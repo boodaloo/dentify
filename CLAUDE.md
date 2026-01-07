@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DentApp is a cloud-first SaaS platform for dental practice management. The project is currently in **Phase 1 (Planning & Design)** - no code has been written yet.
+Dentify is a cloud-first SaaS platform for dental practice management. The project is currently in **Phase 1 (Planning & Design)** - no code has been written yet.
 
 ### Target Architecture
 
