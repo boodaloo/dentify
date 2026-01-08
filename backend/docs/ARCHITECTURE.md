@@ -34,11 +34,11 @@
 ┌─────────────────────┐         ┌─────────────────────────────┐
 │  dentify_internal   │         │       dentify_app           │
 │                     │         │                             │
-│  • staff            │         │  • clinics                  │
-│  • billing          │         │  • users      ← clinic_id   │
-│  • subscriptions    │         │  • patients   ← clinic_id   │
-│  • tickets          │         │  • appointments             │
-│  • analytics        │         │  • ...                      │
+│  • clinics ─────────┼────────▶│  clinic_id (просто ID)      │
+│  • staff            │         │  • users      ← clinic_id   │
+│  • subscription_plans         │  • patients   ← clinic_id   │
+│  • invoices/payments│         │  • appointments             │
+│  • tickets          │         │  • services, ...            │
 │                     │         │                             │
 │                     │         │  + Row Level Security       │
 │                     │         │  + Partitioning             │
@@ -476,16 +476,15 @@ staff
 ├── created_at
 └── updated_at
 
--- Клиники (мастер-данные)
+-- Клиники (мастер-данные, источник clinic_id для dentify_app)
 clinics
-├── id
+├── id                        -- используется как clinic_id в dentify_app
 ├── name
 ├── legal_name
 ├── inn
 ├── address
 ├── contact_email
 ├── contact_phone
-├── db_name                   -- ссылка на БД клиники
 ├── status (trial | active | suspended | cancelled)
 ├── subscription_plan_id
 ├── assigned_manager_id       -- FK → staff
@@ -685,36 +684,13 @@ deleted_at (timestamp) -- время удаления, NULL если не уда
 - Восстановление: `UPDATE ... SET is_deleted = 0, deleted_at = NULL`
 - Полная очистка (GDPR): отдельный процесс с подтверждением
 
+**Примечание:** Таблицы `clinics` и `subscription_plans` находятся в `dentify_internal`.
+В `dentify_app` используется только `clinic_id` как идентификатор (без FK).
+
 ```sql
 -- ============================================================
--- КЛИНИКИ
+-- НАСТРОЙКИ КЛИНИКИ (в dentify_app)
 -- ============================================================
-
--- Клиники (мастер-таблица)
-clinics
-├── id
-├── name
-├── legal_name
-├── inn
-├── contact_email
-├── contact_phone
-├── status (trial | active | suspended | cancelled)
-├── subscription_plan_id
-├── trial_ends_at
-├── created_at
-└── updated_at
-
--- Тарифные планы
-subscription_plans
-├── id
-├── name (Solo | Clinic | Enterprise)
-├── price_monthly
-├── price_yearly
-├── max_users
-├── max_patients
-├── features (JSON)
-├── is_active
-└── created_at
 
 -- Настройки виджета онлайн-записи
 widget_settings
@@ -766,6 +742,15 @@ rooms
 -- ПОЛЬЗОВАТЕЛИ
 -- ============================================================
 
+-- Справочник специализаций врачей
+specializations
+├── id
+├── clinic_id                -- ← RLS
+├── name                     -- "Терапевт", "Хирург", "Ортодонт", "Ортопед"
+├── sort_order
+├── is_active
+└── created_at
+
 -- Пользователи клиники [SOFT DELETE]
 users
 ├── id
@@ -776,7 +761,7 @@ users
 ├── phone
 ├── role (doctor | admin)
 ├── is_owner (0 | 1)         -- владелец клиники (макс. 2)
-├── specialization           -- для врачей
+├── specialization_id        -- FK → specializations (для врачей)
 ├── is_active
 ├── failed_attempts          -- для rate limiting
 ├── locked_until
@@ -799,9 +784,6 @@ patients
 ├── middle_name
 ├── birth_date
 ├── gender
-├── phone
-├── email
-├── address
 ├── allergies
 ├── notes
 ├── home_branch_id           -- "домашний" филиал (nullable)
@@ -810,6 +792,45 @@ patients
 ├── deleted_at
 ├── created_at
 └── updated_at
+
+-- Контактные данные пациента (телефоны, email, адреса)
+patient_contacts
+├── id
+├── clinic_id                -- ← RLS
+├── patient_id
+├── type (phone | email | address)
+├── value                    -- "+79161234567", "ivan@mail.ru", "г. Москва, ул. Ленина 10-5"
+├── label                    -- "Личный", "Рабочий", "Дом", "Родственник"
+├── is_primary (0 | 1)       -- основной контакт этого типа
+└── created_at
+
+-- Примеры:
+-- type=phone:   value="+79161234567", label="Личный", is_primary=1
+-- type=phone:   value="+79031112233", label="Жена", is_primary=0
+-- type=email:   value="ivan@mail.ru", label="Рабочий", is_primary=0
+-- type=address: value="г. Москва, ул. Ленина, д. 10, кв. 5", label="Дом", is_primary=1
+
+-- Лечащие врачи пациента
+patient_doctors
+├── id
+├── clinic_id                -- ← RLS
+├── patient_id
+├── doctor_id                -- FK → users (role=doctor)
+├── specialization_id        -- FK → specializations (специализация врача)
+├── is_active (0 | 1)        -- активный лечащий врач
+├── assigned_at              -- когда назначен
+└── created_at
+
+-- Ограничение: только один активный врач на специализацию
+CREATE UNIQUE INDEX idx_patient_doctors_one_active_per_spec
+ON patient_doctors (clinic_id, patient_id, specialization_id)
+WHERE is_active = 1;
+
+-- Пример: пациент Иванов
+-- doctor_id=5, specialization=Терапевт,  is_active=1  ✓
+-- doctor_id=7, specialization=Терапевт,  is_active=0  ✓ (лечил раньше)
+-- doctor_id=8, specialization=Ортодонт,  is_active=1  ✓
+-- doctor_id=9, specialization=Ортодонт,  is_active=1  ✗ ошибка!
 
 -- ============================================================
 -- РАСПИСАНИЕ И ПРИЁМЫ
@@ -915,7 +936,7 @@ dental_chart_history
 ├── changed_by_user_id
 └── created_at
 
--- Записи осмотров / дневники [SOFT DELETE]
+-- Медицинские записи приёма [SOFT DELETE]
 medical_records
 ├── id
 ├── clinic_id                -- ← RLS
@@ -933,7 +954,27 @@ medical_records
 ├── created_at
 └── updated_at
 
+-- Дневник врача (свободные записи)
+patient_diary
+├── id
+├── clinic_id                -- ← RLS
+├── patient_id
+├── doctor_id                -- кто написал (FK → users)
+├── appointment_id (nullable) -- можно привязать к приёму
+├── content (TEXT)           -- текст записи (без ограничения длины)
+├── record_date              -- дата записи
+├── created_at
+└── updated_at
+
+-- Индекс для быстрого доступа к записям пациента
+CREATE INDEX idx_diary_patient_date
+ON patient_diary (clinic_id, patient_id, record_date DESC);
+
+-- Несколько записей в день — ок
+-- Каждая запись принадлежит врачу (doctor_id)
+
 -- Файлы / снимки (метаданные, сами файлы в S3)
+-- Отложенное удаление: deleted_at → cron удаляет из S3 через 30 дней
 files
 ├── id
 ├── clinic_id                -- ← RLS
@@ -945,7 +986,10 @@ files
 ├── mime_type
 ├── size_bytes
 ├── uploaded_by_user_id
-└── created_at
+├── created_at
+└── deleted_at               -- время удаления (NULL если активен)
+
+-- Cron-задача: удалить из S3 где deleted_at < NOW() - 30 days
 
 -- Счета пациентам [SOFT DELETE]
 patient_invoices
@@ -967,11 +1011,51 @@ patient_payments
 ├── id
 ├── invoice_id
 ├── amount
-├── method (cash | card | transfer)
+├── method (cash | card | transfer | balance)  -- balance = с баланса
+├── balance_cash_used        -- сколько списано с нал. баланса (для method=balance)
+├── balance_card_used        -- сколько списано с безнал. баланса (для method=balance)
 ├── received_by_user_id
 ├── is_deleted (0 | 1)       -- soft delete
 ├── deleted_at
 └── created_at
+
+-- ============================================================
+-- БАЛАНС ПАЦИЕНТА
+-- ============================================================
+
+-- Баланс пациента (раздельный учёт нал/безнал)
+patient_balances
+├── id
+├── clinic_id                -- ← RLS
+├── patient_id (UNIQUE per clinic)
+├── cash_balance             -- баланс наличных
+├── card_balance             -- баланс безналичных
+└── updated_at
+
+-- История операций с балансом
+balance_transactions
+├── id
+├── clinic_id                -- ← RLS
+├── patient_id
+├── type (deposit | withdrawal)  -- пополнение | списание
+├── amount                   -- общая сумма операции
+├── cash_amount              -- сколько наличных в операции
+├── card_amount              -- сколько безнала в операции
+├── balance_cash_after       -- остаток наличных после
+├── balance_card_after       -- остаток безнала после
+├── source_type              -- 'manual', 'payment', 'refund'
+├── source_id (nullable)     -- ID оплаты/возврата
+├── invoice_id (nullable)    -- какой счёт оплачен (для withdrawal)
+├── description              -- "Пополнение баланса", "Оплата счёта №123"
+├── created_by_user_id       -- кто провёл операцию
+├── receipt_number (nullable) -- номер чека
+└── created_at
+
+-- Пример операций:
+-- 1. Пополнение 10,000₽ нал    → type=deposit, cash_amount=10000, card_amount=0
+-- 2. Пополнение 5,000₽ безнал  → type=deposit, cash_amount=0, card_amount=5000
+-- 3. Оплата счёта 7,000₽       → type=withdrawal, cash_amount=3000, card_amount=4000
+--    (смешанная: 3000 нал + 4000 безнал, если на балансе cash=3000, card=5000)
 
 -- ============================================================
 -- РАСПИСАНИЕ ВРАЧЕЙ
@@ -1782,6 +1866,333 @@ find /backups -mtime +14 -delete
 - Ошибки 5xx > 1%
 - Диск заполнен > 80%
 - Бэкап не выполнен
+
+---
+
+## Docker / Инфраструктура
+
+### Локальная разработка
+
+```yaml
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: dentify
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: dentify_app
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    environment:
+      DATABASE_URL: postgresql://dentify:dev_password@postgres:5432/dentify_app
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  web:
+    build: ./frontend/web
+    volumes:
+      - ./frontend/web:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+```
+
+**Команды:**
+```bash
+docker-compose up -d              # поднять всё
+docker-compose logs -f api        # логи бэкенда
+docker-compose exec api pytest    # запустить тесты
+docker-compose down -v            # остановить и удалить volumes
+```
+
+### Продакшн (AWS VPS + Docker Compose)
+
+**Этап 1 (MVP):** Self-hosted на одном сервере
+
+```
+AWS EC2 (t3.medium, $30-40/мес)
+│
+├── Traefik (reverse proxy, SSL)
+│   ├── HTTPS терминация
+│   ├── Let's Encrypt автообновление
+│   └── Роутинг: api.dentify.app → api, app.dentify.app → web
+│
+├── api (FastAPI в Docker)
+├── web (React build в Nginx)
+├── redis (Docker)
+├── postgres (Docker)          ← self-hosted на старте
+│
+└── S3 (файлы пациентов)       ← отдельно от VPS
+```
+
+**docker-compose.prod.yml:**
+```yaml
+services:
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--providers.docker=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@dentify.app"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - letsencrypt:/letsencrypt
+
+  api:
+    image: ghcr.io/dentify/api:latest
+    labels:
+      - "traefik.http.routers.api.rule=Host(`api.dentify.app`)"
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: ${SECRET_KEY}
+    depends_on:
+      - postgres
+      - redis
+
+  web:
+    image: ghcr.io/dentify/web:latest
+    labels:
+      - "traefik.http.routers.web.rule=Host(`app.dentify.app`)"
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+  letsencrypt:
+```
+
+**Этап 2 (рост):** Managed PostgreSQL
+
+```
+AWS EC2                    AWS RDS PostgreSQL
+├── Traefik          ───▶  ├── Automated backups
+├── api                    ├── Multi-AZ (отказоустойчивость)
+├── web                    └── Point-in-time recovery
+└── redis
+```
+
+**Этап 3 (масштаб):** Kubernetes (EKS)
+
+```
+AWS EKS
+├── Ingress (ALB)
+├── api (Deployment, HPA)
+├── web (Deployment)
+├── redis (ElastiCache)
+└── postgres (RDS)
+```
+
+---
+
+## CI/CD (GitHub Actions)
+
+### Структура workflows
+
+```
+.github/workflows/
+├── ci.yml          # Тесты на каждый PR
+├── deploy.yml      # Деплой на прод (main branch)
+└── release.yml     # Релиз с тегом версии
+```
+
+### CI Pipeline (ci.yml)
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint backend
+        run: |
+          cd backend
+          pip install ruff
+          ruff check .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+        run: |
+          cd backend
+          pytest --cov=src --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: |
+          docker build -t ghcr.io/dentify/api:${{ github.sha }} ./backend
+          docker build -t ghcr.io/dentify/web:${{ github.sha }} ./frontend/web
+```
+
+### Deploy Pipeline (deploy.yml)
+
+```yaml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push images
+        run: |
+          docker build -t ghcr.io/dentify/api:latest ./backend
+          docker build -t ghcr.io/dentify/web:latest ./frontend/web
+          docker push ghcr.io/dentify/api:latest
+          docker push ghcr.io/dentify/web:latest
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: deploy
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/dentify
+            docker-compose pull
+            docker-compose up -d --remove-orphans
+            docker system prune -f
+```
+
+### Тестирование
+
+```
+tests/
+├── unit/                    # Без внешних зависимостей
+│   ├── test_validators.py
+│   └── test_utils.py
+│
+├── integration/             # С БД (pytest + testcontainers)
+│   ├── test_patients_api.py
+│   ├── test_appointments_api.py
+│   └── conftest.py          # Фикстуры: test DB, test client
+│
+└── e2e/                     # Playwright (отдельно)
+    └── test_booking_flow.py
+```
+
+**conftest.py для интеграционных тестов:**
+```python
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine
+
+@pytest.fixture
+async def test_db():
+    """Создаёт чистую тестовую БД для каждого теста."""
+    engine = create_async_engine(os.getenv("DATABASE_URL"))
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+@pytest.fixture
+async def client(test_db):
+    """HTTP клиент для тестов API."""
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
+```
 
 ---
 
