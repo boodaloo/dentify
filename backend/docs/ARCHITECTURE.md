@@ -810,6 +810,17 @@ patient_contacts
 -- type=email:   value="ivan@mail.ru", label="Рабочий", is_primary=0
 -- type=address: value="г. Москва, ул. Ленина, д. 10, кв. 5", label="Дом", is_primary=1
 
+-- Комментарии по пациенту (в карточке)
+patient_comments
+├── id
+├── clinic_id                -- ← RLS
+├── patient_id
+├── author_id                -- FK → users (кто написал)
+├── content (TEXT)           -- текст комментария
+├── is_pinned (0 | 1)        -- закреплённый комментарий (показывать первым)
+├── created_at
+└── updated_at
+
 -- Лечащие врачи пациента
 patient_doctors
 ├── id
@@ -1140,6 +1151,67 @@ bonus_rules
 ├── min_check_amount         -- минимальная сумма чека (nullable)
 ├── is_active
 └── created_at
+
+-- ============================================================
+-- СИСТЕМА ЛОЯЛЬНОСТИ
+-- ============================================================
+
+-- Уровни лояльности (Серебряный, Золотой, Платиновый)
+loyalty_tiers
+├── id
+├── clinic_id                -- ← RLS
+├── name                     -- "Серебряный", "Золотой", "Платиновый"
+├── min_total_spent          -- от какой суммы покупок (накопительно)
+├── bonus_multiplier         -- множитель бонусов (1.0, 1.5, 2.0)
+├── discount_type (percent | fixed)  -- тип скидки
+├── discount_value           -- 10 (%) или 500 (₽)
+├── color                    -- цвет для UI (#C0C0C0, #FFD700, #E5E4E2)
+├── sort_order
+├── is_active
+└── created_at
+
+-- Акции / Промо-кампании
+promotions
+├── id
+├── clinic_id                -- ← RLS
+├── name                     -- "Скидка 20% на чистку"
+├── description              -- описание для пациентов
+├── type (discount_percent | discount_fixed | bonus_multiply | free_service)
+├── value                    -- 20 (%) или 500 (₽) или 2 (x2 бонусы)
+├── start_date
+├── end_date
+├── min_check_amount         -- мин. сумма чека (nullable)
+├── max_uses_total           -- лимит использований всего (nullable)
+├── max_uses_per_patient     -- лимит на пациента (nullable)
+├── promo_code (nullable)    -- "SUMMER2025" (для ввода вручную)
+├── is_active
+├── created_at
+└── updated_at
+
+-- Услуги, участвующие в акции
+promotion_services
+├── id
+├── promotion_id
+├── service_id               -- FK → services
+└── discount_override        -- своя скидка для этой услуги (nullable)
+
+-- Использование акций (история)
+promotion_usages
+├── id
+├── clinic_id                -- ← RLS
+├── promotion_id
+├── patient_id
+├── appointment_id (nullable)
+├── invoice_id (nullable)
+├── discount_amount          -- сколько сэкономил
+├── promo_code_used          -- какой код ввёл (если был)
+└── created_at
+
+-- Примеры акций:
+-- 1. "Скидка 20% на отбеливание" → type=discount_percent, value=20
+-- 2. "500₽ скидка при чеке от 5000₽" → type=discount_fixed, value=500, min_check=5000
+-- 3. "Двойные бонусы в июне" → type=bonus_multiply, value=2
+-- 4. "Бесплатная консультация" → type=free_service + promotion_services
 
 -- ============================================================
 -- ПАЦИЕНТСКОЕ ПРИЛОЖЕНИЕ (AUTH)
