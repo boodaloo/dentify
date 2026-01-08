@@ -36,98 +36,108 @@
 
 ---
 
-## 2. Создание новой клиники — автоматизация
+## 2. Создание новой клиники — автоматизация ✅ РЕШЕНО
 
 **Проблема:**
 Клиника оплатила подписку → нужно автоматически развернуть инфраструктуру.
 
-**Что должно произойти:**
+**Решение: Одна БД + RLS (без создания отдельных баз)**
 
-```
-1. Создать БД dentify_clinic_XXX
-2. Накатить все миграции (структура таблиц)
-3. Создать запись в dentify_catalog.clinic_databases
-4. Создать owner-пользователя в новой БД
-5. Отправить welcome email с данными для входа
-```
-
-**Реализация:**
-Отдельный сервис `ClinicProvisioner` или Celery task.
+Регистрация = просто INSERT в существующие таблицы:
 
 ```python
-async def provision_clinic(clinic_id: int, owner_email: str):
-    db_name = f"dentify_clinic_{clinic_id}"
-    await create_database(db_name)
-    await run_migrations(db_name)
-    await register_in_catalog(clinic_id, db_name)
-    await create_owner_user(db_name, owner_email)
-    await send_welcome_email(owner_email)
+async def register_clinic(data: ClinicRegisterData):
+    # 1. Создать клинику
+    clinic = await db.fetchrow("""
+        INSERT INTO clinics (name, contact_email, status, trial_ends_at)
+        VALUES ($1, $2, 'trial', NOW() + INTERVAL '7 days')
+        RETURNING id
+    """, data.name, data.email)
+
+    # 2. Создать владельца
+    await db.execute("""
+        INSERT INTO users (clinic_id, email, password_hash, is_owner, role)
+        VALUES ($1, $2, $3, 1, 'admin')
+    """, clinic['id'], data.email, hash_password(data.password))
+
+    # 3. Создать главный филиал
+    await db.execute("""
+        INSERT INTO branches (clinic_id, name, is_main)
+        VALUES ($1, 'Главный филиал', 1)
+    """, clinic['id'])
+
+    # 4. Создать настройки
+    await db.execute("""
+        INSERT INTO clinic_settings (clinic_id, timezone)
+        VALUES ($1, $2)
+    """, clinic['id'], detect_timezone_by_ip())
+
+    # 5. Welcome email
+    await send_welcome_email(data.email)
 ```
 
-**Решение:** ?
+**Преимущества:**
+- Нет создания БД = мгновенная регистрация
+- Нет миграций на отдельную базу
+- RLS автоматически изолирует данные
+
+**Статус:** Добавлено в ARCHITECTURE.md
 
 ---
 
-## 3. Миграции на сотни БД
+## 3. Миграции на сотни БД ✅ РЕШЕНО
 
 **Проблема:**
 Alembic работает с одной БД. У нас 500 клиник = 500 отдельных баз.
 
-**Вопросы:**
-- Как накатить миграцию на все 500 баз?
-- Что если одна упала — откатывать все?
-- Версионирование: клиника A на v1.5, клиника B на v1.6?
+**Решение: Одна БД = одна миграция**
 
-**Варианты решения:**
+С переходом на одну базу `dentify_app` проблема исчезла:
 
-A) **Скрипт массовых миграций:**
 ```bash
-#!/bin/bash
-for db in $(psql dentify_catalog -t -c "SELECT db_name FROM clinic_databases WHERE status='active'"); do
-    echo "Migrating $db..."
-    alembic -x db=$db upgrade head || echo "FAILED: $db" >> migration_errors.log
-done
+# Одна команда на всех клиентов
+alembic upgrade head
 ```
 
-B) **Хранить версию схемы в catalog:**
-```sql
-clinic_databases
-├── ...
-├── schema_version
-└── last_migration_at
-```
+**Преимущества:**
+- Все клиники на одной версии схемы
+- Нет проблем с версионированием
+- Нет "упавших" миграций
+- Простой откат при необходимости
 
-C) **Blue-green миграции:**
-Новые клиники сразу на новой версии, старые мигрируют постепенно.
-
-**Решение:** ?
+**Статус:** Проблема устранена изменением архитектуры
 
 ---
 
-## 4. Кэширование (Redis)
+## 4. Кэширование (Redis) ✅ РЕШЕНО
 
 **Проблема:**
 Нет слоя кэширования. Каждый запрос идёт в БД.
 
-**Где нужен Redis:**
+**Решение: Redis для кэша + очередей**
 
-| Кейс | TTL |
-|------|-----|
-| JWT refresh tokens | 7 дней |
-| Сессии пользователей | 24 часа |
-| Прайс-лист услуг клиники | 1 час |
-| Rate limiting (IP → count) | 1 минута |
-| Очередь задач (бэкапы, emails) | — |
+**Что кэшируем:**
 
-**Архитектура:**
+| Данные | TTL | Ключ |
+|--------|-----|------|
+| Прайс-лист услуг | 1 час | `clinic:{id}:services` |
+| Расписание врачей | 15 мин | `clinic:{id}:schedules` |
+| Свободные слоты | 5 мин | `clinic:{id}:slots:{date}` |
+| Данные пользователя | 30 мин | `user:{id}:profile` |
+| Настройки клиники | 1 час | `clinic:{id}:settings` |
+| JWT blacklist | До истечения | `jwt:blacklist:{token_id}` |
 
-```
-FastAPI → Redis (cache/queue) → PostgreSQL
-              ↓
-          Celery workers (фоновые задачи)
-```
+**Очереди задач (ARQ/Celery):**
+- Отправка email/SMS
+- Генерация отчётов
+- Проверка истёкших триалов
+- Бэкапы
 
-**Решение:** Добавить Redis в стек? Celery для очередей?
+**Дополнительно:**
+- Rate limiting
+- Pub/Sub для realtime (WebSocket)
+
+**Статус:** Добавлено в ARCHITECTURE.md с примерами кода
 
 ---
 
@@ -285,8 +295,8 @@ services:
 | # | Вопрос | Приоритет | Статус |
 |---|--------|-----------|--------|
 | 1 | Аутентификация | P0 | ✅ Решено |
-| 2 | Provisioning клиник | P0 | ⏳ Ожидает |
-| 3 | Миграции | P1 | ⏳ Ожидает |
+| 2 | Provisioning клиник | P0 | ✅ Решено |
+| 3 | Миграции | P1 | ✅ Решено (одна БД) |
 | 4 | Redis/кэширование | P1 | ⏳ Ожидает |
 | 5 | Soft delete | P1 | ⏳ Ожидает |
 | 6 | Timezone | P1 | ✅ Решено |

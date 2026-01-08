@@ -8,6 +8,8 @@
 | База данных | PostgreSQL |
 | Драйвер БД | asyncpg (raw SQL) |
 | Connection Pool | PgBouncer |
+| **Кэширование** | **Redis** |
+| **Очереди задач** | **Redis + Celery/ARQ** |
 | Миграции | Alembic |
 | Аутентификация | JWT |
 | Файловое хранилище | S3 / MinIO |
@@ -25,13 +27,22 @@
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      PgBouncer                               │
-└─────────┬─────────────────┬─────────────────┬───────────────┘
-          │                 │                 │
-          ▼                 ▼                 ▼
-┌─────────────────┐ ┌──────────────┐ ┌─────────────────┐
-│ dentify_internal│ │dentify_catalog│ │ dentify_clinic_X│
-│ (админка)       │ │ (реестр)     │ │ (данные клиники)│
-└─────────────────┘ └──────────────┘ └─────────────────┘
+│                  (один connection pool)                      │
+└─────────┬───────────────────────────────────┬───────────────┘
+          │                                   │
+          ▼                                   ▼
+┌─────────────────────┐         ┌─────────────────────────────┐
+│  dentify_internal   │         │       dentify_app           │
+│                     │         │                             │
+│  • staff            │         │  • clinics                  │
+│  • billing          │         │  • users      ← clinic_id   │
+│  • subscriptions    │         │  • patients   ← clinic_id   │
+│  • tickets          │         │  • appointments             │
+│  • analytics        │         │  • ...                      │
+│                     │         │                             │
+│                     │         │  + Row Level Security       │
+│                     │         │  + Partitioning             │
+└─────────────────────┘         └─────────────────────────────┘
                                               │
                     ┌─────────────────────────┘
                     ▼
@@ -41,11 +52,224 @@
           └─────────────────┘
 ```
 
-### Принцип изоляции
+### Почему две БД, а не отдельная на клинику?
 
-- **Отдельная БД на каждую клинику** — максимальная изоляция данных
-- **Внутренние сотрудники** — отдельная БД (dentify_internal)
-- **Реестр клиник** — dentify_catalog (маршрутизация к нужной БД)
+| Критерий | Отдельная БД на клинику | Одна БД + RLS |
+|----------|-------------------------|---------------|
+| Миграции | На каждую БД отдельно | Одна миграция на всех |
+| Connection pool | По пулу на БД | Один пул |
+| Бэкап | Отдельно каждую | Один pg_dump |
+| Изоляция | Физическая | Логическая (RLS) |
+| Масштаб | 500 БД = 500 проблем | 10 млн строк = ок |
+
+**Расчёт:** 1000 клиник × 10,000 пациентов = 10 млн строк. PostgreSQL справляется.
+
+### Принцип изоляции (Row Level Security)
+
+```sql
+-- Включаем RLS на таблице
+ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
+
+-- Политика: видишь только данные своей клиники
+CREATE POLICY clinic_isolation ON patients
+    USING (clinic_id = current_setting('app.current_clinic_id')::int);
+
+-- Забыл WHERE clinic_id = ? — PostgreSQL сам отфильтрует!
+```
+
+### Партиционирование (для производительности)
+
+```sql
+-- Партиционирование по clinic_id
+CREATE TABLE patients (
+    id SERIAL,
+    clinic_id INT NOT NULL,
+    ...
+) PARTITION BY HASH (clinic_id);
+
+-- 16 партиций
+CREATE TABLE patients_p0 PARTITION OF patients FOR VALUES WITH (MODULUS 16, REMAINDER 0);
+CREATE TABLE patients_p1 PARTITION OF patients FOR VALUES WITH (MODULUS 16, REMAINDER 1);
+-- ... и так далее
+```
+
+---
+
+## Redis (Кэширование и очереди)
+
+### Архитектура
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        FastAPI                               │
+└───────┬─────────────────────────────────┬───────────────────┘
+        │                                 │
+        ▼                                 ▼
+┌───────────────┐                 ┌───────────────┐
+│   PostgreSQL  │                 │     Redis     │
+│   (данные)    │                 │  (кэш/очереди)│
+└───────────────┘                 └───────┬───────┘
+                                          │
+                                          ▼
+                                  ┌───────────────┐
+                                  │ Celery/ARQ    │
+                                  │ (воркеры)     │
+                                  └───────────────┘
+```
+
+### Что кэшируем
+
+| Данные | TTL | Ключ | Почему |
+|--------|-----|------|--------|
+| Прайс-лист услуг | 1 час | `clinic:{id}:services` | Редко меняется, часто запрашивается |
+| Расписание врачей | 15 мин | `clinic:{id}:schedules` | Быстрый доступ при записи |
+| Свободные слоты | 5 мин | `clinic:{id}:slots:{date}` | Виджет онлайн-записи |
+| Данные пользователя | 30 мин | `user:{id}:profile` | Не ходить в БД каждый запрос |
+| Настройки клиники | 1 час | `clinic:{id}:settings` | Timezone, валюта и т.д. |
+| Категории услуг | 2 часа | `clinic:{id}:categories` | Почти статичные данные |
+| JWT blacklist | До истечения | `jwt:blacklist:{token_id}` | Logout, смена пароля |
+
+### Реализация кэширования
+
+```python
+import redis.asyncio as redis
+import json
+
+class CacheService:
+    def __init__(self):
+        self.redis = redis.from_url("redis://localhost:6379")
+
+    async def get_services(self, clinic_id: int) -> list:
+        key = f"clinic:{clinic_id}:services"
+
+        # Пробуем взять из кэша
+        cached = await self.redis.get(key)
+        if cached:
+            return json.loads(cached)
+
+        # Нет в кэше — идём в БД
+        services = await db.fetch("""
+            SELECT * FROM services
+            WHERE clinic_id = $1 AND is_active = true
+        """, clinic_id)
+
+        # Сохраняем в кэш на 1 час
+        await self.redis.setex(
+            key,
+            3600,  # TTL в секундах
+            json.dumps(services)
+        )
+
+        return services
+
+    async def invalidate_services(self, clinic_id: int):
+        """Вызывать при изменении прайса"""
+        await self.redis.delete(f"clinic:{clinic_id}:services")
+```
+
+### Инвалидация кэша
+
+```python
+# При обновлении услуги
+@router.put("/services/{service_id}")
+async def update_service(service_id: int, data: ServiceUpdate):
+    await db.execute("UPDATE services SET ... WHERE id = $1", service_id)
+
+    # Сбрасываем кэш
+    await cache.invalidate_services(clinic_id)
+
+    return {"status": "ok"}
+```
+
+### Очереди фоновых задач
+
+| Задача | Приоритет | Описание |
+|--------|-----------|----------|
+| Отправка email | high | Welcome, напоминания |
+| SMS уведомления | high | Напоминание о приёме |
+| Генерация отчётов | low | PDF, Excel экспорт |
+| Проверка триалов | low | Истёкшие подписки |
+| Бэкапы | low | Ежедневные дампы |
+| Очистка старых данных | low | GDPR, ротация логов |
+
+### Пример фоновой задачи (ARQ)
+
+```python
+from arq import create_pool
+from arq.connections import RedisSettings
+
+# Определение задачи
+async def send_appointment_reminder(ctx, appointment_id: int):
+    appointment = await db.fetchrow("""
+        SELECT a.*, p.phone, p.name as patient_name
+        FROM appointments a
+        JOIN patients p ON a.patient_id = p.id
+        WHERE a.id = $1
+    """, appointment_id)
+
+    await sms_service.send(
+        phone=appointment['phone'],
+        message=f"Напоминаем о записи завтра в {appointment['start_time']}"
+    )
+
+# Планирование задачи
+async def schedule_reminder(appointment_id: int, remind_at: datetime):
+    pool = await create_pool(RedisSettings())
+    await pool.enqueue_job(
+        'send_appointment_reminder',
+        appointment_id,
+        _defer_until=remind_at
+    )
+```
+
+### Rate Limiting
+
+```python
+async def check_rate_limit(ip: str, endpoint: str, limit: int = 100) -> bool:
+    """100 запросов в минуту с одного IP"""
+    key = f"rate:{ip}:{endpoint}"
+
+    current = await redis.incr(key)
+    if current == 1:
+        await redis.expire(key, 60)  # TTL 1 минута
+
+    return current <= limit
+```
+
+### Сессии и JWT
+
+```python
+# При logout — добавляем токен в blacklist
+async def logout(token_id: str, expires_in: int):
+    await redis.setex(
+        f"jwt:blacklist:{token_id}",
+        expires_in,  # До истечения токена
+        "1"
+    )
+
+# При каждом запросе — проверяем blacklist
+async def is_token_valid(token_id: str) -> bool:
+    return not await redis.exists(f"jwt:blacklist:{token_id}")
+```
+
+### Pub/Sub для реального времени (будущее)
+
+```python
+# Уведомление о новой записи в реальном времени
+async def notify_new_appointment(clinic_id: int, appointment: dict):
+    await redis.publish(
+        f"clinic:{clinic_id}:appointments",
+        json.dumps(appointment)
+    )
+
+# Подписка в WebSocket handler
+async def websocket_handler(websocket, clinic_id: int):
+    pubsub = redis.pubsub()
+    await pubsub.subscribe(f"clinic:{clinic_id}:appointments")
+
+    async for message in pubsub.listen():
+        await websocket.send_json(message['data'])
+```
 
 ---
 
@@ -55,7 +279,7 @@
 
 | URL | Кто заходит | База |
 |-----|-------------|------|
-| `dentify.com` | Клиенты (клиники) | dentify_catalog → dentify_clinic_X |
+| `dentify.com` | Клиенты (клиники) | dentify_app |
 | `admin.dentify.com` | Сотрудники Dentify | dentify_internal |
 
 ### Схема аутентификации клиента
@@ -68,22 +292,27 @@
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  dentify_catalog.user_credentials                           │
-│  Поиск по email → clinic_id, user_id                        │
+│  dentify_app.users                                          │
+│  Поиск по email → clinic_id, user data                      │
+│  (email уникален глобально)                                 │
 └─────────────────────┬───────────────────────────────────────┘
                       │
-          ┌───────────┴───────────┐
-          ▼                       ▼
-┌─────────────────┐    ┌─────────────────────────────────────┐
-│ dentify_internal│    │ dentify_clinic_X                    │
-│ Проверка:       │    │ Загрузка:                           │
-│ - подписка      │    │ - данные пользователя               │
-│ - фичи          │    │ - роль, права                       │
-│ - лимиты        │    │ - доступные филиалы                 │
-└────────┬────────┘    └─────────────────┬───────────────────┘
-         │                               │
-         └───────────────┬───────────────┘
-                         ▼
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Проверка:                                                  │
+│  • clinic.status = 'active' или 'trial'                     │
+│  • clinic.trial_ends_at > NOW() (если trial)                │
+│  • user.is_active = true                                    │
+│  • clinic.subscription → features                           │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  SET app.current_clinic_id = {clinic_id}                    │
+│  (для Row Level Security)                                   │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  JWT Token                                                  │
 │  {                                                          │
@@ -94,6 +323,22 @@
 │    subscription_status: "active"                            │
 │  }                                                          │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### Middleware для RLS
+
+```python
+class ClinicIsolationMiddleware:
+    async def __call__(self, request, call_next):
+        # Получаем clinic_id из JWT
+        clinic_id = get_clinic_from_jwt(request)
+
+        # Устанавливаем переменную сессии PostgreSQL
+        await db.execute(
+            "SET app.current_clinic_id = $1", clinic_id
+        )
+
+        return await call_next(request)
 ```
 
 ### Управление пользователями
@@ -254,49 +499,6 @@ analytics_events
 
 ---
 
-## База: dentify_catalog (Реестр)
-
-Маршрутизация, аутентификация и публичный API для виджета.
-
-```sql
--- Реестр клиник и их БД
-clinic_databases
-├── clinic_id
-├── db_name
-├── db_host
-├── status (active | maintenance | archived)
-└── created_at
-
--- Учётные данные пользователей (для маршрутизации логина)
-user_credentials
-├── id
-├── email (UNIQUE)           -- глобально уникальный
-├── password_hash
-├── clinic_id                -- FK → dentify_internal.clinics
-├── user_id                  -- ID в dentify_clinic_X.users
-├── is_active
-├── failed_attempts          -- для rate limiting
-├── locked_until             -- блокировка после неудачных попыток
-├── last_login_at
-├── last_login_ip
-└── created_at
-
--- Настройки виджета онлайн-записи
-widget_settings
-├── clinic_id
-├── api_key                  -- публичный ключ
-├── allowed_domains          -- example-clinic.com
-├── enabled
-├── theme (JSON)             -- цвета под сайт клиники
-├── show_doctors
-├── available_service_ids
-└── updated_at
-```
-
-**Важно:** При изменении email пользователя — обновлять в `user_credentials`.
-
----
-
 ## Филиалы (Branches)
 
 ### Концепция
@@ -344,11 +546,54 @@ widget_settings
 
 ---
 
-## База: dentify_clinic_X (Данные клиники)
+## База: dentify_app (Данные всех клиник)
 
-Создаётся отдельно для каждой клиники.
+Единая база для всех клиник с изоляцией через RLS.
+
+**Все таблицы содержат `clinic_id` для изоляции данных.**
 
 ```sql
+-- ============================================================
+-- КЛИНИКИ
+-- ============================================================
+
+-- Клиники (мастер-таблица)
+clinics
+├── id
+├── name
+├── legal_name
+├── inn
+├── contact_email
+├── contact_phone
+├── status (trial | active | suspended | cancelled)
+├── subscription_plan_id
+├── trial_ends_at
+├── created_at
+└── updated_at
+
+-- Тарифные планы
+subscription_plans
+├── id
+├── name (Solo | Clinic | Enterprise)
+├── price_monthly
+├── price_yearly
+├── max_users
+├── max_patients
+├── features (JSON)
+├── is_active
+└── created_at
+
+-- Настройки виджета онлайн-записи
+widget_settings
+├── clinic_id
+├── api_key                  -- публичный ключ
+├── allowed_domains
+├── enabled
+├── theme (JSON)
+├── show_doctors
+├── available_service_ids
+└── updated_at
+
 -- ============================================================
 -- ФИЛИАЛЫ
 -- ============================================================
@@ -356,6 +601,7 @@ widget_settings
 -- Филиалы клиники
 branches
 ├── id
+├── clinic_id                -- ← RLS
 ├── name                     -- "Филиал на Ленина", "Центральный"
 ├── short_code               -- "ЛЕН", "ЦНТ" (для UI)
 ├── address
@@ -375,6 +621,7 @@ user_branches
 -- Кабинеты / кресла (для крупных клиник)
 rooms
 ├── id
+├── clinic_id                -- ← RLS
 ├── branch_id
 ├── name                     -- "Кабинет 1", "Кресло 3"
 ├── is_active
@@ -387,13 +634,18 @@ rooms
 -- Пользователи клиники
 users
 ├── id
+├── clinic_id                -- ← RLS
+├── email (UNIQUE globally)  -- для логина
+├── password_hash
 ├── name
-├── email                    -- синхронизируется с catalog.user_credentials
 ├── phone
 ├── role (doctor | admin)
 ├── is_owner (0 | 1)         -- владелец клиники (макс. 2)
 ├── specialization           -- для врачей
 ├── is_active
+├── failed_attempts          -- для rate limiting
+├── locked_until
+├── last_login_at
 ├── created_at
 └── updated_at
 
@@ -404,6 +656,7 @@ users
 -- Пациенты
 patients
 ├── id
+├── clinic_id                -- ← RLS
 ├── first_name
 ├── last_name
 ├── middle_name
@@ -426,6 +679,7 @@ patients
 -- Записи на приём
 appointments
 ├── id
+├── clinic_id                -- ← RLS
 ├── patient_id
 ├── doctor_id
 ├── branch_id                -- в каком филиале
@@ -441,6 +695,7 @@ appointments
 -- Заявки с виджета (онлайн-запись)
 widget_bookings
 ├── id
+├── clinic_id                -- ← RLS
 ├── patient_name
 ├── patient_phone
 ├── patient_email
@@ -460,6 +715,7 @@ widget_bookings
 -- Услуги
 services
 ├── id
+├── clinic_id                -- ← RLS
 ├── category_id
 ├── name
 ├── code
@@ -471,6 +727,7 @@ services
 -- Категории услуг
 service_categories
 ├── id
+├── clinic_id                -- ← RLS
 ├── name
 ├── sort_order
 └── is_active
@@ -495,6 +752,7 @@ appointment_services
 -- Зубная формула
 dental_chart
 ├── id
+├── clinic_id                -- ← RLS
 ├── patient_id
 ├── tooth_number (1-32)
 ├── status (healthy | caries | filled | extracted | implant | crown)
@@ -515,6 +773,7 @@ dental_chart_history
 -- Записи осмотров / дневники
 medical_records
 ├── id
+├── clinic_id                -- ← RLS
 ├── patient_id
 ├── appointment_id
 ├── record_type (examination | treatment | consultation)
@@ -530,11 +789,12 @@ medical_records
 -- Файлы / снимки (метаданные, сами файлы в S3)
 files
 ├── id
+├── clinic_id                -- ← RLS
 ├── patient_id
 ├── appointment_id (nullable)
 ├── file_type (xray | photo | document | other)
 ├── original_name
-├── s3_key                   -- путь в S3
+├── s3_key                   -- путь в S3/{clinic_id}/...
 ├── mime_type
 ├── size_bytes
 ├── uploaded_by_user_id
@@ -543,6 +803,7 @@ files
 -- Счета пациентам
 patient_invoices
 ├── id
+├── clinic_id                -- ← RLS
 ├── patient_id
 ├── appointment_id (nullable)
 ├── total_amount
@@ -568,6 +829,7 @@ patient_payments
 -- Рабочее расписание врачей (по филиалам)
 doctor_schedules
 ├── id
+├── clinic_id                -- ← RLS
 ├── doctor_id
 ├── branch_id                -- в каком филиале работает в этот день
 ├── day_of_week (1-7)
@@ -579,6 +841,7 @@ doctor_schedules
 -- Исключения в расписании (отпуск, больничный)
 schedule_exceptions
 ├── id
+├── clinic_id                -- ← RLS
 ├── doctor_id
 ├── branch_id (nullable)     -- NULL = для всех филиалов
 ├── date
@@ -604,6 +867,81 @@ clinic_settings
 ├── working_hours_end        -- '21:00'
 └── updated_at
 ```
+
+---
+
+## Регистрация клиники (Trial)
+
+### Процесс регистрации
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  dentify.com/register                                        │
+│  [Название клиники] [Email] [Телефон] [Пароль]              │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  1. Создать запись в clinics                                 │
+│     status = 'trial'                                        │
+│     trial_ends_at = NOW() + 7 days                          │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  2. Создать владельца в users                                │
+│     is_owner = 1                                            │
+│     role = 'admin'                                          │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  3. Создать главный филиал в branches                        │
+│     is_main = 1                                             │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  4. Создать настройки в clinic_settings                      │
+│     timezone = определить по IP                             │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  5. Отправить welcome email                                  │
+│  6. Автоматический вход → Dashboard                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Trial → Paid
+
+```python
+# Фоновая задача: проверка истёкших триалов
+async def check_expired_trials():
+    expired = await db.fetch("""
+        SELECT id FROM clinics
+        WHERE status = 'trial' AND trial_ends_at < NOW()
+    """)
+
+    for clinic in expired:
+        # Меняем статус на suspended
+        await db.execute("""
+            UPDATE clinics SET status = 'suspended'
+            WHERE id = $1
+        """, clinic['id'])
+
+        # Отправляем email: "Ваш триал закончился"
+        await send_trial_expired_email(clinic)
+```
+
+### Что доступно в Trial
+
+| Функция | Trial (7 дней) | Платная подписка |
+|---------|----------------|------------------|
+| Пациенты | До 50 | По тарифу |
+| Пользователи | 1 (владелец) | По тарифу |
+| Все функции | ✓ | ✓ |
+| Поддержка | Email | По тарифу |
 
 ---
 
