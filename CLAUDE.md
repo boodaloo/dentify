@@ -37,14 +37,48 @@ Built-in AI assistant for all user types — a key competitive advantage:
 - **No hallucinations** — deterministic responses via NLU + SQL queries
 - **Use cases:** Patient search, schedule queries, financial reports, analytics
 
-## Key Project Documents
+## Project Structure
 
-- `algorithm.md` - Complete development roadmap, market analysis, monetization strategy, and technical architecture (in Russian)
-- `GEMINI.md` - Main README with project vision, features, and conventions
-- `ui_first_goal.md` - UI/UX design workflow from wireframing to prototyping
-- `ui_ux_links.md` - Design inspiration and reference links
-- `summary.md` - Project session log
-- `prmt.md` - Chronological log of tasks and decisions
+```
+dent_app/
+├── docs/                    # General documentation
+│   ├── algorithm.md         # Development roadmap, market analysis (RU)
+│   ├── GEMINI.md            # Project vision, features
+│   ├── ui_first_goal.md     # UI/UX workflow
+│   ├── BrandName.md         # Brand naming research
+│   └── BrandLogo.md         # Logo concepts
+│
+├── backend/                 # FastAPI backend
+│   ├── docs/
+│   │   └── ARCHITECTURE.md  # DB schema, API design, architecture
+│   ├── src/                 # Source code (TBD)
+│   └── tests/               # Tests (TBD)
+│
+├── frontend/                # React applications
+│   ├── web/                 # Main clinic web app
+│   ├── widget/              # Booking widget for clinic websites
+│   └── admin/               # Admin panel
+│
+├── mobile/                  # Flutter applications
+│   ├── clinic_app/          # For clinic staff
+│   └── patient_app/         # DentifyPatient for patients
+│
+├── design/                  # Design assets
+│   ├── ideas/               # Design inspiration, icons
+│   ├── logo/                # Logo variants
+│   ├── ui/                  # UI screenshots/mockups
+│   └── figma/               # Figma exports
+│
+└── shared/                  # Shared code
+    └── types/               # TypeScript types for API
+```
+
+## Key Documents
+
+- `docs/algorithm.md` - Complete development roadmap, market analysis, monetization strategy (in Russian)
+- `docs/GEMINI.md` - Main README with project vision, features, and conventions
+- `docs/ui_first_goal.md` - UI/UX design workflow from wireframing to prototyping
+- `backend/docs/ARCHITECTURE.md` - Database schema, API endpoints, technical architecture
 
 ## Development Phases
 
