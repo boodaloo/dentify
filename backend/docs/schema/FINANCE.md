@@ -8,7 +8,7 @@
 
 ```sql
 -- Счета пациентам [SOFT DELETE]
-patient_invoices
+fin_invoices
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
@@ -23,7 +23,7 @@ patient_invoices
 └── updated_at
 
 -- Оплаты от пациентов [SOFT DELETE]
-patient_payments
+fin_payments
 ├── id
 ├── invoice_id
 ├── amount
@@ -44,7 +44,7 @@ patient_payments
 
 ```sql
 -- Баланс пациента (раздельный учёт нал/безнал)
-patient_balances
+fin_balances
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id (UNIQUE per clinic)
@@ -53,7 +53,7 @@ patient_balances
 └── updated_at
 
 -- История операций с балансом
-balance_transactions
+fin_balance_transactions
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
@@ -87,7 +87,7 @@ balance_transactions
 
 ```sql
 -- Бонусный баланс пациента (по клиникам)
-patient_bonuses
+fin_bonuses
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
@@ -97,7 +97,7 @@ patient_bonuses
 └── updated_at
 
 -- История операций с бонусами
-bonus_transactions
+fin_bonus_transactions
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
@@ -111,7 +111,7 @@ bonus_transactions
 └── created_at
 
 -- Правила начисления бонусов
-bonus_rules
+fin_bonus_rules
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name                     -- "За визит", "За приглашённого друга"
@@ -128,7 +128,7 @@ bonus_rules
 
 ```sql
 -- Уровни лояльности (Серебряный, Золотой, Платиновый)
-loyalty_tiers
+fin_loyalty_tiers
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name                     -- "Серебряный", "Золотой", "Платиновый"
@@ -142,7 +142,7 @@ loyalty_tiers
 └── created_at
 
 -- Акции / Промо-кампании
-promotions
+fin_promotions
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name                     -- "Скидка 20% на чистку"
@@ -160,14 +160,14 @@ promotions
 └── updated_at
 
 -- Услуги, участвующие в акции
-promotion_services
+fin_promotion_services
 ├── id
 ├── promotion_id
-├── service_id               -- FK → services
+├── service_id               -- FK → clin_services
 └── discount_override        -- своя скидка для этой услуги (nullable)
 
 -- Использование акций (история)
-promotion_usages
+fin_promotion_usages
 ├── id
 ├── clinic_id                -- ← RLS
 ├── promotion_id

@@ -10,7 +10,7 @@
 
 ```sql
 -- Сотрудники Dentify
-staff
+adm_staff
 ├── id
 ├── name
 ├── email
@@ -21,7 +21,7 @@ staff
 └── updated_at
 
 -- Клиники (мастер-данные, источник clinic_id для dentify_app)
-clinics
+adm_clinics
 ├── id                        -- используется как clinic_id в dentify_app
 ├── name
 ├── legal_name
@@ -31,13 +31,13 @@ clinics
 ├── contact_phone
 ├── status (trial | active | suspended | cancelled)
 ├── subscription_plan_id
-├── assigned_manager_id       -- FK → staff
+├── assigned_manager_id       -- FK → adm_staff
 ├── trial_ends_at
 ├── created_at
 └── updated_at
 
 -- Тарифные планы
-subscription_plans
+adm_subscription_plans
 ├── id
 ├── name (Solo | Clinic | Enterprise)
 ├── price_monthly
@@ -49,7 +49,7 @@ subscription_plans
 └── created_at
 
 -- Счета клиникам
-invoices
+adm_invoices
 ├── id
 ├── clinic_id
 ├── invoice_number
@@ -62,7 +62,7 @@ invoices
 └── created_at
 
 -- Платежи
-payments
+adm_payments
 ├── id
 ├── invoice_id
 ├── amount
@@ -72,14 +72,14 @@ payments
 └── created_at
 
 -- Feature flags для клиник
-clinic_features
+adm_clinic_features
 ├── clinic_id
 ├── feature_key
 ├── enabled
 └── updated_at
 
 -- Тикеты поддержки (Helpdesk)
-tickets
+adm_tickets
 ├── id
 ├── clinic_id
 ├── created_by_user_id       -- кто из клиники создал
@@ -94,7 +94,7 @@ tickets
 └── sla_breached (0 | 1)
 
 -- Переписка по тикетам
-ticket_messages
+adm_ticket_messages
 ├── id
 ├── ticket_id
 ├── author_type (staff | client)
@@ -104,13 +104,13 @@ ticket_messages
 └── created_at
 
 -- Категории тикетов
-ticket_categories
+adm_ticket_categories
 ├── id
 ├── name (Billing | Technical | Feature request | Bug)
 └── default_priority
 
 -- Правила SLA
-sla_rules
+adm_sla_rules
 ├── id
 ├── priority
 ├── first_response_hours     -- 1ч для critical
@@ -118,7 +118,7 @@ sla_rules
 └── subscription_plan_id     -- разный SLA для разных тарифов
 
 -- Аудит действий
-audit_logs
+adm_audit_logs
 ├── id
 ├── staff_id
 ├── action
@@ -129,7 +129,7 @@ audit_logs
 └── created_at
 
 -- Аналитика (события)
-analytics_events
+adm_analytics_events
 ├── id
 ├── clinic_id
 ├── event_type
@@ -186,7 +186,7 @@ analytics_events
 
 ```sql
 -- Филиалы клиники [SOFT DELETE]
-branches
+core_branches
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name                     -- "Филиал на Ленина", "Центральный"
@@ -201,14 +201,14 @@ branches
 └── created_at
 
 -- Доступ пользователей к филиалам
-user_branches
+core_user_branches
 ├── user_id
 ├── branch_id
 ├── is_default (0 | 1)       -- филиал по умолчанию при входе
 └── access_level (full | read_only)
 
 -- Кабинеты / кресла (для крупных клиник)
-rooms
+core_rooms
 ├── id
 ├── clinic_id                -- ← RLS
 ├── branch_id
@@ -223,7 +223,7 @@ rooms
 
 ```sql
 -- Справочник специализаций врачей
-specializations
+core_specializations
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name                     -- "Терапевт", "Хирург", "Ортодонт", "Ортопед"
@@ -232,7 +232,7 @@ specializations
 └── created_at
 
 -- Пользователи клиники [SOFT DELETE]
-users
+core_users
 ├── id
 ├── clinic_id                -- ← RLS
 ├── email (UNIQUE globally)  -- для логина
@@ -241,7 +241,7 @@ users
 ├── phone
 ├── role (doctor | admin)
 ├── is_owner (0 | 1)         -- владелец клиники (макс. 2)
-├── specialization_id        -- FK → specializations (для врачей)
+├── specialization_id        -- FK → core_specializations (для врачей)
 ├── is_active
 ├── failed_attempts          -- для rate limiting
 ├── locked_until
@@ -266,7 +266,7 @@ users
 
 ```sql
 -- Пациенты [SOFT DELETE]
-patients
+core_patients
 ├── id
 ├── clinic_id                -- ← RLS
 ├── first_name
@@ -284,7 +284,7 @@ patients
 └── updated_at
 
 -- Контактные данные пациента (телефоны, email, адреса)
-patient_contacts
+core_patient_contacts
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
@@ -301,30 +301,30 @@ patient_contacts
 -- type=address: value="г. Москва, ул. Ленина, д. 10, кв. 5", label="Дом", is_primary=1
 
 -- Комментарии по пациенту (в карточке)
-patient_comments
+core_patient_comments
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
-├── author_id                -- FK → users (кто написал)
+├── author_id                -- FK → core_users (кто написал)
 ├── content (TEXT)           -- текст комментария
 ├── is_pinned (0 | 1)        -- закреплённый комментарий (показывать первым)
 ├── created_at
 └── updated_at
 
 -- Лечащие врачи пациента
-patient_doctors
+core_patient_doctors
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
-├── doctor_id                -- FK → users (role=doctor)
-├── specialization_id        -- FK → specializations (специализация врача)
+├── doctor_id                -- FK → core_users (role=doctor)
+├── specialization_id        -- FK → core_specializations (специализация врача)
 ├── is_active (0 | 1)        -- активный лечащий врач
 ├── assigned_at              -- когда назначен
 └── created_at
 
 -- Ограничение: только один активный врач на специализацию
-CREATE UNIQUE INDEX idx_patient_doctors_one_active_per_spec
-ON patient_doctors (clinic_id, patient_id, specialization_id)
+CREATE UNIQUE INDEX idx_core_patient_doctors_one_active_per_spec
+ON core_patient_doctors (clinic_id, patient_id, specialization_id)
 WHERE is_active = 1;
 
 -- Пример: пациент Иванов
@@ -340,7 +340,7 @@ WHERE is_active = 1;
 
 ```sql
 -- Настройки виджета онлайн-записи
-widget_settings
+core_widget_settings
 ├── clinic_id
 ├── api_key                  -- публичный ключ
 ├── allowed_domains
@@ -351,7 +351,7 @@ widget_settings
 └── updated_at
 
 -- Настройки клиники
-clinic_settings
+core_clinic_settings
 ├── id
 ├── timezone                 -- 'Europe/Moscow'
 ├── currency                 -- 'RUB'
@@ -385,15 +385,15 @@ clinic_settings
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Составной индекс для поиска по ФИО
-CREATE INDEX idx_patients_fullname_trgm
-ON patients USING gin (
+CREATE INDEX idx_core_patients_fullname_trgm
+ON core_patients USING gin (
   (lower(last_name || ' ' || first_name || ' ' || COALESCE(middle_name, '')))
   gin_trgm_ops
 );
 
 -- Индекс для поиска по телефону
-CREATE INDEX idx_patients_phone_trgm
-ON patients USING gin (phone gin_trgm_ops);
+CREATE INDEX idx_core_patients_phone_trgm
+ON core_patients USING gin (phone gin_trgm_ops);
 ```
 
 ### Поисковый запрос
@@ -403,7 +403,7 @@ ON patients USING gin (phone gin_trgm_ops);
 SELECT
   id, first_name, last_name, phone,
   similarity(lower(last_name || ' ' || first_name), lower(:query)) AS rank
-FROM patients
+FROM core_patients
 WHERE
   clinic_id = :clinic_id
   AND is_deleted = 0
@@ -429,7 +429,7 @@ LIMIT 20;
 ### Поля для поиска
 
 ```
-patients
+core_patients
 ├── last_name + first_name + middle_name  -- fuzzy (pg_trgm)
 ├── phone                                  -- fuzzy + exact
 ├── email                                  -- exact (ILIKE)

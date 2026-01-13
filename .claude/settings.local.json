@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nРеструктуризация документации: модульная архитектура\n\n- Разбит ARCHITECTURE.md \\(2500 строк\\) на 12 модульных файлов\n- schema/: CORE, CLINICAL, FINANCE, INVENTORY\n- features/: AUTH, WIDGET, PATIENT_APP, DENTAI, IMPORT_EXPORT\n- infrastructure/: REDIS, DOCKER, CICD\n- Главный файл теперь оглавление со ссылками\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

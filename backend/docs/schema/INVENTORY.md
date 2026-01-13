@@ -47,7 +47,7 @@
 
 ```sql
 -- Контрагенты (поставщики, лаборатории)
-contractors
+inv_contractors
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name                     -- "ООО Дентал-Сервис"
@@ -62,7 +62,7 @@ contractors
 └── created_at
 
 -- Категории материалов
-material_categories
+inv_material_categories
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name                     -- "Анестетики", "Пломбировочные"
@@ -70,7 +70,7 @@ material_categories
 └── is_active
 
 -- Единицы измерения
-units
+inv_units
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name                     -- "шт", "мл", "г", "карпула"
@@ -78,7 +78,7 @@ units
 └── is_active
 
 -- Номенклатура материалов
-materials
+inv_materials
 ├── id
 ├── clinic_id                -- ← RLS
 ├── category_id
@@ -91,7 +91,7 @@ materials
 └── created_at
 
 -- Остатки по филиалам
-material_stock
+inv_material_stock
 ├── id
 ├── clinic_id                -- ← RLS
 ├── material_id
@@ -101,7 +101,7 @@ material_stock
 └── updated_by_user_id
 
 -- Движение материалов
-stock_movements
+inv_stock_movements
 ├── id
 ├── clinic_id                -- ← RLS
 ├── material_id
@@ -119,7 +119,7 @@ stock_movements
 └── created_at
 
 -- Поступления (накладные)
-stock_receipts
+inv_stock_receipts
 ├── id
 ├── clinic_id                -- ← RLS
 ├── branch_id
@@ -132,7 +132,7 @@ stock_receipts
 └── created_at
 
 -- Позиции в поступлении
-stock_receipt_items
+inv_stock_receipt_items
 ├── id
 ├── receipt_id
 ├── material_id
@@ -142,7 +142,7 @@ stock_receipt_items
 └── created_at
 
 -- Привязка материалов к услугам (для автосписания)
-service_materials
+inv_service_materials
 ├── id
 ├── clinic_id                -- ← RLS
 ├── service_id

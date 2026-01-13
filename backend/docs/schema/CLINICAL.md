@@ -8,7 +8,7 @@
 
 ```sql
 -- Записи на приём [SOFT DELETE]
-appointments
+clin_appointments
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
@@ -26,7 +26,7 @@ appointments
 └── updated_at
 
 -- Заявки с виджета (онлайн-запись)
-widget_bookings
+clin_widget_bookings
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_name
@@ -48,7 +48,7 @@ widget_bookings
 
 ```sql
 -- Рабочее расписание врачей (по филиалам)
-doctor_schedules
+clin_doctor_schedules
 ├── id
 ├── clinic_id                -- ← RLS
 ├── doctor_id
@@ -60,7 +60,7 @@ doctor_schedules
 └── updated_at
 
 -- Исключения в расписании (отпуск, больничный)
-schedule_exceptions
+clin_schedule_exceptions
 ├── id
 ├── clinic_id                -- ← RLS
 ├── doctor_id
@@ -79,7 +79,7 @@ schedule_exceptions
 
 ```sql
 -- Услуги [SOFT DELETE]
-services
+clin_services
 ├── id
 ├── clinic_id                -- ← RLS
 ├── category_id
@@ -93,7 +93,7 @@ services
 └── created_at
 
 -- Категории услуг [SOFT DELETE]
-service_categories
+clin_service_categories
 ├── id
 ├── clinic_id                -- ← RLS
 ├── name
@@ -103,14 +103,14 @@ service_categories
 └── deleted_at
 
 -- Цены по филиалам (если отличаются от базовой)
-service_branch_prices
+clin_service_branch_prices
 ├── service_id
 ├── branch_id
 ├── price                    -- цена в этом филиале
 └── updated_at
 
 -- Оказанные услуги (привязка к приёму)
-appointment_services
+clin_appointment_services
 ├── id
 ├── appointment_id
 ├── service_id
@@ -126,7 +126,7 @@ appointment_services
 
 ```sql
 -- Зубная формула
-dental_chart
+clin_dental_chart
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
@@ -137,7 +137,7 @@ dental_chart
 └── updated_at
 
 -- История изменений зубной формулы
-dental_chart_history
+clin_dental_chart_history
 ├── id
 ├── dental_chart_id
 ├── old_status
@@ -153,7 +153,7 @@ dental_chart_history
 
 ```sql
 -- Медицинские записи приёма [SOFT DELETE]
-medical_records
+clin_medical_records
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
@@ -171,11 +171,11 @@ medical_records
 └── updated_at
 
 -- Дневник врача (свободные записи)
-patient_diary
+clin_patient_diary
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id
-├── doctor_id                -- кто написал (FK → users)
+├── doctor_id                -- кто написал (FK → core_users)
 ├── appointment_id (nullable) -- можно привязать к приёму
 ├── content (TEXT)           -- текст записи (без ограничения длины)
 ├── record_date              -- дата записи
@@ -183,8 +183,8 @@ patient_diary
 └── updated_at
 
 -- Индекс для быстрого доступа к записям пациента
-CREATE INDEX idx_diary_patient_date
-ON patient_diary (clinic_id, patient_id, record_date DESC);
+CREATE INDEX idx_clin_patient_diary_date
+ON clin_patient_diary (clinic_id, patient_id, record_date DESC);
 
 -- Несколько записей в день — ок
 -- Каждая запись принадлежит врачу (doctor_id)
@@ -197,7 +197,7 @@ ON patient_diary (clinic_id, patient_id, record_date DESC);
 ```sql
 -- Файлы / снимки (метаданные, сами файлы в S3)
 -- Отложенное удаление: deleted_at → cron удаляет из S3 через 30 дней
-files
+clin_files
 ├── id
 ├── clinic_id                -- ← RLS
 ├── patient_id

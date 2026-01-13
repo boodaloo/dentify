@@ -72,10 +72,10 @@
 
 ```sql
 -- Включаем RLS на таблице
-ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE core_patients ENABLE ROW LEVEL SECURITY;
 
 -- Политика: видишь только данные своей клиники
-CREATE POLICY clinic_isolation ON patients
+CREATE POLICY clinic_isolation ON core_patients
     USING (clinic_id = current_setting('app.current_clinic_id')::int);
 
 -- Забыл WHERE clinic_id = ? — PostgreSQL сам отфильтрует!
@@ -85,15 +85,15 @@ CREATE POLICY clinic_isolation ON patients
 
 ```sql
 -- Партиционирование по clinic_id
-CREATE TABLE patients (
+CREATE TABLE core_patients (
     id SERIAL,
     clinic_id INT NOT NULL,
     ...
 ) PARTITION BY HASH (clinic_id);
 
 -- 16 партиций
-CREATE TABLE patients_p0 PARTITION OF patients FOR VALUES WITH (MODULUS 16, REMAINDER 0);
-CREATE TABLE patients_p1 PARTITION OF patients FOR VALUES WITH (MODULUS 16, REMAINDER 1);
+CREATE TABLE core_patients_p0 PARTITION OF core_patients FOR VALUES WITH (MODULUS 16, REMAINDER 0);
+CREATE TABLE core_patients_p1 PARTITION OF core_patients FOR VALUES WITH (MODULUS 16, REMAINDER 1);
 -- ... и так далее
 ```
 
@@ -108,9 +108,9 @@ is_deleted (0 | 1)     -- флаг удаления, default 0
 deleted_at (timestamp) -- время удаления, NULL если не удалён
 ```
 
-**Таблицы с soft delete:** `patients`, `users`, `services`, `service_categories`, `patient_invoices`, `patient_payments`, `appointments`, `medical_records`, `branches`
+**Таблицы с soft delete:** `core_patients`, `core_users`, `clin_services`, `clin_service_categories`, `fin_invoices`, `fin_payments`, `clin_appointments`, `clin_medical_records`, `core_branches`
 
-**Физическое удаление:** `files`, `widget_bookings`, `doctor_schedules`, `schedule_exceptions`, `bonus_transactions`
+**Физическое удаление:** `clin_files`, `clin_widget_bookings`, `clin_doctor_schedules`, `clin_schedule_exceptions`, `fin_bonus_transactions`
 
 ---
 
@@ -134,6 +134,12 @@ deleted_at (timestamp) -- время удаления, NULL если не уда
 | [features/PATIENT_APP.md](features/PATIENT_APP.md) | Мобильное приложение DentifyPatient |
 | [features/DENTAI.md](features/DENTAI.md) | AI-ассистент |
 | [features/IMPORT_EXPORT.md](features/IMPORT_EXPORT.md) | Импорт/экспорт данных, аналитика |
+
+### Аутентификация
+
+| Файл | Описание |
+|------|----------|
+| [features/AUTH.md](features/AUTH.md) | Таблицы: `auth_patient_codes`, `auth_patient_devices`, `auth_patient_sessions` |
 
 ### Инфраструктура
 
