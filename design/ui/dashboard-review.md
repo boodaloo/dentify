@@ -22,7 +22,7 @@ Horizontal timeline with "NOW" marker — exactly as designed. Past appointments
 ### 3. Personalized Greeting
 "Good morning, Dr. Johnson! Friday, January 10, 2026 | 6 patients today" — context-aware, informative, human.
 
-### 4. DentAI Insight
+### 4. OrisAI Insight
 "Afternoon schedule has 2 open slots. Recommend filling with recall patients." — Proactive AI with personality, not intrusive.
 
 ### 5. KPI Cards Structure
@@ -43,7 +43,7 @@ Tasks checklist + Quick Actions — practical layout.
 | Issue | Current | Should Be |
 |-------|---------|-----------|
 | **Logo color** | All teal | "Dent" = Deep Teal #0D7377, "ify" = Coral #FF6B6B |
-| **DentAI button** | Teal/Mint | Coral #FF6B6B (main CTA color) |
+| **OrisAI button** | Teal/Mint | Coral #FF6B6B (main CTA color) |
 
 ### P1 — Before Release
 
@@ -51,7 +51,7 @@ Tasks checklist + Quick Actions — practical layout.
 |-------|---------|----------|
 | **Status strips missing** | Status only shown as text badge | Add 4px color strip on left of each appointment row |
 | **Sidebar color faded** | Appears grayish-green | Saturate to proper Deep Teal #0D7377 |
-| **Coral almost absent** | Only on "New Appointment" button | Add coral to: logo, DentAI button, Treatment appointments, accents |
+| **Coral almost absent** | Only on "New Appointment" button | Add coral to: logo, OrisAI button, Treatment appointments, accents |
 
 ### P2 — Iteration
 
@@ -83,7 +83,7 @@ Tasks checklist + Quick Actions — practical layout.
 |---------|---------|----------|--------|
 | Sidebar | Grayish teal | Deep Teal #0D7377 | Needs saturation |
 | Logo "ify" | Teal | Coral #FF6B6B | Wrong |
-| DentAI button | Mint/Teal | Coral #FF6B6B | Wrong |
+| OrisAI button | Mint/Teal | Coral #FF6B6B | Wrong |
 | New Appointment btn | Coral | Coral #FF6B6B | Correct |
 | Timeline blocks | Color-coded | Multiple colors | Correct |
 | KPI trends | Green | Mint #45B7A0 | Correct |
@@ -92,7 +92,7 @@ Tasks checklist + Quick Actions — practical layout.
 
 ## Summary
 
-> "This is like a suit from a good tailor with the buttons missing. Functionally — yes. Visually attractive — yes. But missing those details that transform 'good dental SaaS' into 'that Dentify everyone talks about'."
+> "This is like a suit from a good tailor with the buttons missing. Functionally — yes. Visually attractive — yes. But missing those details that transform 'good dental SaaS' into 'that Orisios everyone talks about'."
 
 **The foundation is solid. Now add the polish.**
 
@@ -101,7 +101,7 @@ Tasks checklist + Quick Actions — practical layout.
 ## Next Steps
 
 1. Fix logo colors (P0)
-2. Fix DentAI button color (P0)
+2. Fix OrisAI button color (P0)
 3. Add status color strips to appointments (P1)
 4. Saturate sidebar color (P1)
 5. Add more coral accents throughout (P1)

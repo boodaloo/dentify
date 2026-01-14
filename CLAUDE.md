@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Dentify is a cloud-first SaaS platform for dental practice management. The project is currently in **Phase 1 (Planning & Design)** - no code has been written yet.
+Orisios is a cloud-first SaaS platform for dental practice management. The project is currently in **Phase 1 (Planning & Design)** - no code has been written yet.
 
 ### Target Architecture
 
@@ -28,7 +28,7 @@ Dentify is a cloud-first SaaS platform for dental practice management. The proje
 - **Easier maintenance** — single codebase, no platform-specific builds
 - **Lower development costs** — React ecosystem is mature with many ready-made components
 
-### AI Assistant (DentAI)
+### AI Assistant (OrisAI)
 
 Built-in AI assistant for all user types — a key competitive advantage:
 
@@ -61,7 +61,7 @@ dent_app/
 │
 ├── mobile/                  # Flutter applications
 │   ├── clinic_app/          # For clinic staff
-│   └── patient_app/         # DentifyPatient for patients
+│   └── patient_app/         # OrisiosPatient for patients
 │
 ├── design/                  # Design assets
 │   ├── ideas/               # Design inspiration, icons

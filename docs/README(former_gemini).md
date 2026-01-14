@@ -1,4 +1,4 @@
-# Dentify: A Modern Dental Practice Management Platform
+# Orisios: A Modern Dental Practice Management Platform
 
 ## Current Status: Phase 1 (Planning & Design)
 
@@ -8,7 +8,7 @@ We are now actively in the **UI/UX Design** phase. The core focus is on creating
 
 ## Project Overview
 
-This project is the creation of **Dentify**, a modern, cloud-first, all-in-one SaaS (Software as a Service) platform designed to manage all aspects of a dental practice. The application is **web-based** (works in any modern browser) with a companion mobile app for iOS and Android.
+This project is the creation of **Orisios**, a modern, cloud-first, all-in-one SaaS (Software as a Service) platform designed to manage all aspects of a dental practice. The application is **web-based** (works in any modern browser) with a companion mobile app for iOS and Android.
 
 The core vision is to provide a user-friendly, intuitive, and powerful tool that streamlines clinic operations, enhances patient engagement, and provides a clear path to monetization.
 
@@ -24,7 +24,7 @@ The core vision is to provide a user-friendly, intuitive, and powerful tool that
 *   **Billing & Invoicing:** Creation of invoices, payment processing, and reporting.
 *   **Customizable Document Constructor:** A tool to create custom templates.
 *   **Price List Management:** Import and manage service price lists.
-*   **AI Assistant (DentAI):** Built-in intelligent assistant for natural language queries — find patients, check schedules, generate reports, all by simply asking.
+*   **AI Assistant (OrisAI):** Built-in intelligent assistant for natural language queries — find patients, check schedules, generate reports, all by simply asking.
 
 ### Monetization Model:
 
@@ -32,7 +32,7 @@ The project will be monetized via a multi-tiered subscription model (e.g., "Solo
 
 ## System Architecture
 
-The Dentify platform will be built on a **microservices architecture** following DevOps principles. The backend will consist of several small, independent services (e.g., Patient Service, Appointment Service, Billing Service), each communicating via APIs.
+The Orisios platform will be built on a **microservices architecture** following DevOps principles. The backend will consist of several small, independent services (e.g., Patient Service, Appointment Service, Billing Service), each communicating via APIs.
 
 The frontend ecosystem will include:
 1.  **Main Web Application (React):** The primary browser-based application for clinic staff (doctors, administrators). This is the main product.

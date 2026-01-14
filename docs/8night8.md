@@ -12,10 +12,10 @@
 **Решение:**
 
 1. **Два входа:**
-   - `dentify.com` → клиенты (клиники)
-   - `admin.dentify.com` → сотрудники Dentify
+   - `orisios.com` → клиенты (клиники)
+   - `admin.orisios.com` → сотрудники Orisios
 
-2. **Таблица `user_credentials` в dentify_catalog:**
+2. **Таблица `user_credentials` в orisios_catalog:**
    - Email глобально уникален
    - Содержит clinic_id и user_id для маршрутизации
    - Rate limiting (failed_attempts, locked_until)
@@ -92,7 +92,7 @@ Alembic работает с одной БД. У нас 500 клиник = 500 о
 
 **Решение: Одна БД = одна миграция**
 
-С переходом на одну базу `dentify_app` проблема исчезла:
+С переходом на одну базу `orisios_app` проблема исчезла:
 
 ```bash
 # Одна команда на всех клиентов
@@ -164,8 +164,8 @@ patients
 
 B) **Архивная БД:**
 ```
-dentify_clinic_X (активные данные)
-dentify_clinic_X_archive (удалённые)
+orisios_clinic_X (активные данные)
+orisios_clinic_X_archive (удалённые)
 ```
 
 C) **Гибрид:**

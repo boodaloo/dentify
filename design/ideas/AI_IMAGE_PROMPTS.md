@@ -1,12 +1,12 @@
-# Dentify: Промпты для генерации UI изображений
+# Orisios: Промпты для генерации UI изображений
 
 > Промпты оптимизированы для Midjourney, DALL-E 3, Stable Diffusion и Leonardo AI
 >
-> **Бренд:** Dentify | **Обновлено:** 8 января 2026
+> **Бренд:** Orisios | **Обновлено:** 8 января 2026
 
 ---
 
-## Цветовая палитра Dentify
+## Цветовая палитра Orisios
 
 | Цвет | HEX | Использование |
 |------|-----|---------------|
@@ -31,7 +31,7 @@ clean and professional interface with teal and coral color palette.
 Layout: Left sidebar navigation (deep teal #0D7377) with icons and labels,
 main content area with light gray background (#F8FAFB).
 
-Header: "Dentify" logo with D-fingerprint icon on the left, search bar in center,
+Header: "Orisios" logo with D-fingerprint icon on the left, search bar in center,
 AI assistant button, notification bell and user avatar on the right.
 
 Main content includes:
@@ -43,7 +43,7 @@ Main content includes:
 - Right sidebar: "Tasks" checklist and "Quick Actions" buttons
 - Bottom: Weekly revenue mini-chart with teal accent line
 
-Color palette Dentify:
+Color palette Orisios:
 - Primary: Deep Teal #0D7377 (sidebar, headers)
 - Accent: Coral #FF6B6B (buttons, active states, CTAs)
 - Secondary: Light Teal #45B7A0 (success, hover)
@@ -68,7 +68,7 @@ YES: flat design, vector style, UI mockup, high fidelity, dribbble quality
 
 ```
 Dental clinic appointment scheduling interface, weekly calendar view,
-modern web application UI design for Dentify software.
+modern web application UI design for Orisios software.
 
 Layout:
 - Left sidebar: deep teal (#0D7377) navigation with calendar icon active
@@ -102,7 +102,7 @@ high-fidelity mockup, Figma quality, Inter font.
 
 ```
 Dental patient profile page UI design, modern healthcare web application,
-detailed patient record interface for Dentify software.
+detailed patient record interface for Orisios software.
 
 Layout:
 - Left sidebar: deep teal (#0D7377) navigation, "Patients" section active
@@ -142,7 +142,7 @@ professional healthcare design, high fidelity UI mockup.
 ### Промпт:
 
 ```
-Interactive dental chart interface, tooth diagram UI for Dentify dentist software,
+Interactive dental chart interface, tooth diagram UI for Orisios dentist software,
 modern web application design.
 
 Central element: Adult teeth diagram showing all 32 teeth in anatomical layout,
@@ -180,18 +180,18 @@ modern healthcare UX, similar to Dentrix or Curve Dental but more modern.
 
 ---
 
-## 5. AI-Ассистент DentAI (Chat Panel)
+## 5. AI-Ассистент OrisAI (Chat Panel)
 
 ### Промпт:
 
 ```
-AI assistant chat interface for Dentify dental software, floating chat panel UI,
+AI assistant chat interface for Orisios dental software, floating chat panel UI,
 modern conversational interface design.
 
 Main screen: Dashboard with slight blur/dim overlay on left side
 
 Right side: Chat panel (400px width) with:
-- Header: "DentAI" title with brain/AI icon in teal, minimize and close buttons
+- Header: "OrisAI" title with brain/AI icon in teal, minimize and close buttons
 - Chat area with message bubbles:
   - AI messages: light gray background, left-aligned, teal icon
   - User messages: coral (#FF6B6B) background, right-aligned, white text
@@ -223,14 +223,14 @@ clean typography, high-fidelity mockup.
 ### Промпт:
 
 ```
-Mobile app UI design for Dentify dental clinic management, iOS/Android smartphone interface,
+Mobile app UI design for Orisios dental clinic management, iOS/Android smartphone interface,
 companion app for dental software.
 
 Phone frame: Modern smartphone mockup (iPhone 15 style)
 
 Screen content - Home/Dashboard:
 - Top: "Good morning, Doctor!" greeting, notification bell icon
-- Dentify logo with D-fingerprint icon
+- Orisios logo with D-fingerprint icon
 - Today's summary cards (horizontal scroll):
   - "8 appointments" with calendar icon
   - "45,600₽" revenue
@@ -246,7 +246,7 @@ Screen content - Home/Dashboard:
   - Color-coded status dots (coral, saffron, light teal)
 
 Bottom navigation bar (5 items):
-- Home (active, coral), Calendar, Patients, DentAI, Profile
+- Home (active, coral), Calendar, Patients, OrisAI, Profile
 - Deep teal background (#0D7377)
 
 Color palette: Coral accents #FF6B6B, light gray background #F8FAFB,
@@ -265,7 +265,7 @@ native feel, high-fidelity mockup, app store quality.
 ### Промпт:
 
 ```
-Login page UI design for Dentify dental clinic software, web application sign-in screen,
+Login page UI design for Orisios dental clinic software, web application sign-in screen,
 modern authentication interface.
 
 Split layout:
@@ -273,7 +273,7 @@ Split layout:
   - Abstract dental/medical themed illustration
   - Soft teal (#0D7377) and coral (#FF6B6B) gradient shapes
   - D-fingerprint logo pattern in background
-  - "Dentify" logo large and centered
+  - "Orisios" logo large and centered
   - Tagline: "Smart dental practice management"
 
 - Right side (40%): Login form on white background
@@ -303,7 +303,7 @@ teal and coral color palette, welcoming feel.
 ### Промпт:
 
 ```
-Billing and invoicing interface for Dentify dental software,
+Billing and invoicing interface for Orisios dental software,
 financial management dashboard, modern web application UI.
 
 Layout:
@@ -343,7 +343,7 @@ professional and trustworthy, high-fidelity mockup.
 ### Промпт:
 
 ```
-Settings page UI design for Dentify dental software,
+Settings page UI design for Orisios dental software,
 configuration and preferences interface, modern web application.
 
 Layout:
@@ -386,7 +386,7 @@ organized sections, clear hierarchy, high-fidelity mockup.
 ### Промпт:
 
 ```
-Analytics dashboard for Dentify dental software, data visualization interface,
+Analytics dashboard for Orisios dental software, data visualization interface,
 business intelligence view, modern web application UI.
 
 Layout:
@@ -429,7 +429,7 @@ clean data visualization, professional charts, high-fidelity mockup.
 ### Промпт:
 
 ```
-Dentify dental clinic management software UI kit preview, multiple screens showcase,
+Orisios dental clinic management software UI kit preview, multiple screens showcase,
 modern SaaS application design system.
 
 Artboard showing 8 screens arranged in 2 rows of 4:
@@ -437,7 +437,7 @@ Row 1: Dashboard, Calendar/Schedule, Patient List, Patient Profile
 Row 2: Dental Chart, Billing/Invoices, Analytics, Settings
 
 All screens sharing consistent design system:
-- Color palette Dentify: Deep Teal #0D7377, Coral #FF6B6B,
+- Color palette Orisios: Deep Teal #0D7377, Coral #FF6B6B,
   Light Teal #45B7A0, Saffron #F2CC8F, Near Black #1A1A2E
 - Left sidebar navigation (deep teal) consistent across all screens
 - White content cards with subtle shadows
@@ -445,7 +445,7 @@ All screens sharing consistent design system:
 - Inter/Satoshi typography
 - Rounded corners (8px)
 - Consistent spacing and grid
-- Dentify logo with D-fingerprint icon in header
+- Orisios logo with D-fingerprint icon in header
 
 Style: Figma/Sketch UI kit presentation, portfolio quality,
 dribbble shot layout, clean arrangement with subtle background,
@@ -486,37 +486,37 @@ high-fidelity mockups, professional SaaS design showcase.
 
 ### Dashboard:
 ```
-Dentify dental SaaS dashboard, teal #0D7377 sidebar, coral #FF6B6B accents,
+Orisios dental SaaS dashboard, teal #0D7377 sidebar, coral #FF6B6B accents,
 metric cards, appointment list, AI button, clean modern UI --ar 16:9 --v 6
 ```
 
 ### Calendar:
 ```
-Dentify dental appointment calendar, weekly view, coral status indicators,
+Orisios dental appointment calendar, weekly view, coral status indicators,
 teal sidebar, light gray background, modern healthcare design --ar 16:9 --v 6
 ```
 
 ### Mobile:
 ```
-Dentify dental clinic mobile app, iOS design, coral accents, teal navigation,
-appointment list, DentAI button, clean modern interface --ar 9:19 --v 6
+Orisios dental clinic mobile app, iOS design, coral accents, teal navigation,
+appointment list, OrisAI button, clean modern interface --ar 9:19 --v 6
 ```
 
 ### Patient Profile:
 ```
-Dentify patient profile page, dental chart preview, visit history,
+Orisios patient profile page, dental chart preview, visit history,
 teal sidebar, coral CTA buttons, medical records interface --ar 16:9 --v 6
 ```
 
 ### Billing:
 ```
-Dentify billing dashboard, invoice table, payment status badges,
+Orisios billing dashboard, invoice table, payment status badges,
 financial metrics cards, teal and coral color scheme --ar 16:9 --v 6
 ```
 
 ### Analytics:
 ```
-Dentify analytics dashboard, revenue charts, patient statistics,
+Orisios analytics dashboard, revenue charts, patient statistics,
 data visualization, teal primary, coral highlights --ar 16:9 --v 6
 ```
 
@@ -530,7 +530,7 @@ data visualization, teal primary, coral highlights --ar 16:9 --v 6
 | 2 | Calendar/Schedule | 16:9 | |
 | 3 | Patient Profile | 16:9 | |
 | 4 | Dental Chart | 16:9 | |
-| 5 | DentAI Chat | 9:16 | |
+| 5 | OrisAI Chat | 9:16 | |
 | 6 | Mobile App | 9:19 | |
 | 7 | Login | 16:9 | |
 | 8 | Billing | 16:9 | |
@@ -541,5 +541,5 @@ data visualization, teal primary, coral highlights --ar 16:9 --v 6
 ---
 
 *Документ обновлён: 8 января 2026*
-*Бренд: Dentify*
+*Бренд: Orisios*
 *Палитра: Deep Teal + Coral*

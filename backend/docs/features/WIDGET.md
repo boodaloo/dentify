@@ -9,11 +9,11 @@
 **JS-скрипт** (единственный вариант, iframe избыточен):
 
 ```html
-<script src="https://dentify.app/widget.js"
+<script src="https://orisios.app/widget.js"
         data-api-key="pk_live_xxxxx"
         data-theme="light">
 </script>
-<div id="dentify-booking"></div>
+<div id="orisios-booking"></div>
 ```
 
 Скрипт:
@@ -70,7 +70,7 @@ POST /api/widget/{api_key}/book         -- создать заявку
 
 ## Уведомления о заявках
 
-1. **В системе Dentify:**
+1. **В системе Orisios:**
    - Раздел **"Онлайн заявки"** в левом меню
    - Бейдж с количеством новых заявок
    - Звуковое уведомление (опционально)

@@ -14,9 +14,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: dentify
+      POSTGRES_USER: orisios
       POSTGRES_PASSWORD: dev_password
-      POSTGRES_DB: dentify_app
+      POSTGRES_DB: orisios_app
     ports:
       - "5432:5432"
 
@@ -30,7 +30,7 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      DATABASE_URL: postgresql://dentify:dev_password@postgres:5432/dentify_app
+      DATABASE_URL: postgresql://orisios:dev_password@postgres:5432/orisios_app
       REDIS_URL: redis://redis:6379
     ports:
       - "8000:8000"
@@ -71,7 +71,7 @@ AWS EC2 (t3.medium, $30-40/мес)
 ├── Traefik (reverse proxy, SSL)
 │   ├── HTTPS терминация
 │   ├── Let's Encrypt автообновление
-│   └── Роутинг: api.dentify.app → api, app.dentify.app → web
+│   └── Роутинг: api.orisios.app → api, app.orisios.app → web
 │
 ├── api (FastAPI в Docker)
 ├── web (React build в Nginx)
@@ -89,7 +89,7 @@ services:
     command:
       - "--providers.docker=true"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.email=admin@dentify.app"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@orisios.app"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
     ports:
@@ -100,9 +100,9 @@ services:
       - letsencrypt:/letsencrypt
 
   api:
-    image: ghcr.io/dentify/api:latest
+    image: ghcr.io/orisios/api:latest
     labels:
-      - "traefik.http.routers.api.rule=Host(`api.dentify.app`)"
+      - "traefik.http.routers.api.rule=Host(`api.orisios.app`)"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -113,9 +113,9 @@ services:
       - redis
 
   web:
-    image: ghcr.io/dentify/web:latest
+    image: ghcr.io/orisios/web:latest
     labels:
-      - "traefik.http.routers.web.rule=Host(`app.dentify.app`)"
+      - "traefik.http.routers.web.rule=Host(`app.orisios.app`)"
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
 
   postgres:

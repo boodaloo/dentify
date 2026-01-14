@@ -1,4 +1,4 @@
-# Dentify Backend Architecture
+# Orisios Backend Architecture
 
 > Модульная документация архитектуры бэкенда.
 
@@ -36,7 +36,7 @@
           │                                   │
           ▼                                   ▼
 ┌─────────────────────┐         ┌─────────────────────────────┐
-│  dentify_internal   │         │       dentify_app           │
+│  orisios_internal   │         │       orisios_app           │
 │                     │         │                             │
 │  • clinics ─────────┼────────▶│  clinic_id (просто ID)      │
 │  • staff            │         │  • users      ← clinic_id   │
@@ -131,8 +131,8 @@ deleted_at (timestamp) -- время удаления, NULL если не уда
 |------|----------|
 | [features/AUTH.md](features/AUTH.md) | Аутентификация клиник и пациентов |
 | [features/WIDGET.md](features/WIDGET.md) | Виджет онлайн-записи |
-| [features/PATIENT_APP.md](features/PATIENT_APP.md) | Мобильное приложение DentifyPatient |
-| [features/DENTAI.md](features/DENTAI.md) | AI-ассистент |
+| [features/PATIENT_APP.md](features/PATIENT_APP.md) | Мобильное приложение OrisiosPatient |
+| [features/ORISAI.md](features/ORISAI.md) | AI-ассистент |
 | [features/IMPORT_EXPORT.md](features/IMPORT_EXPORT.md) | Импорт/экспорт данных, аналитика |
 
 ### Аутентификация
@@ -184,14 +184,14 @@ deleted_at (timestamp) -- время удаления, NULL если не уда
 8. [ ] Бонусная система
 9. [ ] Импорт данных (XLSX шаблоны)
 10. [ ] Склад и материалы
-11. [ ] Админка Dentify (internal)
+11. [ ] Админка Orisios (internal)
 12. [ ] XLS экспорт
 13. [ ] Мониторинг
 
 ### Frontend
 1. [ ] React Web App (основное приложение для клиник)
-2. [ ] React Admin Panel (для сотрудников Dentify)
+2. [ ] React Admin Panel (для сотрудников Orisios)
 
 ### Mobile
-1. [ ] Flutter: DentifyPatient (приложение для пациентов)
-2. [ ] Flutter: Dentify (companion app для врачей — опционально)
+1. [ ] Flutter: OrisiosPatient (приложение для пациентов)
+2. [ ] Flutter: Orisios (companion app для врачей — опционально)

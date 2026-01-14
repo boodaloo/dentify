@@ -1,6 +1,6 @@
-# Dentify Color Palette
+# Orisios Color Palette
 
-> Official color system for Dentify brand
+> Official color system for Orisios brand
 > Last updated: January 2026
 
 ---

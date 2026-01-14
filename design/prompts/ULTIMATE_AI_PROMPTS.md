@@ -1,6 +1,6 @@
-# Dentify: Ultimate AI Generation Prompts
+# Orisios: Ultimate AI Generation Prompts
 
-> The most detailed prompts for generating Dentify brand assets
+> The most detailed prompts for generating Orisios brand assets
 > Created by Leo, Design Maestro — January 2026
 
 ---
@@ -29,7 +29,7 @@
 ### A1. Main Icon (Primary)
 
 ```
-Professional logo icon design for "Dentify" dental software brand. The letter "D" constructed entirely from fingerprint-style curved parallel lines, forming an elegant continuous pattern.
+Professional logo icon design for "Orisios" dental software brand. The letter "D" constructed entirely from fingerprint-style curved parallel lines, forming an elegant continuous pattern.
 
 STRUCTURE:
 - The outer boundary forms a perfect uppercase "D" shape with the straight vertical edge on the left side
@@ -75,7 +75,7 @@ OUTPUT: Single icon on pure white #FFFFFF background, PNG with transparency, vec
 ### A2. Full Wordmark
 
 ```
-Complete logo wordmark for "Dentify" dental clinic management software. Horizontal lockup with icon on left and typography on right.
+Complete logo wordmark for "Orisios" dental clinic management software. Horizontal lockup with icon on left and typography on right.
 
 ICON (LEFT SIDE):
 - D-shaped fingerprint icon as described: uppercase D formed by 12-14 curved parallel lines in fingerprint whorl pattern
@@ -87,7 +87,7 @@ SPACING:
 - 16px gap between icon and text
 - Optical alignment: icon baseline aligns with text baseline
 
-TYPOGRAPHY - "Dentify":
+TYPOGRAPHY - "Orisios":
 - Font: Modern geometric sans-serif similar to Satoshi, Inter, or Gilroy Medium
 - Weight: 500 (Medium)
 - Letter-spacing: -0.5%
@@ -108,7 +108,7 @@ BACKGROUND: Pure white #FFFFFF
 ### A3. Dark Mode Version
 
 ```
-Dark mode variant of Dentify logo with D-fingerprint icon and wordmark.
+Dark mode variant of Orisios logo with D-fingerprint icon and wordmark.
 
 BACKGROUND: Near Black #1A1A2E with subtle navy undertone
 
@@ -131,7 +131,7 @@ SPECIAL: Coral elements appear to glow subtly - professional, not neon
 ### A4. Simplified Favicon
 
 ```
-Minimalist app icon version of Dentify D-fingerprint logo, optimized for small sizes.
+Minimalist app icon version of Orisios D-fingerprint logo, optimized for small sizes.
 
 SIMPLIFICATION:
 - Reduce to 7-8 lines for clarity
@@ -162,10 +162,10 @@ Variant 3 - Dark:
 ### B1. Main Wordmark
 
 ```
-Elegant hand-lettered logo for "dentify" in continuous single-line calligraphy style.
+Elegant hand-lettered logo for "orisios" in continuous single-line calligraphy style.
 
 LETTERING:
-- All lowercase "dentify"
+- All lowercase "orisios"
 - Single continuous line that never lifts
 - Thin line weight: 1.5-2px consistent
 - Modern calligraphy, Spencerian-influenced
@@ -194,7 +194,7 @@ MOOD: Intimate, caring, personal touch. Like a handwritten note.
 ### B2. Teal Color Version
 
 ```
-Handwritten "dentify" calligraphy in brand teal.
+Handwritten "orisios" calligraphy in brand teal.
 
 STRUCTURE: Same as B1
 
@@ -218,7 +218,7 @@ Version C - Coral Accent:
 ### B3. Hidden Tooth in "d" Loop
 
 ```
-Handwritten "dentify" with hidden tooth in the letter "d".
+Handwritten "orisios" with hidden tooth in the letter "d".
 
 CONCEPT:
 - The "d" loop and bowl create negative space suggesting a tooth
@@ -256,7 +256,7 @@ Option 3 - Full Brand:
 ## Main Dashboard (Light Mode)
 
 ```
-Ultra-detailed UI design for Dentify dental clinic management software main dashboard. Modern SaaS web application, desktop view at 1440x900px viewport.
+Ultra-detailed UI design for Orisios dental clinic management software main dashboard. Modern SaaS web application, desktop view at 1440x900px viewport.
 
 === LAYOUT ===
 Three-column:
@@ -280,7 +280,7 @@ Height: 72px, white background, bottom border #E8E8ED
 Left: "Clinic Weather" - Sun icon (Mint #45B7A0) + "All Clear"
 Center: Search bar - 400px pill shape, #F8F9FC background
 Right:
-- DentAI button: Coral #FF6B6B, white text, sparkle icon
+- OrisAI button: Coral #FF6B6B, white text, sparkle icon
 - Notification bell with red badge
 - User avatar 40px
 
@@ -329,7 +329,7 @@ Clean, airy, not clinical
 ## Dashboard Dark Mode
 
 ```
-Dark mode Dentify dashboard with signature "coral glow" effect.
+Dark mode Orisios dashboard with signature "coral glow" effect.
 
 === COLORS ===
 Page background: #0F0F1A (deep navy-black)
@@ -340,7 +340,7 @@ Secondary text: #9393A8
 
 === CORAL GLOW ===
 Coral elements have subtle glow: box-shadow 0 0 20px rgba(255, 107, 107, 0.15)
-Applied to: DentAI button, CTAs, active states
+Applied to: OrisAI button, CTAs, active states
 Sophisticated, NOT neon
 
 === SIDEBAR ===
@@ -363,7 +363,7 @@ MOOD: Late-night work comfort, premium, like Linear dark mode
 ## Mobile Dashboard
 
 ```
-Dentify mobile app dashboard, iPhone 15 Pro frame.
+Orisios mobile app dashboard, iPhone 15 Pro frame.
 
 === TOP SECTION ===
 Deep Teal #0D7377 header (180px), curved bottom
@@ -383,7 +383,7 @@ Coral "Start Visit" button
 4 appointment rows with time, name, type, status dot
 
 === BOTTOM NAV ===
-5 items: Home (active, Coral), Calendar, Patients, DentAI, Profile
+5 items: Home (active, Coral), Calendar, Patients, OrisAI, Profile
 44px+ touch targets
 
 --ar 9:19.5 --v 6.1 --style raw --s 200 --no android, old iphone

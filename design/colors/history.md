@@ -1,6 +1,6 @@
-# Dentify Color History
+# Orisios Color History
 
-> Evolution of color decisions for the Dentify brand
+> Evolution of color decisions for the Orisios brand
 
 ---
 
@@ -11,7 +11,7 @@
 
 ### Philosophy
 
-Medical software traditionally drowns in boring blue and sterile white. Dentify should stand out while still inspiring trust. The combination of **Teal + Coral** is fresh, modern, but not frivolous.
+Medical software traditionally drowns in boring blue and sterile white. Orisios should stand out while still inspiring trust. The combination of **Teal + Coral** is fresh, modern, but not frivolous.
 
 ### Primary Palette Chosen
 
@@ -22,7 +22,7 @@ Medical software traditionally drowns in boring blue and sterile white. Dentify 
 
 ### Why NOT standard medical blue?
 
-> "Medical software traditionally drowns in a sea of boring blue and sterile white. *Yawn.* Dentify should stand out while still inspiring trust."
+> "Medical software traditionally drowns in a sea of boring blue and sterile white. *Yawn.* Orisios should stand out while still inspiring trust."
 > — Leo
 
 ### Supporting Colors

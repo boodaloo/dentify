@@ -1,9 +1,9 @@
-# Dentify UX Sparkle Ideas
+# Orisios UX Sparkle Ideas
 
 > "Good design is as little design as possible... except for the details that make people smile."
 > — Leo, Design Maestro
 
-These are the unique micro-interactions and design details that will make Dentify memorable.
+These are the unique micro-interactions and design details that will make Orisios memorable.
 
 ---
 
@@ -65,7 +65,7 @@ Add second layer of meaning to appointment status strips:
 ### 6. Generative Patient Avatars
 Instead of initials "EW" — generative avatars in brand style. Each patient gets unique pattern from lines (like fingerprint in logo) with unique colors.
 
-Use library like [Boring Avatars](https://boringavatars.com/) with Dentify palette.
+Use library like [Boring Avatars](https://boringavatars.com/) with Orisios palette.
 
 **Priority:** P1
 **Effort:** Low
@@ -153,7 +153,7 @@ Subtle badge on appointment if patient's birthday is near:
 
 ## IV. Audio Design
 
-### 12. Dentify Sounds (Optional)
+### 12. Orisios Sounds (Optional)
 Custom micro-sounds (user can disable):
 
 - **New appointment:** Soft unique "ding"
@@ -161,7 +161,7 @@ Custom micro-sounds (user can disable):
 - **Appointment complete:** Achievement sound
 - **Cancellation:** Soft "oops"
 
-Must be designed specifically for Dentify. Not stock sounds.
+Must be designed specifically for Orisios. Not stock sounds.
 
 **Priority:** P3
 **Effort:** High
@@ -171,13 +171,13 @@ Must be designed specifically for Dentify. Not stock sounds.
 
 ## V. Unique Features
 
-### 13. DentAI with Personality
+### 13. OrisAI with Personality
 Give AI assistant character and empathy:
 
 ```
 User: "Who's scheduled tomorrow?"
 
-DentAI: "Tomorrow you have 7 patients. Starting at 9:00 with Petrov
+OrisAI: "Tomorrow you have 7 patients. Starting at 9:00 with Petrov
 (by the way, he hasn't been here for 8 months — remind about hygiene?).
 Busy day, but I believe in you! 💪"
 ```
@@ -217,7 +217,7 @@ Dark theme where coral (#FF6B6B) becomes the star:
 
 | Priority | Ideas | Total |
 |----------|-------|-------|
-| **P1** | Smile Loading, Personalized Greeting, Generative Avatars, DentAI Personality | 4 |
+| **P1** | Smile Loading, Personalized Greeting, Generative Avatars, OrisAI Personality | 4 |
 | **P2** | Live Timeline, Easter Egg, Clinic Weather, Focus Mode, Patient Journey, Dark Mode, Birthday Badge, Status Strips, Pulse | 9 |
 | **P3** | Confetti, Sounds | 2 |
 

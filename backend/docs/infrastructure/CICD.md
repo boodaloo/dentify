@@ -86,8 +86,8 @@ jobs:
 
       - name: Build Docker images
         run: |
-          docker build -t ghcr.io/dentify/api:${{ github.sha }} ./backend
-          docker build -t ghcr.io/dentify/web:${{ github.sha }} ./frontend/web
+          docker build -t ghcr.io/orisios/api:${{ github.sha }} ./backend
+          docker build -t ghcr.io/orisios/web:${{ github.sha }} ./frontend/web
 ```
 
 ---
@@ -116,10 +116,10 @@ jobs:
 
       - name: Build and push images
         run: |
-          docker build -t ghcr.io/dentify/api:latest ./backend
-          docker build -t ghcr.io/dentify/web:latest ./frontend/web
-          docker push ghcr.io/dentify/api:latest
-          docker push ghcr.io/dentify/web:latest
+          docker build -t ghcr.io/orisios/api:latest ./backend
+          docker build -t ghcr.io/orisios/web:latest ./frontend/web
+          docker push ghcr.io/orisios/api:latest
+          docker push ghcr.io/orisios/web:latest
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.0
@@ -128,7 +128,7 @@ jobs:
           username: deploy
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/dentify
+            cd /opt/orisios
             docker-compose pull
             docker-compose up -d --remove-orphans
             docker system prune -f

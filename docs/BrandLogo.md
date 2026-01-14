@@ -1,7 +1,10 @@
-# Dentify — Логотип и Айдентика
+# Orisios — Логотип и Айдентика
 
-> Бренд: **Dentify** (Dent + Identify)
+> Бренд: **Orisios**
 > Ценности: современность, технологичность, персонализация, доверие, профессионализм
+>
+> **ПРИМЕЧАНИЕ:** Этот документ содержит концепции для предыдущего названия бренда (Dentify).
+> Требуется переработка логотипа и айдентики под новое название Orisios.
 
 ---
 
@@ -17,7 +20,7 @@
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │    ╭─────╮                                              │
-│   ╱ ╭───╮ ╲      D = Dentify (бренд)                   │
+│   ╱ ╭───╮ ╲      D = Orisios (бренд)                   │
 │  │ ╱ ╭─╮ ╲ │                                            │
 │  │ │ │🦷│ │ │     Fingerprint = Identify (уникальность) │
 │  │ ╲ ╰─╯ ╱ │                                            │
@@ -42,7 +45,7 @@
 
 ### Расшифровка символики
 
-1. **Буква D** — первая буква названия Dentify, мгновенная узнаваемость бренда
+1. **Буква D** — первая буква названия Orisios, мгновенная узнаваемость бренда
 
 2. **Fingerprint (отпечаток пальца)** — отсылка к "Identify":
    - Уникальность каждого пациента
@@ -252,7 +255,7 @@
 
 ## Вариант 7: "Continuous Line"
 
-**Концепция:** Слово "Dentify" написано одной непрерывной линией — поток, continuity, seamless experience.
+**Концепция:** Слово "Orisios" написано одной непрерывной линией — поток, continuity, seamless experience.
 
 **Визуал:**
 - Логотип как единый штрих
@@ -402,7 +405,7 @@ Minimalist logo design, letter "D" stylized as a fingerprint, smooth curved line
 
 **Вариация (более детальная):**
 ```
-Professional logo for dental SaaS company "Dentify", capital letter D made of organic fingerprint-like curved lines, biometric identification concept, the lines flow naturally creating unique pattern, minimal and sophisticated, teal and coral color palette, suitable for app icon, high-end tech startup aesthetic --v 6 --ar 1:1
+Professional logo for dental SaaS company "Orisios", capital letter D made of organic fingerprint-like curved lines, biometric identification concept, the lines flow naturally creating unique pattern, minimal and sophisticated, teal and coral color palette, suitable for app icon, high-end tech startup aesthetic --v 6 --ar 1:1
 ```
 
 **Для иконки приложения:**
@@ -421,7 +424,7 @@ Clever logo design, letter "D" with hidden tooth silhouette in negative space, o
 
 **Вариация (с контекстом):**
 ```
-Minimalist logo for dental software "Dentify", uppercase D containing cleverly hidden tooth shape in the negative space, viewer discovers the tooth on second look, single color deep blue, extremely clean lines, premium tech company aesthetic, suitable for favicon and large signage --v 6 --ar 1:1
+Minimalist logo for dental software "Orisios", uppercase D containing cleverly hidden tooth shape in the negative space, viewer discovers the tooth on second look, single color deep blue, extremely clean lines, premium tech company aesthetic, suitable for favicon and large signage --v 6 --ar 1:1
 ```
 
 **Для иконки приложения:**
@@ -440,7 +443,7 @@ Futuristic logo design, minimalist letter "D" with horizontal scanning line pass
 
 **Вариация (более tech):**
 ```
-Modern tech logo for "Dentify", sleek letter D with glowing horizontal scan line across middle, biometric scanning visualization, dark background with electric cyan accent, holographic subtle effect, futuristic dental technology, startup logo --v 6 --ar 1:1
+Modern tech logo for "Orisios", sleek letter D with glowing horizontal scan line across middle, biometric scanning visualization, dark background with electric cyan accent, holographic subtle effect, futuristic dental technology, startup logo --v 6 --ar 1:1
 ```
 
 **Для иконки приложения:**
@@ -459,7 +462,7 @@ Retro-digital logo design, minimalist smile made of 4-5 square pixels, pixel art
 
 **Вариация (с wordmark):**
 ```
-Logo for dental tech startup "Dentify", simple pixelated smile icon (3-5 squares forming curved smile), paired with clean monospace typography, retro gaming meets healthcare tech, vibrant magenta on dark background, unique and memorable --v 6 --ar 16:9
+Logo for dental tech startup "Orisios", simple pixelated smile icon (3-5 squares forming curved smile), paired with clean monospace typography, retro gaming meets healthcare tech, vibrant magenta on dark background, unique and memorable --v 6 --ar 16:9
 ```
 
 **Для иконки приложения:**
