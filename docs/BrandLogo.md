@@ -1,554 +1,291 @@
-# Orisios — Логотип и Айдентика
+# Orisios - Logo and Brand Identity
 
-> Бренд: **Orisios**
-> Ценности: современность, технологичность, персонализация, доверие, профессионализм
+> **Brand:** Orisios
+> **Etymology:** From Latin "os, oris" (mouth) - the gateway to oral health
+> **Values:** Modern, Technological, Personalized, Trustworthy, Professional
 >
-> **ПРИМЕЧАНИЕ:** Этот документ содержит концепции для предыдущего названия бренда (Dentify).
-> Требуется переработка логотипа и айдентики под новое название Orisios.
+> **Updated:** January 2026 - Complete rebrand from Dentify to Orisios
 
 ---
 
-## ФИНАЛЬНЫЙ ВЫБОР ЛОГОТИПА
+## CURRENT STATUS: New Logo Required
 
-### D + Fingerprint + Tooth (Triple Meaning Logo)
+The previous Dentify logo (D + Fingerprint + Tooth) was excellent but is fundamentally tied to the old brand name. For Orisios, we need a fresh concept that:
 
-**Файл:** `logo/dentify_logo_variant_4_1.jpg`
+1. References "os/oris" (mouth) etymology
+2. Works as full logo and app icon
+3. Maintains Teal + Coral color heritage
+4. Feels modern, tech-forward, trustworthy
 
-**Концепция:** Три смысла в одном символе — гениальное решение, объединяющее все ключевые элементы бренда.
+**See full brand identity documentation:** `design/brand/ORISIOS_BRAND_IDENTITY.md`
+
+---
+
+## RECOMMENDED LOGO CONCEPT: "The Smile Arc"
+
+### Concept Overview
+
+The letter "O" from Orisios transforms into a stylized smile arc - the universal symbol of oral health outcome. Not a tooth (clinical), but the result of good dental care (emotional).
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│    ╭─────╮                                              │
-│   ╱ ╭───╮ ╲      D = Orisios (бренд)                   │
-│  │ ╱ ╭─╮ ╲ │                                            │
-│  │ │ │🦷│ │ │     Fingerprint = Identify (уникальность) │
-│  │ ╲ ╰─╯ ╱ │                                            │
-│   ╲ ╰───╯ ╱      Tooth = Dental (отрасль)              │
-│    ╰─────╯                                              │
-│                                                         │
-│    Dent + ify      (градиент teal → coral)             │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+Visual Description:
+
+       ╭──────────╮
+      ╱            ╲
+     │   ╭──────╮   │     Outer O: Brand letter
+     │   ╰──────╯   │     Inner arc: The smile
+      ╲            ╱
+       ╰──────────╯
+
+Full wordmark: [O-smile] risios
+App icon: Just the O with inner arc
 ```
 
-### Почему это лучший выбор
+### Why This Works
 
-| Критерий | Оценка | Комментарий |
-|----------|--------|-------------|
-| Смысловая глубина | ★★★★★ | Три значения: D + Fingerprint + Tooth |
-| Уникальность | ★★★★★ | Нет аналогов среди конкурентов |
-| Запоминаемость | ★★★★★ | "Aha moment" при обнаружении зуба |
-| Масштабируемость | ★★★★☆ | Работает на большинстве размеров |
-| Цветовая палитра | ★★★★★ | Teal + Coral — современно, premium |
-| Типографика | ★★★★★ | Градиент "Dent" → "ify" усиливает идею |
+| Criterion | Score | Comment |
+|-----------|-------|---------|
+| Semantic Depth | 5/5 | O = Orisios + Smile = Dental outcome |
+| Uniqueness | 5/5 | No competitors have this concept |
+| Memorability | 5/5 | "An O with a smile inside" |
+| Scalability | 5/5 | Works from 16px to billboard |
+| Color Palette | 5/5 | Teal + Coral perfectly integrated |
+| Typography | 5/5 | Natural wordmark completion |
 
-### Расшифровка символики
+### Symbolism
 
-1. **Буква D** — первая буква названия Orisios, мгновенная узнаваемость бренда
+1. **Letter O** - First letter of Orisios, instant brand recognition
 
-2. **Fingerprint (отпечаток пальца)** — отсылка к "Identify":
-   - Уникальность каждого пациента
-   - Персонализированный подход
-   - Технология идентификации
+2. **Smile Arc** - The goal of all dental work:
+   - Universal positive symbol
+   - Human, emotional connection
+   - Not a tooth (avoiding clinical cliche)
+   - The outcome patients seek
 
-3. **Скрытый зуб** — связь со стоматологией:
-   - Не бросается в глаза сразу (умный дизайн)
-   - "Easter egg" — люди делятся открытием
-   - Профессиональная принадлежность без клише
-
-### Цветовая палитра
-
-| Цвет | HEX | Использование |
-|------|-----|---------------|
-| Deep Teal | #0D7377 | Основной цвет, "Dent" в wordmark |
-| Coral | #FF6B6B | Акцент, "ify" в wordmark |
-| Light Teal | #45B7A0 | Градиенты, hover-состояния |
-| White | #FFFFFF | Фон, негативное пространство |
-| Near Black | #1A1A2E | Тексты, dark mode |
-
-### Версии логотипа
-
-| Версия | Применение |
-|--------|------------|
-| **Full Logo** | Сайт, презентации, документы |
-| **Icon Only** | App icon, favicon, аватары |
-| **Monochrome** | Печать, watermarks |
-| **Dark Mode** | Тёмные интерфейсы |
-
-### Рекомендуемый шрифт для wordmark
-
-**Primary:** Satoshi или Inter (бесплатные)
-- Современный sans-serif
-- Отличная читаемость
-- Хорошо сочетается с иконкой
-
-### Альтернативный вариант
-
-**Файл:** `logo/dentify_logo_variant_2_1.jpg`
-
-Более простая версия D-Fingerprint без скрытого зуба. Использовать когда:
-- Нужна максимальная простота
-- Очень маленький размер (favicon)
-- Monochrome печать
+3. **Circle** - Completeness:
+   - Complete practice management
+   - Continuous care cycle
+   - Wholeness, trust
 
 ---
 
-### Следующие шаги для финализации
+## Alternative Concepts
 
-1. [x] Выбрать финальную концепцию
-2. [ ] Отрисовать в векторе (Figma/Illustrator)
-3. [ ] Создать все версии (full, icon, mono, dark)
-4. [ ] Экспортировать в форматах: SVG, PNG, ICO
-5. [ ] Подготовить brand guidelines
-6. [ ] Создать favicon и app icons всех размеров
+### Concept 2: "The Oral Gateway"
 
----
+Two elegant curved lines suggesting an opening mouth/gateway - abstract representation of "oris" (mouth) without being literal.
 
-# АРХИВ: Исследование концепций
-
-> Ниже — документация процесса выбора логотипа
-
----
-
-## Требования к логотипу
-
-- Работает как логотип и как иконка приложения
-- Читается в маленьком размере (favicon, app icon)
-- Современный, tech-ориентированный стиль
-- Связь со стоматологией (но не клише вроде зуба с улыбкой)
-- Уникальность и запоминаемость
-
----
-
-## Вариант 1: "D-Fingerprint"
-
-**Концепция:** Буква "D" стилизованная под отпечаток пальца — отсылка к "Identify" в названии. Уникальность каждого пациента.
-
-**Визуал:**
-- Буква D с линиями, имитирующими папиллярный узор
-- Линии плавные, органические
-- Одна из линий образует улыбку
-
-**Цвета:**
-- Основной: Deep Teal (#0D7377)
-- Акцент: Coral (#FF6B6B)
-
-**Шрифт:** **Circular Std** или **Gilroy**
-- Геометричный, современный sans-serif
-- Мягкие окончания букв
-- Отлично читается в любом размере
-
-**Иконка:** Только символ D с узором
-
----
-
-## Вариант 2: "Smile Bracket"
-
-**Концепция:** Буквы "D" и "y" соединены дугой, образующей улыбку. Минималистично, технологично.
-
-**Визуал:**
-- Логотип: dentify
-- Под буквами d__y проходит плавная дуга (улыбка)
-- Дуга может быть градиентной
-
-**Цвета:**
-- Основной: Electric Blue (#2D7DD2)
-- Градиент в Mint (#45B7A0)
-
-**Шрифт:** **Poppins** или **Nunito Sans**
-- Дружелюбный, округлый
-- Современный geometric sans-serif
-- Хорошо работает с curved элементами
-
-**Иконка:** Буква D с дугой-улыбкой снизу
-
----
-
-## Вариант 3: "Scan Line"
-
-**Концепция:** Буква D с горизонтальной линией сканирования — ассоциация с технологией идентификации, сканированием.
-
-**Визуал:**
-- Минималистичная D
-- Через неё проходит тонкая горизонтальная линия (как при сканировании)
-- Линия с лёгким glow-эффектом
-
-**Цвета:**
-- Основной: Midnight Blue (#1A1A2E)
-- Акцент: Neon Cyan (#00F5FF)
-
-**Шрифт:** **Inter** или **Manrope**
-- Чистый, технологичный
-- Нейтральный, но современный
-- Идеален для SaaS-продуктов
-
-**Иконка:** D со сканирующей линией
-
----
-
-## Вариант 4: "Tooth Abstract"
-
-**Концепция:** Абстрактный зуб, образованный из двух геометрических форм — современная интерпретация стоматологической темы.
-
-**Визуал:**
-- Две формы: одна напоминает корень, другая — коронку
-- Между ними негативное пространство
-- Вместе образуют стилизованную букву D
-
-**Цвета:**
-- Основной: Royal Purple (#6C63FF)
-- Дополнительный: Soft Lavender (#A5A5FF)
-
-**Шрифт:** **Satoshi** или **General Sans**
-- Современный, слегка геометричный
-- Чистые линии
-- Профессиональный, но не скучный
-
-**Иконка:** Только абстрактный символ
-
----
-
-## Вариант 5: "Dot Matrix D"
-
-**Концепция:** Буква D, составленная из точек разного размера — цифровизация, данные, технологии.
-
-**Визуал:**
-- D из ~20-30 точек
-- Точки образуют паттерн
-- Некоторые точки выделены цветом (как данные)
-
-**Цвета:**
-- Основной: Charcoal (#2C3E50)
-- Акценты: Turquoise (#1ABC9C), Coral (#E74C3C)
-
-**Шрифт:** **Space Grotesk** или **Outfit**
-- Технологичный, с характером
-- Геометричные формы
-- Современный grotesque
-
-**Иконка:** Символ D из точек
-
----
-
-## Вариант 6: "Shield D"
-
-**Концепция:** D внутри мягкого щита — защита данных, безопасность, доверие (важно для медицинского ПО).
-
-**Визуал:**
-- Округлый щит (не агрессивный)
-- Внутри минималистичная D
-- Можно добавить subtle checkmark
-
-**Цвета:**
-- Основной: Forest Green (#228B22)
-- Дополнительный: Sage (#87AE73)
-
-**Шрифт:** **Plus Jakarta Sans** или **DM Sans**
-- Надёжный, но современный
-- Хорошая читаемость
-- Профессиональный без корпоративной жёсткости
-
-**Иконка:** Щит с D
-
----
-
-## Вариант 7: "Continuous Line"
-
-**Концепция:** Слово "Orisios" написано одной непрерывной линией — поток, continuity, seamless experience.
-
-**Визуал:**
-- Логотип как единый штрих
-- Линия не прерывается
-- Конец линии образует точку над i
-
-**Цвета:**
-- Основной: Warm Black (#1C1C1C)
-- Альтернатива: Ocean Blue (#0077B6)
-
-**Шрифт:** Кастомная леттеринг или **Recoleta** (для контраста)
-- Основной текст — custom continuous line
-- Дополнительный — тёплый современный serif
-
-**Иконка:** Буква D одной линией
-
----
-
-## Вариант 8: "Pixel Smile"
-
-**Концепция:** Минималистичная улыбка из пикселей — digital + friendly.
-
-**Визуал:**
-- 3-5 квадратных "пикселей" образуют улыбку
-- Рядом wordmark "dentify"
-- Ретро-digital эстетика
-
-**Цвета:**
-- Основной: Hot Pink (#FF1493) или Electric Purple (#BF00FF)
-- Фон: Near Black (#0A0A0A)
-
-**Шрифт:** **JetBrains Mono** или **Fira Code**
-- Monospace для tech-вайба
-- Современный, но с характером
-- Уникально для dental-индустрии
-
-**Иконка:** Пиксельная улыбка
-
----
-
-## Вариант 9: "Negative Space Tooth"
-
-**Концепция:** В негативном пространстве буквы D скрыт силуэт зуба — умный дизайн, Easter egg.
-
-**Визуал:**
-- На первый взгляд — просто буква D
-- При внимательном рассмотрении видно зуб
-- Чистый, минималистичный
-
-**Цвета:**
-- Основной: Classic Blue (#0F4C81)
-- Альтернатива: Slate Gray (#708090)
-
-**Шрифт:** **Aeonik** или **TT Norms Pro**
-- Premium sans-serif
-- Чистый, профессиональный
-- Используется топовыми tech-компаниями
-
-**Иконка:** D с негативным пространством
-
----
-
-## Вариант 10: "Gradient Wave"
-
-**Концепция:** Буква D с градиентной волной внутри — динамика, современность, энергия.
-
-**Визуал:**
-- Контур буквы D
-- Внутри — волнообразный градиент
-- Волна может анимироваться в digital-версиях
-
-**Цвета:**
-- Градиент: Sunset Orange (#FF6B35) → Magenta (#FF3CAC) → Blue (#2B86C5)
-- Или: Mint (#00D9A5) → Cyan (#00C9FF) → Purple (#7B68EE)
-
-**Шрифт:** **Clash Display** или **Cabinet Grotesk**
-- Яркий, современный display font
-- Отлично для заголовков
-- Выделяется среди конкурентов
-
-**Иконка:** D с градиентной заливкой
-
----
-
-## Сравнительная таблица
-
-| # | Концепция | Стиль | Шрифт | Уникальность | Масштабируемость |
-|---|-----------|-------|-------|--------------|------------------|
-| 1 | D-Fingerprint | Органичный | Circular Std | ★★★★★ | ★★★★☆ |
-| 2 | Smile Bracket | Дружелюбный | Poppins | ★★★☆☆ | ★★★★★ |
-| 3 | Scan Line | Tech/Cyber | Inter | ★★★★☆ | ★★★★★ |
-| 4 | Tooth Abstract | Минимализм | Satoshi | ★★★★☆ | ★★★★☆ |
-| 5 | Dot Matrix D | Digital/Data | Space Grotesk | ★★★★☆ | ★★★☆☆ |
-| 6 | Shield D | Надёжность | Plus Jakarta Sans | ★★★☆☆ | ★★★★★ |
-| 7 | Continuous Line | Артистичный | Custom/Recoleta | ★★★★★ | ★★★☆☆ |
-| 8 | Pixel Smile | Ретро-digital | JetBrains Mono | ★★★★★ | ★★★★☆ |
-| 9 | Negative Space | Умный дизайн | Aeonik | ★★★★★ | ★★★★★ |
-| 10 | Gradient Wave | Динамичный | Clash Display | ★★★★☆ | ★★★★☆ |
-
----
-
-## Архивные рекомендации (до генерации)
-
-> Эти рекомендации были актуальны до генерации финальных вариантов.
-> Финальный выбор см. в начале документа.
-
-### Топ-3 концепций:
-
-1. **#1 D-Fingerprint** — идеально отражает "Identify" в названии, уникально, запоминается
-2. **#9 Negative Space Tooth** — умный дизайн, профессионально, скрытый смысл
-3. **#3 Scan Line** — технологично, современно, отлично для SaaS
-
-**Итог:** Финальный логотип объединил концепции #1 и #9 — D-Fingerprint со скрытым зубом внутри.
-
----
-
-## Ресурсы для шрифтов
-
-| Шрифт | Тип | Где скачать |
-|-------|-----|-------------|
-| Circular Std | Платный | Lineto.com |
-| Gilroy | Freemium | Tinkov/Radomir |
-| Poppins | Бесплатный | Google Fonts |
-| Inter | Бесплатный | Google Fonts |
-| Satoshi | Бесплатный | Fontshare.com |
-| Space Grotesk | Бесплатный | Google Fonts |
-| Plus Jakarta Sans | Бесплатный | Google Fonts |
-| JetBrains Mono | Бесплатный | JetBrains |
-| Clash Display | Бесплатный | Fontshare.com |
-| Cabinet Grotesk | Бесплатный | Fontshare.com |
-
----
-
-## Промты для генерации логотипов (AI Image Generation)
-
-> Промты оптимизированы для Midjourney, DALL-E 3, Stable Diffusion и Leonardo AI.
-> Рекомендуется генерировать в формате 1:1 для иконок и 16:9 для полных логотипов.
-
----
-
-### 1. D-Fingerprint
-
-**Базовый промт:**
 ```
-Minimalist logo design, letter "D" stylized as a fingerprint, smooth curved lines forming fingerprint pattern inside the letter D, one line subtly forms a smile, deep teal color #0D7377 with coral accent #FF6B6B, clean white background, modern tech company logo, vector style, flat design --v 6 --style raw
+        ╭─────╮
+       ╱       ╲          Upper curve
+      ╱         ╲
+       ╲       ╱          Lower curve
+        ╰─────╯
 ```
 
-**Вариация (более детальная):**
+**Pros:** Elegant, architectural, premium
+**Cons:** Less immediately recognizable, more abstract
+
+### Concept 3: "The Orbis"
+
+Concentric circles representing the cycle of care - prevention, treatment, maintenance, health.
+
 ```
-Professional logo for dental SaaS company "Orisios", capital letter D made of organic fingerprint-like curved lines, biometric identification concept, the lines flow naturally creating unique pattern, minimal and sophisticated, teal and coral color palette, suitable for app icon, high-end tech startup aesthetic --v 6 --ar 1:1
+      ╭──────────────╮
+     ╱    ╭──────╮    ╲
+    │    │    ●   │    │
+     ╲    ╰──────╯    ╱
+      ╰──────────────╯
 ```
 
-**Для иконки приложения:**
-```
-App icon design, letter D with fingerprint texture, smooth concentric curves, teal gradient, rounded square format, iOS app icon style, clean minimal, no text, centered composition --v 6 --ar 1:1 --style raw
+**Pros:** Geometric, tech-forward, philosophical
+**Cons:** Weaker dental connection, more generic
+
+---
+
+## Color Palette (Evolution)
+
+We keep the proven Deep Teal + Coral foundation with refined naming.
+
+### Primary Colors
+
+| Color | HEX | RGB | Role |
+|-------|-----|-----|------|
+| **Oris Teal** | `#0D7377` | 13, 115, 119 | Primary brand color |
+| **Oris Coral** | `#FF6B6B` | 255, 107, 107 | Accent, warmth, CTAs |
+
+### Secondary Colors
+
+| Color | HEX | Role |
+|-------|-----|------|
+| **Ocean Teal** | `#14919B` | Gradients, hover |
+| **Seafoam** | `#45B7A0` | Success states |
+| **Soft Teal** | `#E8F6F6` | Light backgrounds |
+| **Night** | `#1A1A2E` | Primary text |
+| **Pearl** | `#F8F9FC` | Page backgrounds |
+
+### Gradient
+
+```css
+--gradient-oris: linear-gradient(135deg, #0D7377 0%, #14919B 100%);
+--gradient-coral: linear-gradient(135deg, #FF6B6B 0%, #FF8585 100%);
 ```
 
 ---
 
-### 2. Negative Space Tooth
+## Typography
 
-**Базовый промт:**
-```
-Clever logo design, letter "D" with hidden tooth silhouette in negative space, optical illusion, minimalist single color, classic blue #0F4C81, professional and sophisticated, dental technology company, smart design, white background, vector flat style --v 6 --style raw
-```
+### Primary: Inter
+- Designed for screens
+- Excellent readability
+- Modern, professional
+- Free (Google Fonts)
 
-**Вариация (с контекстом):**
-```
-Minimalist logo for dental software "Orisios", uppercase D containing cleverly hidden tooth shape in the negative space, viewer discovers the tooth on second look, single color deep blue, extremely clean lines, premium tech company aesthetic, suitable for favicon and large signage --v 6 --ar 1:1
-```
+### Display: Satoshi
+- Geometric warmth
+- Premium headings
+- Free (Fontshare)
 
-**Для иконки приложения:**
-```
-App icon, geometric letter D with tooth hidden in negative space, smart minimal design, solid navy blue on white, rounded corners, clean vector style, no gradients, professional medical software look --v 6 --ar 1:1 --style raw
-```
+### Wordmark Style
 
----
+```
+[O-symbol] risios
 
-### 3. Scan Line
-
-**Базовый промт:**
-```
-Futuristic logo design, minimalist letter "D" with horizontal scanning line passing through it, neon cyan glow effect #00F5FF on dark midnight blue #1A1A2E background, tech identification concept, cyberpunk minimal, SaaS company logo, clean vector style --v 6 --style raw
-```
-
-**Вариация (более tech):**
-```
-Modern tech logo for "Orisios", sleek letter D with glowing horizontal scan line across middle, biometric scanning visualization, dark background with electric cyan accent, holographic subtle effect, futuristic dental technology, startup logo --v 6 --ar 1:1
-```
-
-**Для иконки приложения:**
-```
-Dark mode app icon, letter D with neon cyan horizontal line through center, scanning effect, glow on dark background, minimal cyberpunk aesthetic, rounded square format, high contrast, tech company --v 6 --ar 1:1 --style raw
+Symbol: Oris Teal gradient
+Text: Inter or Satoshi, Semibold
+Color: Night (#1A1A2E) or White (on dark)
 ```
 
 ---
 
-### 4. Pixel Smile
+## Logo Versions Required
 
-**Базовый промт:**
+| Version | Use Case | Notes |
+|---------|----------|-------|
+| **Full Horizontal** | Headers, marketing | Symbol + wordmark |
+| **Full Stacked** | Square formats | Symbol above wordmark |
+| **Symbol Only** | App icons, favicons | Just the O-smile |
+| **Wordmark Only** | When symbol nearby | Just "Orisios" text |
+| **Inverted** | Dark backgrounds | White on Teal |
+| **Monochrome** | Print, watermarks | Single color |
+
+---
+
+## Logo Files to Create
+
+| Asset | Format | Sizes |
+|-------|--------|-------|
+| Logo Full (H) | SVG, PNG | Original, @2x |
+| Logo Stacked | SVG, PNG | Original, @2x |
+| Symbol | SVG, PNG | 24, 48, 96, 192, 512 |
+| Favicon | ICO, PNG | 16, 32, 48 |
+| Apple Touch | PNG | 180 |
+| Android | PNG | 48, 72, 96, 144, 192, 512 |
+| iOS App Store | PNG | 1024 |
+| Open Graph | PNG | 1200x630 |
+
+---
+
+## AI Generation Prompts
+
+**See full prompt library:** `design/brand/ORISIOS_LOGO_PROMPTS.md`
+
+### Quick Start Prompt (Smile Arc)
+
 ```
-Retro-digital logo design, minimalist smile made of 4-5 square pixels, pixel art style, hot pink #FF1493 or electric purple #BF00FF on near-black background #0A0A0A, 8-bit aesthetic meets modern minimal, tech company logo, playful but professional --v 6 --style raw
+Minimalist logo design for dental technology company "Orisios".
+
+Concept: The letter "O" contains a stylized smile arc inside it.
+- Clean circular outer shape (the letter O)
+- Inside: a curved arc representing a smile, positioned in the lower half
+- Negative space between outer circle and inner arc
+
+Color: Deep teal gradient from #0D7377 to #14919B
+Style: Vector logo, flat design, minimal, tech startup aesthetic
+Background: Pure white
+No text, just the symbol
+
+--ar 1:1 --v 6.1 --style raw
 ```
 
-**Вариация (с wordmark):**
-```
-Logo for dental tech startup "Orisios", simple pixelated smile icon (3-5 squares forming curved smile), paired with clean monospace typography, retro gaming meets healthcare tech, vibrant magenta on dark background, unique and memorable --v 6 --ar 16:9
-```
+### App Icon Prompt
 
-**Для иконки приложения:**
 ```
-App icon, pixel art smile made of 5 small squares in arc formation, electric purple gradient, dark background, retro 8-bit digital aesthetic, modern minimal, centered, rounded square format --v 6 --ar 1:1 --style raw
+App icon, O with smile symbol, white on deep teal gradient #0D7377 to #14919B, dental tech brand Orisios, iOS style rounded square, minimal clean --ar 1:1 --v 6.1 --style raw
 ```
 
 ---
 
-### 5. Continuous Line
+## Implementation Checklist
 
-**Базовый промт:**
-```
-Artistic logo design, word "dentify" written in single continuous line, one-line drawing style, the line never breaks, elegant flowing cursive, warm black #1C1C1C on white background, sophisticated minimal, custom lettering, startup logo --v 6 --style raw
-```
+### Phase 1: Design (Current)
+- [x] Brand philosophy defined
+- [x] Logo concepts developed
+- [x] Color palette confirmed
+- [x] Typography selected
+- [x] AI prompts created
+- [ ] Generate logo variations
+- [ ] Select final direction
+- [ ] Vector artwork in Figma
 
-**Вариация (только буква D):**
-```
-Minimalist logo, letter "D" drawn with single continuous line, one stroke art, the line starts and ends at the same point forming complete D, ocean blue #0077B6, artistic but professional, dental technology brand, clean white background --v 6 --ar 1:1
-```
+### Phase 2: Production
+- [ ] Export all logo versions
+- [ ] Create favicon set
+- [ ] Create app icons (iOS, Android)
+- [ ] Brand guidelines PDF
 
-**Для иконки приложения:**
-```
-App icon, letter D created from single continuous flowing line, elegant one-stroke design, deep blue on white, artistic minimal, smooth curves, no breaks in line, rounded square format, premium feel --v 6 --ar 1:1 --style raw
-```
-
----
-
-### Дополнительные модификаторы для промтов
-
-**Для более чистого результата добавьте:**
-```
---no text, letters, words, watermark, signature
-```
-
-**Для векторного стиля:**
-```
-vector logo, flat design, solid colors, no gradients, no shadows, print-ready
-```
-
-**Для premium-эстетики:**
-```
-luxury brand, sophisticated, high-end, refined, elegant minimalism
-```
-
-**Для tech-стиля:**
-```
-silicon valley startup, SaaS company, fintech aesthetic, modern technology
-```
+### Phase 3: Implementation
+- [ ] Update all documentation
+- [ ] Configure design tokens in code
+- [ ] Replace Dentify references
+- [ ] Update marketing materials
 
 ---
 
-### Рекомендации по генерации
+## Archive: Dentify Logo (Previous Brand)
 
-| Платформа | Лучшие настройки |
-|-----------|------------------|
-| **Midjourney** | --v 6 --style raw --ar 1:1 для иконок |
-| **DALL-E 3** | Добавить "vector logo design" в начало |
-| **Leonardo AI** | Использовать модель "Logo Diffusion" |
-| **Stable Diffusion** | Модель "Logo.Redmond" или "LogoRedmond-LogoLoraForSDXL" |
+> **Note:** The content below documents the previous Dentify logo.
+> This is archived for reference only. The new Orisios brand
+> requires a fresh logo concept as outlined above.
 
-**Важно:** AI-генераторы хорошо создают концепции, но финальный логотип лучше отрисовать вручную в векторе (Figma/Illustrator) на основе лучшего результата.
+### D + Fingerprint + Tooth (Archived)
+
+**Files:** `design/logo/dentify_logo_variant_*.jpg`
+
+The Dentify logo was a clever combination of:
+1. Letter D - Brand initial
+2. Fingerprint pattern - "Identify" in the name
+3. Hidden tooth silhouette - Dental industry
+
+**Why we're moving on:**
+- "D" no longer represents the brand (Orisios starts with O)
+- "Fingerprint" referenced "identify" which is no longer in the name
+- The triple-meaning concept doesn't translate to Orisios
+
+**What we keep:**
+- Deep Teal + Coral color palette (proven, distinctive)
+- Modern, tech-forward aesthetic
+- Hidden meaning philosophy (smile in the O)
+- Quality and attention to detail
 
 ---
 
-## Следующие шаги (ЗАВЕРШЕНО)
+## Related Documents
 
-1. [x] ~~Выбрать 2-3 концепции для проработки~~
-2. [x] ~~Сгенерировать варианты с помощью AI~~
-3. [x] ~~Выбрать финальный вариант~~ → **D + Fingerprint + Tooth**
-4. [ ] Отрисовать в векторе (Figma/Illustrator)
-5. [ ] Протестировать на разных размерах (favicon, app icon, full logo)
-6. [ ] Разработать brand guidelines
+- `design/brand/ORISIOS_BRAND_IDENTITY.md` - Complete brand identity guide
+- `design/brand/ORISIOS_LOGO_PROMPTS.md` - AI generation prompts
+- `design/colors/palette.md` - Full color system
+- `design/ideas/ux-sparkle-ideas.md` - UI micro-interactions
 
 ---
 
-## Сгенерированные логотипы
+> "The best logos are the ones you can describe in a sentence.
+> Orisios: an O with a smile inside."
+>
+> -- Leo, Design Director
 
-| Файл | Концепция | Статус |
-|------|-----------|--------|
-| `dentify_logo_variant_4_1.jpg` | D + Fingerprint + Tooth | **ФИНАЛЬНЫЙ ВЫБОР** |
-| `dentify_logo_variant_2_1.jpg` | D-Fingerprint + Wordmark | Альтернатива |
-| `dentify_logo_variant_3_1.jpg` | D-Fingerprint (app icon) | Архив |
-| `QtwTYhKVX1lxENb0JR86--1--mdjqg.jpg` | D-Fingerprint (solid) | Архив |
-| `1o2lNATImAwv9RrqbJM8--1--pnvz8.jpg` | Fingerprint (oval) | Архив |
-| `uLeKQlsNyl2jDGjtsGTv--1--khp56.jpg` | Fingerprint (wave) | Архив |
-| `dBzlyWBlsbFaavYjIsJ4--0--2ntx6.jpg` | Continuous Line | Архив |
-| `iEOIJTREsB3ln5lepmQx--0--7dx0j.jpg` | Continuous Line v2 | Архив |
-| `2By4HZHQBTsPwDqjmhWL--0--7qfx7.jpg` | Script + Decor | Отклонён |
+---
+
+*Document: BrandLogo.md*
+*Status: Ready for logo generation*
+*Last updated: January 2026*

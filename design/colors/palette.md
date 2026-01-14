@@ -1,6 +1,7 @@
 # Orisios Color Palette
 
 > Official color system for Orisios brand
+> Etymology: "os, oris" (Latin) = mouth
 > Last updated: January 2026
 
 ---
@@ -9,8 +10,8 @@
 
 | Name | HEX | RGB | Usage |
 |------|-----|-----|-------|
-| **Deep Teal** | `#0D7377` | 13, 115, 119 | Main brand color, navigation, primary buttons, headers |
-| **Coral** | `#FF6B6B` | 255, 107, 107 | Accent, CTAs, important notifications, "ify" in logo |
+| **Oris Teal** | `#0D7377` | 13, 115, 119 | Primary brand color, navigation, headers, O-symbol |
+| **Oris Coral** | `#FF6B6B` | 255, 107, 107 | Accent, CTAs, warmth, smile arc in logo |
 | **Light Teal** | `#14919B` | 20, 145, 155 | Hover states, gradients, secondary buttons |
 | **Soft Teal** | `#E8F6F6` | 232, 246, 246 | Card backgrounds, subtle fills, alternating rows |
 | **Mint** | `#45B7A0` | 69, 183, 160 | Success states, positive metrics, confirmations |
