@@ -48,6 +48,20 @@ adm_subscription_plans
 ├── is_active
 └── created_at
 
+-- Доступные платные фичи/дополнения (мастер-данные)
+adm_available_features
+├── id
+├── feature_key              -- "widget", "ortho_chart", "patient_app", "orisai"
+├── name                     -- "Виджет онлайн-записи"
+├── description              -- "Интеграция виджета записи на ваш сайт"
+├── price_monthly
+├── price_yearly
+├── category                 -- "integration" | "module" | "ai" | "communication"
+├── is_active
+├── required_plan            -- минимальный тариф для покупки
+├── requires_user_permission -- нужно ли выдавать права пользователям (0 | 1)
+└── created_at
+
 -- Счета клиникам
 adm_invoices
 ├── id
@@ -71,11 +85,18 @@ adm_payments
 ├── paid_at
 └── created_at
 
--- Feature flags для клиник
+-- Активированные фичи для клиник (что включено менеджером)
 adm_clinic_features
+├── id
 ├── clinic_id
-├── feature_key
-├── enabled
+├── feature_key              -- FK → adm_available_features.feature_key
+├── enabled (0 | 1)          -- включена ли фича
+├── enabled_at
+├── enabled_by_staff_id      -- FK → adm_staff (кто активировал)
+├── disabled_at
+├── expires_at               -- для триальных активаций
+├── is_trial (0 | 1)
+├── notes                    -- примечания менеджера
 └── updated_at
 
 -- Тикеты поддержки (Helpdesk)

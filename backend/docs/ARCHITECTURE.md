@@ -130,6 +130,7 @@ deleted_at (timestamp) -- время удаления, NULL если не уда
 | Файл | Описание |
 |------|----------|
 | [features/AUTH.md](features/AUTH.md) | Аутентификация клиник и пациентов |
+| [features/BILLING.md](features/BILLING.md) | Биллинг, подписки, делегирование доступа |
 | [features/WIDGET.md](features/WIDGET.md) | Виджет онлайн-записи |
 | [features/PATIENT_APP.md](features/PATIENT_APP.md) | Мобильное приложение OrisiosPatient |
 | [features/ORISAI.md](features/ORISAI.md) | AI-ассистент |
