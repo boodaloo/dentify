@@ -4,8 +4,8 @@
 >
 > **Проект:** Orisios — система управления стоматологическими клиниками
 > **Создано:** 16 января 2026
-> **Обновлено:** 16 января 2026
-> **Версия:** 1.1
+> **Обновлено:** 17 января 2026
+> **Версия:** 1.2
 
 ---
 
@@ -511,6 +511,80 @@ Left color strip (4px width)
    - Icon: 👤 16x16px + Text: "Add Patient"
    - Font: 14px Medium
    - Hover: Border color Light Teal, Background Off White
+
+---
+
+##### Birthday Widget (Upcoming Birthdays)
+
+**Container:**
+- Background: White `#FFFFFF`
+- Border Radius: 12px
+- Padding: 20px
+- Shadow: Level 1
+- Margin Top: 24px (после Quick Actions)
+
+**Header:**
+- Left: 🎂 20px icon + "Upcoming Birthdays" (H3: 18px SemiBold, Near Black)
+- Right: "View All" link (12px Medium, Light Teal)
+- Margin Bottom: 16px
+
+**Section Headers (группировка по дням):**
+- Text: "🎉 Сегодня (2)" / "📅 Завтра (1)" / "📆 Через 2 дня (3)"
+- Font: 12px Medium, uppercase, Dark Gray `#5A5A72`
+- Border Bottom: 1px solid Light Gray `#E8E8ED`
+- Margin: 12px 0 8px 0
+
+**Birthday Item (64px height):**
+
+```
+┌───┬─────────────────────────────────┐
+│[IV]│ Иванов Петр          45 лет   │
+│   │ +7 999 123-4567    [📞] [✉️]   │
+└───┴─────────────────────────────────┘
+```
+
+**Layout:**
+- Avatar: 40px circle с инициалами (left), margin-right 12px
+- Content column:
+  - Name: 14px Medium, Near Black
+  - Age: 12px Regular, Dark Gray ("45 лет" - сколько исполняется)
+  - Phone: 12px Regular, Dark Gray
+- Quick Actions: 2 icon buttons (28x28px), right-aligned, gap 8px
+
+**Quick Action Buttons:**
+
+📞 **Call Button:**
+- Size: 28x28px
+- Background: Seafoam `#45B7A0` at 15%
+- Icon: 📞 16px in Seafoam
+- Border Radius: 6px
+- Hover: Background at 25%
+
+✉️ **SMS Button:**
+- Size: 28x28px
+- Background: Coral `#FF6B6B` at 15%
+- Icon: ✉️ 16px in Coral
+- Border Radius: 6px
+- Hover: Background at 25%
+
+**Empty State:**
+- Icon: 🎂 48px, Light Gray opacity 50%
+- Text: "No upcoming birthdays in the next 3 days"
+- Font: 14px Regular, Dark Gray
+- Alignment: Center
+- Min Height: 200px
+
+**Collapsed View (если > 8 пациентов):**
+- Показывать первые 8 items
+- Link: "... еще 5" (12px Medium, Light Teal)
+- Click → expand или "View All"
+
+**Hover State:**
+- Background: Off White `#F8F9FC`
+- Cursor: pointer
+- Transition: 150ms
+
+**Gap между items:** 12px
 
 ---
 
@@ -1532,14 +1606,15 @@ icon: ℹ️ 20x20px in Light Teal
 
 ### Dashboard ✓
 - [ ] Sidebar navigation with all 14 items (static, always visible)
-- [ ] Header bar with Clinic Weather, search, OrisAI, notifications
+- [ ] Header bar with Clinic Weather, search, OrisAI, notifications, chat icon
 - [ ] Greeting section with AI insight
 - [ ] Live Timeline with NOW marker
 - [ ] 4 KPI cards with icons and trends (277px width each)
-- [ ] Grid layout: Appointments (66%) + Tasks/Quick Actions (33%)
+- [ ] Grid layout: Appointments (66%) + Tasks/Quick Actions/Birthdays (33%)
 - [ ] Appointments list with 5 items, left color strip
 - [ ] Tasks checklist card with checkboxes
 - [ ] Quick Actions card with 2 buttons
+- [ ] Birthday Widget with upcoming birthdays (3 days), Quick Actions (📞✉️)
 - [ ] Weekly Revenue chart (full width at bottom)
 
 ### Calendar ✓
@@ -1567,6 +1642,6 @@ icon: ℹ️ 20x20px in Light Teal
 ---
 
 *Документ создан: 16 января 2026*
-*Обновлён: 16 января 2026 — переход на двухколоночный layout*
-*Версия: 1.1*
+*Обновлён: 17 января 2026 — добавлены Chat Widget и Birthday Reminders*
+*Версия: 1.2*
 *Для использования в Figma Make при генерации UI дизайнов Orisios*
