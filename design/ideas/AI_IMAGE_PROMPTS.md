@@ -25,37 +25,66 @@
 ### Промпт:
 
 ```
-Modern dental clinic management software dashboard UI design, desktop web application,
-clean and professional interface with teal and coral color palette.
+Modern dental clinic management software dashboard UI design for Orisios,
+desktop web application at 1440px viewport, clean two-column layout.
 
-Layout: Left sidebar navigation (deep teal #0D7377) with icons and labels,
-main content area with light gray background (#F8FAFB).
+Layout Structure:
+- Left sidebar: 240px width, static, deep teal #0D7377 background
+  Navigation items: Главная (active), Расписание, Заявки, Задачи, Пациенты,
+  Шаблоны, ОМС/ДМС, Лаборатории, Склад, Аналитика, Отчёты, Интеграции, Настройки
 
-Header: "Orisios" logo with D-fingerprint icon on the left, search bar in center,
-AI assistant button, notification bell and user avatar on the right.
+- Main content area: 1200px width, scrollable, light gray background #F8FAFB
+  All content scrolls together as unified flow
 
-Main content includes:
-- Greeting: "Good morning, Dr. Johnson!" with date
-- Top row: 4 metric cards showing revenue (45,600₽), patients count (12),
-  appointments (8/12), average time (42 min) - white cards with subtle shadows
-- Middle section: "Upcoming Appointments" list with patient names, times,
-  and coral (#FF6B6B) status indicators on the left edge of each row
-- Right sidebar: "Tasks" checklist and "Quick Actions" buttons
-- Bottom: Weekly revenue mini-chart with teal accent line
+Header Section (72px height):
+- Left: "Clinic Weather" indicator with sun icon and "All Clear" status
+- Center: Search bar (400px pill shape, white background)
+- Right: "OrisAI" button (coral), notification bell with badge, user avatar
 
-Color palette Orisios:
-- Primary: Deep Teal #0D7377 (sidebar, headers)
-- Accent: Coral #FF6B6B (buttons, active states, CTAs)
-- Secondary: Light Teal #45B7A0 (success, hover)
-- Background: Light Gray #F8FAFB
-- Cards: Pure white #FFFFFF
-- Text: Near Black #1A1A2E
+Content Flow (top to bottom):
+1. Greeting: "Good morning, Dr. Johnson!" (32px SemiBold) + date/patient count
+   AI insight chip on right with lightbulb icon
 
-Style: Modern SaaS dashboard, Figma-quality, clean typography (Inter or Satoshi),
-rounded corners (8px), subtle shadows, plenty of whitespace, professional but friendly.
+2. Live Timeline (120px height card):
+   Horizontal bar 08:00-20:00 with color-coded appointment blocks
+   "NOW" marker as coral dashed line with pulse animation
 
-NO: stock photos, realistic people, 3D renders
-YES: flat design, vector style, UI mockup, high fidelity, dribbble quality
+3. KPI Cards Row (4 cards, 277px each, gap 16px):
+   - Revenue: 45,600₽ with +8.2% trend (seafoam icon)
+   - Patients: 12 total (coral icon)
+   - Appointments: 8/12 with progress bar (teal icon)
+   - Average Time: 42 min (saffron icon)
+
+4. Grid Layout (2 columns: 66% + 33%, gap 24px):
+   LEFT COLUMN (66%): "Upcoming Appointments" card
+   - 5 appointment rows with generative fingerprint avatars
+   - Each row: 4px left color strip (seafoam/coral/saffron), patient name, time, status chip
+
+   RIGHT COLUMN (33%): Stacked cards
+   - "Tasks Today" card: 3 checkboxes with tasks, coral badge count
+   - "Quick Actions" card: "New Appointment" (coral button), "Add Patient" (outline button)
+
+5. Weekly Revenue Chart (full width 1136px):
+   Line chart with teal line, coral data points, 240px height
+
+Color Palette:
+- Deep Teal #0D7377: sidebar, primary
+- Coral #FF6B6B: CTAs, accents, active states
+- Light Teal #14919B: gradients, hover
+- Seafoam #45B7A0: success, confirmed status
+- Saffron #F2CC8F: warnings, pending status
+- Near Black #1A1A2E: text
+- Off White #F8FAFB: page background
+- White #FFFFFF: cards
+
+Typography: Inter, 32px/24px/18px/16px/14px/12px hierarchy
+
+Style: Modern SaaS aesthetic like Linear or Notion, clean grid-based layout,
+subtle shadows (Level 1), 12px border radius on cards, generous whitespace,
+professional yet friendly, two-column flow with unified scroll.
+
+NO: three-column layout, fixed right sidebar, stock photos, 3D renders, cluttered design
+YES: two-column layout, unified scroll, flat design, vector UI, high fidelity mockup
 
 --ar 16:9 --v 6 --style raw
 ```
@@ -486,8 +515,9 @@ high-fidelity mockups, professional SaaS design showcase.
 
 ### Dashboard:
 ```
-Orisios dental SaaS dashboard, teal #0D7377 sidebar, coral #FF6B6B accents,
-metric cards, appointment list, AI button, clean modern UI --ar 16:9 --v 6
+Orisios dental SaaS dashboard, two-column layout, teal #0D7377 sidebar (240px),
+main area (1200px) with KPI cards, live timeline, grid layout: appointments 66% + tasks/actions 33%,
+weekly chart bottom, coral #FF6B6B accents, unified scroll, Linear-style modern UI --ar 16:9 --v 6
 ```
 
 ### Calendar:

@@ -4,7 +4,8 @@
 >
 > **Проект:** Orisios — система управления стоматологическими клиниками
 > **Создано:** 16 января 2026
-> **Версия:** 1.0
+> **Обновлено:** 16 января 2026
+> **Версия:** 1.1
 
 ---
 
@@ -87,19 +88,27 @@ box-shadow: 0px 24px 48px rgba(26, 26, 46, 0.20), 0px 8px 16px rgba(26, 26, 46, 
 ### Общая структура (1440px viewport)
 
 ```
-┌─────────────┬──────────────────────────────────────────────┬──────────────┐
-│   Sidebar   │              Main Content Area                │ Right Panel  │
-│   240px     │                  880px                        │   320px      │
-│             │                                               │              │
-│  Deep Teal  │      Off White Background #F8F9FC             │  Off White   │
-│  #0D7377    │                                               │              │
-│             │                                               │              │
-│  Always     │  [Header Bar]                                 │ [Tasks]      │
-│  Visible    │  [Greeting Section]                           │ [Actions]    │
-│             │  [KPI Cards Row]                              │              │
-│             │  [Appointments List]                          │              │
-│             │  [Chart Section]                              │              │
-└─────────────┴──────────────────────────────────────────────┴──────────────┘
+┌─────────────┬──────────────────────────────────────────────────────────────┐
+│   Sidebar   │              Main Content Area (scrollable)                   │
+│   240px     │                      1200px                                   │
+│  (static)   │                                                               │
+│             │      Off White Background #F8F9FC                             │
+│  Deep Teal  │                                                               │
+│  #0D7377    │  [Header Bar]                                                 │
+│             │  [Greeting Section]                                           │
+│  Always     │  [Live Timeline]                                              │
+│  Visible    │  [KPI Cards Row - 4 cards]                                    │
+│             │                                                               │
+│             │  [Grid Layout 2 columns:]                                     │
+│             │  ┌──────────────────────────┬─────────────────────┐          │
+│             │  │ Appointments List (66%)  │ Tasks + Quick       │          │
+│             │  │                          │ Actions (33%)       │          │
+│             │  └──────────────────────────┴─────────────────────┘          │
+│             │                                                               │
+│             │  [Weekly Chart - full width]                                  │
+│             │                                                               │
+│             │  ↕️ Весь контент прокручивается вместе                        │
+└─────────────┴──────────────────────────────────────────────────────────────┘
 ```
 
 ### 1.1 Sidebar Navigation (240px width, full height)
@@ -177,10 +186,11 @@ box-shadow: 0px 24px 48px rgba(26, 26, 46, 0.20), 0px 8px 16px rgba(26, 26, 46, 
 
 ---
 
-### 1.2 Main Content Area (880px width)
+### 1.2 Main Content Area (1200px width)
 
 **Padding:** 32px all sides
 **Background:** Off White `#F8F9FC`
+**Scroll:** Vertical scroll для всего контента
 
 #### Header Bar (Top, 72px height)
 
@@ -294,7 +304,7 @@ box-shadow: 0px 24px 48px rgba(26, 26, 46, 0.20), 0px 8px 16px rgba(26, 26, 46, 
 #### KPI Cards Row (4 cards, gap 16px)
 
 **Card Specifications:**
-- **Width:** Each card = (880 - 32*2 - 16*3) / 4 = 196px
+- **Width:** Each card = (1200 - 32*2 - 16*3) / 4 = 277px
 - **Height:** 120px
 - **Background:** White `#FFFFFF`
 - **Border Radius:** 12px
@@ -349,7 +359,17 @@ box-shadow: 0px 24px 48px rgba(26, 26, 46, 0.20), 0px 8px 16px rgba(26, 26, 46, 
 
 ---
 
-#### Appointments List Section
+#### Grid Layout Section (2 columns: 66% + 33%)
+
+**Container:**
+- Display: grid
+- Grid Template Columns: 2fr 1fr (66% / 33%)
+- Gap: 24px
+- Margin Bottom: 24px
+
+---
+
+#### Left Column: Appointments List (66% width ≈ 770px)
 
 **Container:**
 - Background: White `#FFFFFF`
@@ -409,23 +429,19 @@ Left color strip (4px width)
 - Cursor: pointer
 - Transition: 150ms
 
-**Margin Bottom:** 24px
-
 ---
 
-### 1.3 Right Sidebar Panel (320px width)
+#### Right Column: Tasks + Quick Actions (33% width ≈ 362px)
 
-**Padding:** 32px vertical, 24px horizontal
-**Background:** Off White `#F8F9FC`
+**Layout:** Vertical stack, gap 24px
 
-#### Tasks Checklist Card
+##### Tasks Checklist Card
 
 **Container:**
 - Background: White `#FFFFFF`
 - Border Radius: 12px
 - Padding: 20px
 - Shadow: Level 1
-- Margin Bottom: 24px
 
 **Header:**
 - Text: "Tasks Today" (H3: 18px SemiBold, Near Black)
@@ -460,7 +476,7 @@ Left color strip (4px width)
 
 ---
 
-#### Quick Actions Card
+##### Quick Actions Card
 
 **Container:**
 - Background: White `#FFFFFF`
@@ -472,7 +488,7 @@ Left color strip (4px width)
 - Text: "Quick Actions" (H3: 18px SemiBold, Near Black)
 - Margin Bottom: 16px
 
-**Buttons:** (2 buttons, gap 12px)
+**Buttons:** (2 buttons, gap 12px, vertical stack)
 
 1. **New Appointment** (Primary)
    - Width: 100%
@@ -495,6 +511,33 @@ Left color strip (4px width)
    - Icon: 👤 16x16px + Text: "Add Patient"
    - Font: 14px Medium
    - Hover: Border color Light Teal, Background Off White
+
+---
+
+#### Weekly Chart Section (Full width, margin-top 24px)
+
+**Container:**
+- Width: 100% (full 1200px - 64px padding = 1136px)
+- Background: White `#FFFFFF`
+- Border Radius: 12px
+- Padding: 24px
+- Shadow: Level 1
+
+**Header:**
+- Text: "Weekly Revenue" (H2: 24px SemiBold, Near Black)
+- Filter dropdown: "Last 7 days ▼" (right-aligned)
+- Margin Bottom: 20px
+
+**Chart:**
+- Type: Line chart
+- Height: 240px
+- Line color: Light Teal `#14919B`
+- Fill gradient: Light Teal at 20% to transparent
+- Grid: Light Gray horizontal lines
+- X-axis: Days (Mon - Sun)
+- Y-axis: Revenue in ₽
+- Data points: Coral `#FF6B6B` circles (8px)
+- Hover: Tooltip with exact value
 
 ---
 
@@ -1488,13 +1531,16 @@ icon: ℹ️ 20x20px in Light Teal
 ## ✅ Checklist для генерации
 
 ### Dashboard ✓
-- [ ] Sidebar navigation with all 14 items
+- [ ] Sidebar navigation with all 14 items (static, always visible)
 - [ ] Header bar with Clinic Weather, search, OrisAI, notifications
 - [ ] Greeting section with AI insight
 - [ ] Live Timeline with NOW marker
-- [ ] 4 KPI cards with icons and trends
-- [ ] Appointments list with 5 items
-- [ ] Right panel: Tasks + Quick Actions
+- [ ] 4 KPI cards with icons and trends (277px width each)
+- [ ] Grid layout: Appointments (66%) + Tasks/Quick Actions (33%)
+- [ ] Appointments list with 5 items, left color strip
+- [ ] Tasks checklist card with checkboxes
+- [ ] Quick Actions card with 2 buttons
+- [ ] Weekly Revenue chart (full width at bottom)
 
 ### Calendar ✓
 - [ ] Toolbar with week navigation and view toggles
@@ -1521,5 +1567,6 @@ icon: ℹ️ 20x20px in Light Teal
 ---
 
 *Документ создан: 16 января 2026*
-*Версия: 1.0*
+*Обновлён: 16 января 2026 — переход на двухколоночный layout*
+*Версия: 1.1*
 *Для использования в Figma Make при генерации UI дизайнов Orisios*
