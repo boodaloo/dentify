@@ -1,0 +1,129 @@
+.patients-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.controls-grid {
+  margin-bottom: var(--spacing-m);
+}
+
+.search-box {
+  padding: 0 var(--spacing-l);
+  height: 52px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-m);
+}
+
+.search-box input {
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  width: 100%;
+  font-size: 15px;
+}
+
+.search-box input:focus {
+  outline: none;
+}
+
+.search-icon {
+  color: var(--color-text-tertiary);
+}
+
+.filters {
+  padding: 0 var(--spacing-l);
+  height: 52px;
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+}
+
+.placeholder-text {
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+}
+
+.patients-list-container {
+  overflow: hidden;
+  padding: 0;
+}
+
+.patients-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.patients-table th {
+  text-align: left;
+  padding: var(--spacing-l);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.patients-table td {
+  padding: var(--spacing-l);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 14px;
+}
+
+.patients-table tr:last-child td {
+  border-bottom: none;
+}
+
+.patients-table tr:hover td {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.patient-identity .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-s);
+  background: var(--gradient-teal);
+}
+
+.full-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.dob {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+
+.contact-box .phone {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.contact-box .email {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+
+.actions-cell {
+  text-align: right;
+}
+
+.pagination {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.page-indicator {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

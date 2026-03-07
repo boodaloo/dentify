@@ -1,0 +1,223 @@
+.calendar-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-l);
+  height: calc(100vh - 72px - 64px);
+}
+
+.calendar-toolbar {
+  padding: var(--space-m) var(--space-l);
+}
+
+.icon-btn-s {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-m);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+}
+
+.icon-btn-s:hover { background: var(--bg-off-white); }
+
+.today-btn {
+  background: rgba(20, 145, 155, 0.1);
+  color: var(--primary-light-teal);
+  padding: 0 var(--space-l);
+  height: 40px;
+}
+
+.view-toggle {
+  background: var(--bg-off-white);
+  padding: 4px;
+  border-radius: var(--radius-m);
+  gap: 4px;
+}
+
+.toggle-item {
+  padding: 0 var(--space-m);
+  height: 32px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.toggle-item.active {
+  background: white;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-l1);
+}
+
+.new-apt-btn {
+  background: var(--accent-coral);
+  color: white;
+  height: 40px;
+  padding: 0 var(--space-l);
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+/* Calendar Layout */
+.calendar-main-layout {
+  display: grid;
+  grid-template-columns: 1fr 368px;
+  gap: var(--space-l);
+  flex: 1;
+  overflow: hidden;
+}
+
+.calendar-grid-container {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.grid-header {
+  display: grid;
+  grid-template-columns: 80px repeat(7, 1fr);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.time-col-header { height: 64px; }
+
+.day-col-header {
+  height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: white;
+}
+
+.day-col-header.weekend { background: rgba(232, 232, 237, 0.5); }
+.day-col-header.today { border-bottom: 2px solid var(--primary-light-teal); }
+
+.day-name { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
+.day-date { font-size: 20px; font-weight: 600; }
+.day-col-header.today .day-date { color: var(--primary-light-teal); }
+
+.today-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--primary-light-teal);
+  border-radius: 50%;
+  position: absolute;
+  top: 8px;
+}
+
+.grid-content {
+  flex: 1;
+  display: flex;
+  overflow-y: auto;
+  position: relative;
+}
+
+.time-labels-col {
+  width: 80px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-light);
+}
+
+.time-label {
+  height: 60px;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: var(--space-s);
+  padding-top: var(--space-micro);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.calendar-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  position: relative;
+}
+
+.day-column {
+  border-right: 1px solid var(--border-light);
+  position: relative;
+}
+
+.day-column.weekend { background: rgba(248, 249, 252, 0.7); }
+
+.hour-slot {
+  height: 60px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.calendar-apt-block {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: var(--radius-m);
+  padding: var(--space-xs);
+  box-shadow: var(--shadow-l1);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.apt-block-inner { overflow: hidden; }
+.apt-name { font-size: 12px; font-weight: 600; }
+.apt-proc { font-size: 11px; color: var(--text-secondary); }
+
+.calendar-apt-block.confirmed { background: rgba(69, 183, 160, 0.15); border-left: 3px solid var(--secondary-seafoam); }
+.calendar-apt-block.in-progress { background: rgba(255, 107, 107, 0.15); border-left: 3px solid var(--accent-coral); }
+.calendar-apt-block.pending { background: rgba(242, 204, 143, 0.25); border-left: 3px solid var(--warning-saffron); }
+
+.now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-coral);
+  z-index: 10;
+}
+
+.now-handle {
+  position: absolute;
+  left: -40px;
+  top: -8px;
+  background: var(--accent-coral);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+/* Details Panel */
+.apt-details-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-selection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--text-secondary);
+}
+
+.empty-icon-bg {
+  width: 64px;
+  height: 64px;
+  background: var(--bg-off-white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-m);
+  color: var(--border-light);
+}

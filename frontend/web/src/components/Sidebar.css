@@ -1,0 +1,104 @@
+.sidebar {
+  width: 240px;
+  height: 100vh;
+  background-color: var(--primary-deep-teal);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-xl) var(--space-l);
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+}
+
+.sidebar-logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  margin-bottom: var(--space-xxl);
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.text-oris { color: var(--primary-light-teal); }
+.text-ios { color: var(--accent-coral); }
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.nav-item {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: 0 var(--space-s);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-m);
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.15s ease-in-out;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.nav-item.active {
+  background: rgba(20, 145, 155, 0.3);
+  color: rgba(255, 255, 255, 1);
+  border-left: 3px solid var(--accent-coral);
+  border-radius: 0 var(--radius-m) var(--radius-m) 0;
+  padding-left: calc(var(--space-s) - 3px);
+}
+
+.nav-icon {
+  flex-shrink: 0;
+}
+
+.nav-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: var(--space-m) 0;
+}
+
+/* Hide scrollbar but allow scrolling */
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
+}
+.lang-toggle-sidebar {
+  margin-bottom: var(--space-s);
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+.lang-toggle-sidebar:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: var(--accent-coral) !important;
+}
+
+.lang-toggle-sidebar .nav-label {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.nav-item.logout {
+  color: var(--accent-coral);
+}

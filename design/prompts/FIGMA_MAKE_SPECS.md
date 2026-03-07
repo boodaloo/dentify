@@ -4,8 +4,8 @@
 >
 > **Проект:** Orisios — система управления стоматологическими клиниками
 > **Создано:** 16 января 2026
-> **Обновлено:** 17 января 2026
-> **Версия:** 1.2
+> **Обновлено:** 18 января 2026
+> **Версия:** 1.4
 
 ---
 
@@ -131,9 +131,9 @@ box-shadow: 0px 24px 48px rgba(26, 26, 46, 0.20), 0px 8px 16px rgba(26, 26, 46, 
 ```
 🏠 Главная          ← Active
 📅 Расписание
+👤 Пациенты
 📥 Заявки
 ✓  Задачи
-👤 Пациенты
 📋 Шаблоны
 🏥 ОМС/ДМС
 🧪 Лаборатории
@@ -176,13 +176,6 @@ box-shadow: 0px 24px 48px rgba(26, 26, 46, 0.20), 0px 8px 16px rgba(26, 26, 46, 
 - Border Left: 3px solid Coral `#FF6B6B`
 - Icon: White at 100% opacity
 - Text: White at 100% opacity
-
-#### Bottom Section (User Profile)
-- **Position:** Bottom of sidebar, 24px from bottom
-- **Content:** Avatar (40px circle) + Name + Role
-- **Background:** `rgba(255, 255, 255, 0.10)`
-- **Padding:** 12px
-- **Border Radius:** 8px
 
 ---
 
@@ -231,11 +224,48 @@ box-shadow: 0px 24px 48px rgba(26, 26, 46, 0.20), 0px 8px 16px rgba(26, 26, 46, 
    - Background: White
    - Border: 1px solid Light Gray
    - Icon: 🔔 20x20px
-   - Badge: Red dot (8px) if unread
+   - Badge: Coral circle (16px) with white number if unread
 
-3. **User Avatar**
+3. **Chat Icon**
+   - Size: 40x40px circle
+   - Background: White
+   - Border: 1px solid Light Gray
+   - Icon: 💬 20x20px
+   - Badge: Coral circle (16px) with white number if unread
+   - Click → opens floating chat panel (400px slide-in from right)
+
+4. **User Avatar + Menu**
    - Size: 40x40px circle
    - Border: 2px solid Light Teal `#14919B`
+   - Image: User photo OR initials on Deep Teal background
+   - Hover: Border color → Coral `#FF6B6B`
+   - Click → opens dropdown menu
+
+**User Dropdown Menu:**
+- Width: 240px
+- Background: White `#FFFFFF`
+- Border Radius: 12px
+- Shadow: Level 4
+- Position: Right-aligned to avatar, 8px gap from header
+
+**User Info Section (top):**
+- Avatar: 48px circle
+- Name: 16px SemiBold, Near Black
+- Email: 12px Regular, Dark Gray
+- Padding: 16px
+- Background: Off White `#F8F9FC`
+- Border Radius: 8px (top corners)
+
+**Menu Items:** (height 40px each, padding 0 16px)
+- Мой профиль
+- Настройки аккаунта
+- Сменить клинику (if multiple)
+- Divider (1px Light Gray, margin 8px)
+- 🌙 Тёмная тема (toggle)
+- Divider
+- 🚪 Выйти (Coral text color)
+
+**Item Hover:** Background Off White
 
 ---
 
@@ -1642,6 +1672,6 @@ icon: ℹ️ 20x20px in Light Teal
 ---
 
 *Документ создан: 16 января 2026*
-*Обновлён: 17 января 2026 — добавлены Chat Widget и Birthday Reminders*
-*Версия: 1.2*
+*Обновлён: 18 января 2026 — Изменён порядок пунктов меню: Пациенты теперь третий*
+*Версия: 1.4*
 *Для использования в Figma Make при генерации UI дизайнов Orisios*

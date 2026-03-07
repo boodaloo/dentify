@@ -1,0 +1,47 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache libc6-compat openssl
+
+# Copy shared and backend source
+COPY shared/types ./shared/types
+COPY backend ./backend
+
+# Build shared types
+WORKDIR /app/shared/types
+RUN npm install && npm run build
+
+# Build backend
+WORKDIR /app/backend
+# Fix workspace dependency to point to local built shared types for build
+RUN sed -i 's/"workspace:\*"/"file:..\/shared\/types"/g' package.json
+RUN npm install
+RUN npx prisma generate
+RUN npm run build
+
+# --- Production ---
+FROM node:20-alpine
+WORKDIR /app
+
+# Install production dependencies (including OpenSSL for Prisma)
+RUN apk add --no-cache libc6-compat openssl
+
+COPY backend/package.json ./
+# Prepare shared types directory for npm install to find it
+COPY --from=builder /app/shared/types/package.json ./shared/types/
+COPY --from=builder /app/shared/types/dist ./shared/types/dist
+
+# Fix workspace dependency for production install
+RUN sed -i 's/"workspace:\*"/"file:shared\/types"/g' package.json
+RUN npm install --omit=dev
+
+# Copy other backend artifacts
+COPY --from=builder /app/backend/dist ./dist
+COPY --from=builder /app/backend/prisma ./prisma
+
+# Generate prisma client for production
+RUN npx prisma generate
+
+EXPOSE 3001
+CMD ["node", "dist/index.js"]

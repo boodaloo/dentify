@@ -30,8 +30,10 @@ desktop web application at 1440px viewport, clean two-column layout.
 
 Layout Structure:
 - Left sidebar: 240px width, static, deep teal #0D7377 background
-  Navigation items: Главная (active), Расписание, Заявки, Задачи, Пациенты,
-  Шаблоны, ОМС/ДМС, Лаборатории, Склад, Аналитика, Отчёты, Интеграции, Настройки
+  • Top: Orisios logo (D-fingerprint icon + wordmark)
+  • Navigation items: Главная (active state with coral left border), Расписание, Пациенты,
+    Заявки, Задачи, Шаблоны, ОМС/ДМС, Лаборатории, Склад, Аналитика, Отчёты, Интеграции, Настройки
+  • NO user profile section at bottom (user menu is in header)
 
 - Main content area: 1200px width, scrollable, light gray background #F8FAFB
   All content scrolls together as unified flow
@@ -39,7 +41,11 @@ Layout Structure:
 Header Section (72px height):
 - Left: "Clinic Weather" indicator with sun icon and "All Clear" status
 - Center: Search bar (400px pill shape, white background)
-- Right: "OrisAI" button (coral), notification bell with badge, user avatar
+- Right (4 items, 16px gap):
+  • "OrisAI" button (coral pill, 40px height)
+  • Notification bell 🔔 with coral badge (white circle, 40px)
+  • Chat icon 💬 with coral badge if unread (white circle, 40px)
+  • User avatar with dropdown menu (40px circle, 2px Light Teal border)
 
 Content Flow (top to bottom):
 1. Greeting: "Good morning, Dr. Johnson!" (32px SemiBold) + date/patient count
@@ -60,9 +66,13 @@ Content Flow (top to bottom):
    - 5 appointment rows with generative fingerprint avatars
    - Each row: 4px left color strip (seafoam/coral/saffron), patient name, time, status chip
 
-   RIGHT COLUMN (33%): Stacked cards
-   - "Tasks Today" card: 3 checkboxes with tasks, coral badge count
+   RIGHT COLUMN (33%): Stacked cards (24px gap)
+   - "Tasks Today" card: 3 checkboxes with tasks, coral badge count (3)
    - "Quick Actions" card: "New Appointment" (coral button), "Add Patient" (outline button)
+   - "🎂 Upcoming Birthdays" card:
+     • Section "🎉 Сегодня (2)" with 2 patient entries
+     • Each entry: fingerprint avatar + name + age + phone + 📞 📧 quick action icons
+     • Compact layout, light background, celebration theme
 
 5. Weekly Revenue Chart (full width 1136px):
    Line chart with teal line, coral data points, 240px height
@@ -515,8 +525,10 @@ high-fidelity mockups, professional SaaS design showcase.
 
 ### Dashboard:
 ```
-Orisios dental SaaS dashboard, two-column layout, teal #0D7377 sidebar (240px),
-main area (1200px) with KPI cards, live timeline, grid layout: appointments 66% + tasks/actions 33%,
+Orisios dental SaaS dashboard, two-column layout, teal #0D7377 sidebar (240px) with menu:
+Главная (active), Расписание, Пациенты, Заявки, Задачи, Шаблоны, ОМС/ДМС, Лаборатории, no user section.
+Header: OrisAI button, 🔔 bell, 💬 chat icon, user avatar (all coral badges). Main area (1200px):
+greeting, live timeline, 4 KPI cards, grid 66%/33%: appointments left + tasks/quick actions/birthday widget right,
 weekly chart bottom, coral #FF6B6B accents, unified scroll, Linear-style modern UI --ar 16:9 --v 6
 ```
 

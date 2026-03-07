@@ -1,0 +1,17 @@
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-off-white);
+}
+
+.main-wrapper {
+  flex: 1;
+  margin-left: 240px; /* Width of the sidebar */
+  display: flex;
+  flex-direction: column;
+}
+
+.content-area {
+  padding: var(--space-xl);
+  flex: 1;
+}

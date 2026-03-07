@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Orisios is a cloud-first SaaS platform for dental practice management. The project is currently in **Phase 1 (Planning & Design)** - no code has been written yet.
+Orisios is a cloud-first SaaS platform for dental practice management. The project is currently in **Phase 2 (Development)** — the core UI and backend are functional and deployed to the production server.
 
 ### Target Architecture
 

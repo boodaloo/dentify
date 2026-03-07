@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Clinic {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+  patients  Patient[]
+  branches  Branch[]
+}
+
+model Branch {
+  id           String        @id @default(uuid())
+  clinicId     String
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  name         String
+  shortCode    String?       // e.g., "LEN"
+  address      String?
+  phone        String?
+  color        String?       // Hex color for UI
+  isActive     Boolean       @default(true)
+  isDeleted    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+  users        User[]        @relation("UserBranches")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(DOCTOR)
+  clinicId  String
+  clinic    Clinic   @relation(fields: [clinicId], references: [id])
+  branches  Branch[] @relation("UserBranches")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Patient {
+  id           String        @id @default(uuid())
+  firstName    String
+  lastName     String
+  middleName   String?
+  email        String?
+  phone        String?
+  dob          DateTime?
+  gender       String?
+  clinicId     String
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  appointments Appointment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Appointment {
+  id         String            @id @default(uuid())
+  clinicId   String
+  patientId  String
+  doctorId   String
+  branchId   String
+  startTime  DateTime
+  endTime    DateTime
+  status     AppointmentStatus @default(SCHEDULED)
+  notes      String?
+  patient    Patient           @relation(fields: [patientId], references: [id])
+  branch     Branch            @relation(fields: [branchId], references: [id])
+  isDeleted  Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  RECEPTIONIST
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}

@@ -1,0 +1,127 @@
+.settings-page {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.settings-container {
+  margin-top: var(--spacing-l);
+}
+
+.settings-sidebar {
+  width: 280px;
+  padding: var(--spacing-m);
+  height: fit-content;
+}
+
+.settings-nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-m);
+  padding: var(--spacing-m) var(--spacing-l);
+  background: none;
+  border: none;
+  border-radius: var(--radius-m);
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-align: left;
+}
+
+.settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-secondary);
+}
+
+.settings-nav-item.active {
+  background: var(--gradient-teal);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.settings-content {
+  padding: var(--spacing-xl);
+}
+
+.settings-section h3 {
+  margin-bottom: var(--spacing-xl);
+  font-size: 18px;
+  color: var(--color-text-primary);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-l);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-s);
+}
+
+.form-group label {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-group input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-s);
+  padding: var(--spacing-m);
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-teal-500);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lang-card {
+  padding: var(--spacing-l);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-card:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.lang-card.selected {
+  background: rgba(20, 184, 166, 0.05);
+  border-color: var(--color-teal-500);
+}
+
+.flag-icon {
+  font-size: 24px;
+}
+
+.lang-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.lang-native {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.check-mark {
+  color: var(--color-teal-500);
+  font-weight: bold;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: orisios
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod # Keeping backend as prod for now or if we have a dev one
+    ports:
+      - '3001:3001'
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/orisios?schema=public
+      - JWT_SECRET=supersecretchangeit
+      - NODE_ENV=development
+      - PORT=3001
+    depends_on:
+      - postgres
+    restart: always
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/web/Dockerfile.dev
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend/web:/app/frontend/web
+      - ./shared/types:/app/shared/types
+      - /app/frontend/web/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:3001
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  postgres_data:

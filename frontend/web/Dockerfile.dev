@@ -1,0 +1,26 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy root workspace files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+
+# Copy shared types
+COPY shared/types ./shared/types
+
+# Copy frontend
+COPY frontend/web ./frontend/web
+
+# Install all dependencies (monorepo root)
+RUN pnpm install
+
+WORKDIR /app/frontend/web
+
+# Expose Vite's port
+EXPOSE 5173
+
+# Run development server with host binding
+CMD ["pnpm", "dev", "--host"]

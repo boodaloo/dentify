@@ -1,0 +1,45 @@
+.patient-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.patient-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-s);
+}
+
+.patient-form label {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.patient-form input,
+.patient-form textarea {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-s);
+  padding: var(--spacing-m);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  width: 100%;
+}
+
+.patient-form textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.patient-form input:focus,
+.patient-form textarea:focus {
+  outline: none;
+  border-color: var(--color-teal-500);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.form-actions {
+  padding-top: var(--spacing-l);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
