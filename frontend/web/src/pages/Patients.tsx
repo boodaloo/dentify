@@ -10,7 +10,11 @@ const IconSearch = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="n
 const IconChevronLeft = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
 const IconChevronRight = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
 
-const Patients: React.FC = () => {
+interface PatientsProps {
+  onSelectPatient?: (patient: any) => void;
+}
+
+const Patients: React.FC<PatientsProps> = ({ onSelectPatient }) => {
   const { t, i18n } = useTranslation();
   const [patients, setPatients] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,11 +31,14 @@ const Patients: React.FC = () => {
     try {
       const data = await api.get('/patients', {
         search: searchTerm,
-        page,
-        limit: 10
+        page: String(page),
+        limit: '10'
       });
-      setPatients(data.items || []);
-      setTotalPages(Math.ceil((data.total || 0) / 10));
+      // API returns either array or { items, total }
+      const items = Array.isArray(data) ? data : (data.items || []);
+      const total = Array.isArray(data) ? data.length : (data.total || 0);
+      setPatients(items);
+      setTotalPages(Math.ceil(total / 10));
     } catch (err) {
       console.error('Failed to fetch patients:', err);
     } finally {
@@ -102,7 +109,7 @@ const Patients: React.FC = () => {
               </tr>
             ) : patients.length > 0 ? (
               patients.map(patient => (
-                <tr key={patient.id} onDoubleClick={() => handleEditPatient(patient)}>
+                <tr key={patient.id} className="patient-row" onClick={() => onSelectPatient?.(patient)} onDoubleClick={() => handleEditPatient(patient)}>
                   <td>
                     <div className="patient-identity flex items-center gap-m">
                       <div className={`avatar p${patient.id.slice(-1)}`}></div>

@@ -10,26 +10,28 @@ export const getAppointments = async (req: AuthRequest, res: Response) => {
         const appointments = await prisma.appointment.findMany({
             where: {
                 clinicId,
+                isDeleted: false,
                 startTime: {
                     gte: start ? new Date(start as string) : undefined,
                     lte: end ? new Date(end as string) : undefined,
                 },
-                isDeleted: false,
             },
             include: {
                 patient: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                    }
+                    select: { id: true, firstName: true, lastName: true, contacts: { where: { type: 'PHONE', isPrimary: true } } },
                 },
-                branch: true
+                doctor: {
+                    select: { id: true, name: true, specialization: true },
+                },
+                branch: true,
+                services: { include: { service: true } },
             },
             orderBy: { startTime: 'asc' },
         });
+
         res.json(appointments);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Error fetching appointments' });
     }
 };
@@ -39,24 +41,24 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
         const clinicId = req.user?.clinicId;
         if (!clinicId) return res.status(400).json({ message: 'Clinic ID not found' });
 
-        const { patientId, doctorId, branchId, startTime, endTime, notes } = req.body;
-
-        // TODO: Add overlap check logic here
+        const { patientId, doctorId, branchId, roomId, startTime, endTime, notes } = req.body;
 
         const appointment = await prisma.appointment.create({
             data: {
+                clinicId,
+                patientId,
+                doctorId,
+                branchId,
+                roomId: roomId || null,
                 startTime: new Date(startTime),
                 endTime: new Date(endTime),
-                notes,
-                patient: { connect: { id: patientId } },
-                branch: { connect: { id: branchId } },
-                clinicId,
-                doctorId,
+                notes: notes || null,
             },
             include: {
-                patient: true,
-                branch: true
-            }
+                patient: { select: { id: true, firstName: true, lastName: true } },
+                doctor: { select: { id: true, name: true } },
+                branch: true,
+            },
         });
 
         res.status(201).json(appointment);
@@ -72,13 +74,8 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
         const { status } = req.body;
         const clinicId = req.user?.clinicId;
 
-        const appointment = await prisma.appointment.findFirst({
-            where: { id, clinicId },
-        });
-
-        if (!appointment) {
-            return res.status(404).json({ message: 'Appointment not found' });
-        }
+        const appointment = await prisma.appointment.findFirst({ where: { id, clinicId, isDeleted: false } });
+        if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
 
         const updated = await prisma.appointment.update({
             where: { id },

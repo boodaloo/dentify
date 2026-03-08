@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import './PatientForm.css';
 
@@ -10,7 +9,6 @@ interface PatientFormProps {
 }
 
 const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSuccess, onCancel }) => {
-  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     firstName: initialData?.firstName || '',
     lastName: initialData?.lastName || '',

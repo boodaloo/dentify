@@ -1,15 +1,113 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Modal from '../components/Modal';
 import AppointmentForm from '../components/AppointmentForm';
 import './Calendar.css';
 
-const IconPlus = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
-const IconChevronLeft = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
-const IconChevronRight = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
-const IconSettings = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
-const IconCalendar = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>;
+const IconPlus        = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
+const IconChevLeft    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
+const IconChevRight   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
+const IconFilter      = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>;
+const IconCalEmpty    = () => <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>;
+const IconPhone       = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.18 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>;
+const IconMail        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
+const IconPlay        = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>;
+const IconRefresh     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>;
+const IconX           = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
+
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 08–20
+const SLOT_H = 60; // px per hour
+
+const getWeekDays = (date: Date): Date[] => {
+  const start = new Date(date);
+  const day = start.getDay();
+  const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+  start.setDate(diff);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+};
+
+const statusColor: Record<string, string> = {
+  CONFIRMED: 'confirmed',
+  SCHEDULED: 'scheduled',
+  IN_PROGRESS: 'in-progress',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+  NO_SHOW: 'no-show',
+};
+
+// ─── Details Panel ────────────────────────────────────────────────────────────
+
+const DetailsPanel: React.FC<{
+  apt: any;
+  locale: string;
+  onEdit: () => void;
+}> = ({ apt, locale, onEdit }) => {
+  const patientName = `${apt.patient?.firstName ?? ''} ${apt.patient?.lastName ?? ''}`.trim();
+  const initials = patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+  const statusKey = statusColor[apt.status] || 'scheduled';
+
+  const infoRows = [
+    { label: 'Date', value: new Date(apt.startTime).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) },
+    { label: 'Time', value: `${new Date(apt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} – ${new Date(apt.endTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}` },
+    { label: 'Procedure', value: apt.notes || 'Routine Checkup' },
+    { label: 'Status', value: apt.status.replace('_', ' ').toLowerCase() },
+  ];
+
+  return (
+    <div className="details-active">
+      <div className="details-patient-section">
+        <div className="details-avatar-wrap">
+          <div className="details-avatar">{initials}</div>
+        </div>
+        <h2 className="details-patient-name">{patientName || 'Unknown'}</h2>
+        <div className="details-contact">
+          <span className="details-contact-row"><IconPhone /> {apt.patient?.phone || '+7 — '}</span>
+          <span className="details-contact-row"><IconMail /> {apt.patient?.email || '—'}</span>
+        </div>
+      </div>
+
+      <div className="details-divider" />
+
+      <div className="details-info-grid">
+        {infoRows.map(row => (
+          <div key={row.label} className="details-info-row">
+            <span className="details-info-label">{row.label}</span>
+            {row.label === 'Status' ? (
+              <span className={`status-chip ${statusKey}`}>{row.value}</span>
+            ) : (
+              <span className="details-info-value">{row.value}</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {apt.notes && (
+        <>
+          <div className="details-divider" />
+          <div className="details-notes-section">
+            <h4>Notes</h4>
+            <div className="details-notes-box">{apt.notes}</div>
+          </div>
+        </>
+      )}
+
+      <div className="details-divider" />
+
+      <div className="details-actions">
+        <button className="details-btn primary" onClick={onEdit}><IconPlay /> Start Visit</button>
+        <button className="details-btn secondary" onClick={onEdit}><IconRefresh /> Reschedule</button>
+        <button className="details-btn danger"><IconX /> Cancel Appointment</button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
 
 const Calendar: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -20,23 +118,20 @@ const Calendar: React.FC = () => {
   const [selectedApt, setSelectedApt] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingApt, setEditingApt] = useState<any>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 08:00 to 20:00
-
-  const getWeekDays = (date: Date) => {
-    const start = new Date(date);
-    const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1);
-    start.setDate(diff);
-    
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      return d;
-    });
-  };
-
+  const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
   const weekDays = getWeekDays(currentDate);
+  const today = new Date();
+
+  // Scroll to current time on mount
+  useEffect(() => {
+    if (gridRef.current) {
+      const hour = today.getHours();
+      const offset = (hour - 8) * SLOT_H - 60;
+      gridRef.current.scrollTop = Math.max(0, offset);
+    }
+  }, [isLoading]);
 
   const fetchAppointments = async () => {
     setIsLoading(true);
@@ -45,127 +140,131 @@ const Calendar: React.FC = () => {
       start.setHours(0, 0, 0, 0);
       const end = new Date(weekDays[6]);
       end.setHours(23, 59, 59, 999);
-
       const data = await api.get('/appointments', {
         start: start.toISOString(),
-        end: end.toISOString()
+        end: end.toISOString(),
       });
       setAppointments(data);
     } catch (err) {
-      console.error('Failed to fetch appointments:', err);
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [currentDate]);
+  useEffect(() => { fetchAppointments(); }, [currentDate]);
 
-  const getAptStyle = (apt: any) => {
+  const navigate = (dir: number) => {
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() + dir * 7);
+    setCurrentDate(d);
+  };
+
+  const aptStyle = (apt: any) => {
     const start = new Date(apt.startTime);
     const end = new Date(apt.endTime);
-    const startHour = start.getHours() + start.getMinutes() / 60;
-    const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    
-    return {
-      top: `${(startHour - 8) * 80 + 2}px`,
-      height: `${duration * 80 - 4}px`,
-    };
+    const top = (start.getHours() + start.getMinutes() / 60 - 8) * SLOT_H + 2;
+    const height = Math.max(((end.getTime() - start.getTime()) / 3600000) * SLOT_H - 4, 28);
+    return { top: `${top}px`, height: `${height}px` };
   };
 
-  const handleCreateNew = () => {
-    setEditingApt(null);
-    setIsModalOpen(true);
+  const nowTop = () => {
+    const h = today.getHours() + today.getMinutes() / 60;
+    return `${(h - 8) * SLOT_H}px`;
   };
 
-  const handleEdit = (apt: any) => {
-    setEditingApt(apt);
-    setIsModalOpen(true);
-  };
+  const isToday = (d: Date) => d.toDateString() === today.toDateString();
+  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
 
-  if (isLoading) {
-    return (
-      <div className="calendar-page flex items-center justify-center">
-        <div className="loading-spinner"></div>
-      </div>
-    );
-  }
-
-  const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
+  const weekRange = `${weekDays[0].toLocaleDateString(locale, { day: 'numeric', month: 'short' })} — ${weekDays[6].toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
   return (
-    <div className="calendar-page">
-      <div className="calendar-main card">
-        <header className="calendar-toolbar flex justify-between items-center">
-          <div className="flex items-center gap-l">
-            <h2 className="month-label">
-              {currentDate.toLocaleString(locale, { month: 'long', year: 'numeric' })}
-            </h2>
-            <div className="nav-buttons flex">
-              <button onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 7)))}>
-                <IconChevronLeft />
-              </button>
-              <button onClick={() => setCurrentDate(new Date())} className="today-btn">{t('calendar.today')}</button>
-              <button onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() + 7)))}>
-                <IconChevronRight />
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center gap-m">
-            <div className="view-switcher flex">
-              <button className={view === 'day' ? 'active' : ''} onClick={() => setView('day')}>{t('calendar.day')}</button>
-              <button className={view === 'week' ? 'active' : ''} onClick={() => setView('week')}>{t('calendar.week')}</button>
-              <button className={view === 'month' ? 'active' : ''} onClick={() => setView('month')}>{t('calendar.month')}</button>
-            </div>
-            <button className="icon-btn"><IconSettings /></button>
-            <button className="add-apt-btn primary flex items-center gap-s" onClick={handleCreateNew}>
-              <IconPlus />
-              {t('calendar.booking')}
-            </button>
-          </div>
-        </header>
+    <div className="calendar-page-wrapper">
 
-        <div className="calendar-grid-wrapper">
-          <div className="time-column">
-            <div className="grid-header-spacer"></div>
-            {hours.map(h => (
-              <div key={h} className="time-slot-label">{h}:00</div>
+      {/* Toolbar */}
+      <header className="calendar-toolbar card">
+        <div className="toolbar-left flex items-center gap-m">
+          <h2 className="week-range-label">{weekRange}</h2>
+          <div className="nav-group flex items-center">
+            <button className="nav-arrow" onClick={() => navigate(-1)}><IconChevLeft /></button>
+            <button className="today-btn" onClick={() => setCurrentDate(new Date())}>{t('calendar.today')}</button>
+            <button className="nav-arrow" onClick={() => navigate(1)}><IconChevRight /></button>
+          </div>
+        </div>
+        <div className="toolbar-right flex items-center gap-m">
+          <div className="view-toggle flex">
+            {['day', 'week', 'month'].map(v => (
+              <button key={v} className={`toggle-item ${view === v ? 'active' : ''}`} onClick={() => setView(v)}>
+                {t(`calendar.${v}`)}
+              </button>
             ))}
           </div>
-          
-          <div className="days-grid">
-            <div className="grid-header flex">
-              {weekDays.map((date, i) => (
-                <div key={i} className={`day-header flex-1 ${date.toDateString() === new Date().toDateString() ? 'today' : ''}`}>
-                  <span className="day-name">{date.toLocaleString(locale, { weekday: 'short' })}</span>
-                  <span className="day-number">{date.getDate()}</span>
-                </div>
+          <button className="icon-btn"><IconFilter /></button>
+          <button className="new-apt-btn flex items-center gap-s" onClick={() => { setEditingApt(null); setIsModalOpen(true); }}>
+            <IconPlus /> {t('calendar.booking')}
+          </button>
+        </div>
+      </header>
+
+      {/* Main layout: grid + details */}
+      <div className="calendar-main-layout">
+
+        {/* Grid */}
+        <div className="calendar-grid-container card">
+
+          {/* Day headers */}
+          <div className="grid-header">
+            <div className="time-col-header" />
+            {weekDays.map((d, i) => (
+              <div key={i} className={`day-col-header ${isToday(d) ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''}`}>
+                <span className="day-name">{d.toLocaleDateString(locale, { weekday: 'short' }).toUpperCase()}</span>
+                <span className="day-date">{d.getDate()}</span>
+                {isToday(d) && <div className="today-dot" />}
+                <span className="day-apt-count">
+                  {appointments.filter(a => new Date(a.startTime).toDateString() === d.toDateString()).length} appts
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Body */}
+          <div className="grid-content" ref={gridRef}>
+            {/* Time labels */}
+            <div className="time-labels-col">
+              {HOURS.map(h => (
+                <div key={h} className="time-label">{h}:00</div>
               ))}
             </div>
-            
-            <div className="grid-content flex">
-              {weekDays.map((date, i) => (
-                <div key={i} className="day-column flex-1">
-                  {hours.map(h => <div key={h} className="hour-cell"></div>)}
-                  
+
+            {/* Day columns */}
+            <div className="calendar-body">
+              {weekDays.map((d, di) => (
+                <div key={di} className={`day-column ${isWeekend(d) ? 'weekend' : ''}`}>
+                  {HOURS.map(h => <div key={h} className="hour-slot" />)}
+
+                  {/* NOW line */}
+                  {isToday(d) && (
+                    <div className="now-line" style={{ top: nowTop() }}>
+                      <div className="now-handle">NOW</div>
+                    </div>
+                  )}
+
+                  {/* Appointments */}
                   {appointments
-                    .filter(apt => new Date(apt.startTime).toDateString() === date.toDateString())
+                    .filter(a => new Date(a.startTime).toDateString() === d.toDateString())
                     .map(apt => (
-                      <div 
-                        key={apt.id} 
-                        className={`apt-card ${apt.status.toLowerCase()}`}
-                        style={getAptStyle(apt)}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedApt(apt);
-                        }}
-                        onDoubleClick={() => handleEdit(apt)}
+                      <div
+                        key={apt.id}
+                        className={`calendar-apt-block ${statusColor[apt.status] || 'scheduled'} ${selectedApt?.id === apt.id ? 'selected' : ''}`}
+                        style={aptStyle(apt)}
+                        onClick={() => setSelectedApt(apt)}
+                        onDoubleClick={() => { setEditingApt(apt); setIsModalOpen(true); }}
                       >
-                        <div className="apt-card-time">
+                        <div className="apt-block-time">
                           {new Date(apt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                         </div>
-                        <div className="apt-card-name">{apt.patient?.lastName}</div>
+                        <div className="apt-name">{apt.patient?.lastName ?? '—'}</div>
+                        <div className="apt-proc">{apt.notes || 'Checkup'}</div>
                       </div>
                     ))
                   }
@@ -174,66 +273,34 @@ const Calendar: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      <aside className="calendar-sidebar flex-col gap-l">
-        <div className="mini-calendar card">
-          <div className="mini-cal-header flex justify-between items-center">
-            <h4>{t('calendar.select_date')}</h4>
-            <IconCalendar />
-          </div>
-          <div className="mini-cal-placeholder">
-            [{currentDate.toLocaleString(locale, { month: 'short', year: 'numeric' })}]
-          </div>
-        </div>
-
-        <div className="apt-details card">
-          <h3>{t('calendar.appointment_details')}</h3>
+        {/* Details panel */}
+        <div className="apt-details-panel card">
           {selectedApt ? (
-            <div className="details-content flex-col gap-m">
-              <div className="detail-item">
-                <label>{t('calendar.patient')}</label>
-                <div className="detail-value">{selectedApt.patient?.firstName} {selectedApt.patient?.lastName}</div>
-              </div>
-              <div className="detail-item">
-                <label>{t('calendar.time')}</label>
-                <div className="detail-value">
-                  {new Date(selectedApt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} - 
-                  {new Date(selectedApt.endTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-              <div className="detail-item">
-                <label>{t('calendar.procedure')}</label>
-                <div className="detail-value">{selectedApt.notes || 'Routine Checkup'}</div>
-              </div>
-              <div className="detail-item">
-                <label>{t('calendar.status')}</label>
-                <span className={`status-badge ${selectedApt.status.toLowerCase()}`}>
-                  {selectedApt.status.toLowerCase()}
-                </span>
-              </div>
-              <button className="action-btn secondary" onClick={() => handleEdit(selectedApt)}>
-                {t('calendar.edit_appointment')}
-              </button>
-            </div>
+            <DetailsPanel
+              apt={selectedApt}
+              locale={locale}
+              onEdit={() => { setEditingApt(selectedApt); setIsModalOpen(true); }}
+            />
           ) : (
-            <div className="empty-selection">{t('calendar.empty_selection')}</div>
+            <div className="empty-selection">
+              <div className="empty-icon-bg"><IconCalEmpty /></div>
+              <p>{t('calendar.empty_selection')}</p>
+            </div>
           )}
         </div>
-      </aside>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title={editingApt ? t('calendar.edit_appointment') : t('calendar.booking')}
       >
-        <AppointmentForm 
+        <AppointmentForm
           initialData={editingApt}
-          onSuccess={() => {
-            setIsModalOpen(false);
-            fetchAppointments();
-          }} 
-          onCancel={() => setIsModalOpen(false)} 
+          onSuccess={() => { setIsModalOpen(false); fetchAppointments(); setSelectedApt(null); }}
+          onCancel={() => setIsModalOpen(false)}
         />
       </Modal>
     </div>

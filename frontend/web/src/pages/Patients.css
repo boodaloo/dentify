@@ -1,3 +1,6 @@
+.patient-row { cursor: pointer; }
+.patient-row:hover td { background: var(--bg-off-white); }
+
 .patients-page {
   display: flex;
   flex-direction: column;
