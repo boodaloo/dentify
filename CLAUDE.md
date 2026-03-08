@@ -6,12 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Orisios is a cloud-first SaaS platform for dental practice management. The project is currently in **Phase 2 (Development)** — the core UI and backend are functional and deployed to the production server.
 
-### Target Architecture
+### Current Tech Stack (implemented)
 
-- **Backend:** Microservices architecture using Node.js (NestJS) or Python (FastAPI) with PostgreSQL
-- **Main Application:** React Web App (SPA) — browser-based, no installation required
-- **Mobile App:** Flutter (iOS/Android) — simplified version for on-the-go access
-- **API Style:** REST or GraphQL
+- **Backend:** Node.js + Express.js + TypeScript + Prisma ORM + PostgreSQL
+- **Main Application:** React 18 + TypeScript + Vite (SPA) — deployed on production server
+- **Deployment:** Docker Compose on VPS (`37.230.162.148`), Nginx reverse proxy
+- **Auth:** JWT stored in localStorage, bcrypt password hashing
+- **i18n:** i18next, English default, Russian supported
+- **Mobile App:** Flutter (iOS/Android) — planned, not started
+- **API Style:** REST
 
 ### Frontend Components
 
@@ -43,34 +46,41 @@ Built-in AI assistant for all user types — a key competitive advantage:
 dent_app/
 ├── docs/                    # General documentation
 │   ├── algorithm.md         # Development roadmap, market analysis (RU)
-│   ├── GEMINI.md            # Project vision, features
+│   ├── GEMINI.md            # Project vision, features, build instructions
 │   ├── ui_first_goal.md     # UI/UX workflow
 │   ├── BrandName.md         # Brand naming research
 │   └── BrandLogo.md         # Logo concepts
 │
-├── backend/                 # FastAPI backend
+├── backend/                 # Express.js backend (Node.js + Prisma + PostgreSQL)
 │   ├── docs/
-│   │   └── ARCHITECTURE.md  # DB schema, API design, architecture
-│   ├── src/                 # Source code (TBD)
-│   └── tests/               # Tests (TBD)
+│   │   ├── ARCHITECTURE.md  # Architecture overview, two-DB design
+│   │   ├── schema/          # DB schema docs: CORE, CLINICAL, FINANCE, INVENTORY
+│   │   ├── features/        # Feature specs: AUTH, BILLING, WIDGET, ORISAI, etc.
+│   │   └── infrastructure/  # Docker, Redis, CI/CD specs
+│   ├── prisma/
+│   │   ├── schema.prisma    # Full 45-table schema (implemented)
+│   │   └── seed.js          # Demo data seed
+│   └── src/
+│       ├── controllers/     # authController, patientController, appointmentController
+│       ├── routes/          # auth, patients, appointments
+│       ├── middleware/       # JWT auth middleware
+│       └── utils/           # JWT helpers
 │
-├── frontend/                # React applications
-│   ├── web/                 # Main clinic web app
-│   ├── widget/              # Booking widget for clinic websites
-│   └── admin/               # Admin panel
+├── frontend/
+│   └── web/                 # Main clinic web app (React + Vite)
+│       └── src/
+│           ├── components/  # Layout, Sidebar, TopHeader, Modal, PatientForm
+│           ├── pages/       # 17 pages (Dashboard, Calendar, Patients,
+│           │                #   PatientProfile, Settings, OnlineBooking,
+│           │                #   Templates, Documents, Labs, OMS, PriceList,
+│           │                #   Invoices, Inventory, Reports, CallJournal,
+│           │                #   Loyalty, Analytics, Integrations)
+│           ├── locales/     # en.json, ru.json
+│           └── services/    # api.ts
 │
-├── mobile/                  # Flutter applications
-│   ├── clinic_app/          # For clinic staff
-│   └── patient_app/         # OrisiosPatient for patients
-│
-├── design/                  # Design assets
-│   ├── ideas/               # Design inspiration, icons
-│   ├── logo/                # Logo variants
-│   ├── ui/                  # UI screenshots/mockups
-│   └── figma/               # Figma exports
-│
-└── shared/                  # Shared code
-    └── types/               # TypeScript types for API
+├── mobile/                  # Flutter applications (planned)
+├── design/                  # Design assets, Figma exports
+└── shared/                  # Shared TypeScript types
 ```
 
 ## Key Documents
@@ -82,10 +92,18 @@ dent_app/
 
 ## Development Phases
 
-1. **Phase 1 (Current):** Planning & Design - UI/UX in Figma
-2. **Phase 2:** Development - Backend API + Frontend apps
-3. **Phase 3:** Testing & QA
-4. **Phase 4:** Launch & Publication
+1. **Phase 1** ✅ Planning & Design — completed
+2. **Phase 2** 🔄 Development — **in progress (current)**
+   - ✅ React Web App: all 17 pages implemented and deployed
+   - ✅ Express backend: auth, patients, appointments API
+   - ✅ PostgreSQL schema: 45 tables (CORE / CLINICAL / FINANCE / INVENTORY)
+   - ✅ Docker Compose production deployment
+   - ⬜ Connect frontend pages to real API data
+   - ⬜ Backend CRUD for all entities (services, invoices, inventory, etc.)
+   - ⬜ Client Portal (subscription management for clinic owners)
+   - ⬜ Admin Panel (internal Orisios management)
+3. **Phase 3** ⬜ Testing & QA
+4. **Phase 4** ⬜ Launch & Publication
 
 ## Backend Requirements
 

@@ -172,27 +172,39 @@ deleted_at (timestamp) -- время удаления, NULL если не уда
 
 ---
 
-## Следующие шаги
+## Текущее состояние (реализовано)
 
-### Backend
-1. [ ] Инициализация FastAPI проекта
-2. [ ] Настройка PostgreSQL + PgBouncer + Redis
-3. [ ] Создание миграций (Alembic)
-4. [ ] Реализация аутентификации (JWT)
-5. [ ] CRUD для основных сущностей
-6. [ ] Public API для виджета онлайн-записи
-7. [ ] Patient API для мобильного приложения пациентов
-8. [ ] Бонусная система
-9. [ ] Импорт данных (XLSX шаблоны)
-10. [ ] Склад и материалы
-11. [ ] Админка Orisios (internal)
-12. [ ] XLS экспорт
-13. [ ] Мониторинг
+> Фактический стек: **Node.js + Express.js + Prisma ORM + PostgreSQL** (вместо FastAPI/Alembic из первоначального плана).
 
-### Frontend
-1. [ ] React Web App (основное приложение для клиник)
-2. [ ] React Admin Panel (для сотрудников Orisios)
+### Backend ✅ / ⬜
+1. ✅ Инициализация проекта (Express.js + TypeScript + Prisma)
+2. ✅ Настройка PostgreSQL (Docker Compose)
+3. ✅ Схема БД: 45 таблиц через `prisma db push`
+4. ✅ Аутентификация (JWT + bcrypt)
+5. ✅ CRUD: пациенты, приёмы (базовый)
+6. ✅ Seed с демо-данными (6 пациентов, 11 приёмов, 8 услуг)
+7. ⬜ CRUD для всех сущностей (услуги, счета, склад, расписание и др.)
+8. ⬜ Public API для виджета онлайн-записи
+9. ⬜ Patient API для мобильного приложения
+10. ⬜ Бонусная система и лояльность
+11. ⬜ Импорт данных (XLSX)
+12. ⬜ Склад: движения, остатки, уведомления
+13. ⬜ XLS экспорт / отчёты
+14. ⬜ Redis (кэш, очереди уведомлений)
+15. ⬜ Мониторинг (Grafana + Prometheus)
+
+### Frontend ✅ / ⬜
+1. ✅ React Web App — 17 страниц, задеплоен на продакшн
+   - Dashboard, Calendar, Patients, PatientProfile, Settings
+   - OnlineBooking, Templates, Documents, Labs, OMS
+   - PriceList, Invoices, Inventory, Reports
+   - CallJournal, Loyalty, Analytics, Integrations
+2. ✅ Сайдбар с 5 именованными группами (CORE/CLINICAL/FINANCE/MARKETING/ADMIN)
+3. ✅ i18n: английский (по умолчанию) + русский
+4. ⬜ Подключить страницы к реальным API данным
+5. ⬜ React Admin Panel (для сотрудников Orisios)
+6. ⬜ Client Portal (для владельцев клиник, управление подпиской)
 
 ### Mobile
-1. [ ] Flutter: OrisiosPatient (приложение для пациентов)
-2. [ ] Flutter: Orisios (companion app для врачей — опционально)
+1. ⬜ Flutter: OrisiosPatient (приложение для пациентов)
+2. ⬜ Flutter: Orisios companion app (для врачей — опционально)

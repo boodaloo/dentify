@@ -1,10 +1,17 @@
 # Orisios: A Modern Dental Practice Management Platform
 
-## Current Status: Phase 1 (Planning & Design)
+## Current Status: Phase 2 (Development) — In Progress
 
-We have completed the initial project planning, including market analysis, feature definition, and monetization strategy.
+**Phase 1 (Planning & Design) — ✅ Completed.**
 
-We are now actively in the **UI/UX Design** phase. The core focus is on creating a complete, interactive prototype in Figma, which will serve as the blueprint for development. Key project artifacts like `algorithm.md` (the initial deep-dive plan), `ui_ux_links.md` (design inspiration), and `ui_first_goal.md` (our design workflow) have been created.
+We are now actively in **Phase 2 (Development)**. The core web application is functional and deployed to a production server (`37.230.162.148`). The full UI prototype is live, the backend API is running, and the PostgreSQL database has a complete 45-table schema.
+
+**What's done:**
+- Full React Web App (17 pages, all sidebar sections implemented)
+- Express.js backend with JWT authentication and Prisma ORM
+- 45-table PostgreSQL schema (CORE / CLINICAL / FINANCE / INVENTORY)
+- Docker Compose production deployment with Nginx
+- Seed data: patients, appointments, services, dental chart
 
 ## Project Overview
 
@@ -50,23 +57,26 @@ The **AI Service** is a separate microservice:
 
 This section will be updated with specific commands as the project is developed.
 
-### 1. Backend (Microservices)
+### 1. Backend (Express + Prisma)
 
-*   **Technology:** Node.js (NestJS) or Python (FastAPI), with PostgreSQL.
-*   **Setup:** `TODO`
-*   **Run:** `TODO`
+*   **Technology:** Node.js + Express.js, TypeScript, Prisma ORM, PostgreSQL.
+*   **Setup:** `cd backend && npm install && npx prisma db push`
+*   **Dev:** `npm run dev`
+*   **Seed DB:** `node prisma/seed.js`
+*   **Production:** Docker Compose — `docker compose build backend && docker compose up -d backend`
 
 ### 2. Frontend - Main Web App (React)
 
-*   **Technology:** React, TypeScript, Vite/Next.js.
-*   **Setup:** `TODO`
-*   **Run:** `TODO`
+*   **Technology:** React 18, TypeScript, Vite, i18next (EN/RU).
+*   **Setup:** `cd frontend/web && npm install`
+*   **Dev:** `npm run dev`
+*   **Production:** Docker Compose — `docker compose build frontend && docker compose up -d frontend`
+*   **Login (demo):** `doctor@orisios.com` / `orisios123`
 
 ### 3. Frontend - Mobile App (Flutter)
 
 *   **Technology:** Flutter (iOS/Android).
-*   **Setup:** `TODO`
-*   **Run:** `TODO`
+*   **Status:** Not started — planned after web app stabilization.
 
 ## Development Conventions
 
