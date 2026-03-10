@@ -1,4 +1,4 @@
-const BASE_URL = 'http://37.230.162.148:3001/api';
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://37.230.162.148:3001/api';
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
