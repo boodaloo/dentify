@@ -1,24 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { api } from '../services/api';
 import './shared-page.css';
 
-const mockInvoices = [
-  { id: 1, num: 'INV-2026-018', patient: 'Ekaterina Sokolova', initials: 'ES', services: 3, total: 12500, issued: '08 Mar 2026', due: '22 Mar 2026', status: 'unpaid' },
-  { id: 2, num: 'INV-2026-017', patient: 'Mikhail Petrov', initials: 'MP', services: 1, total: 6000, issued: '07 Mar 2026', due: '21 Mar 2026', status: 'paid' },
-  { id: 3, num: 'INV-2026-016', patient: 'Anna Volkova', initials: 'AV', services: 5, total: 58000, issued: '05 Mar 2026', due: '19 Mar 2026', status: 'unpaid' },
-  { id: 4, num: 'INV-2026-015', patient: 'Dmitry Novikov', initials: 'DN', services: 2, total: 8500, issued: '01 Mar 2026', due: '15 Mar 2026', status: 'overdue' },
-  { id: 5, num: 'INV-2026-014', patient: 'Olga Smirnova', initials: 'OS', services: 1, total: 3200, issued: '26 Feb 2026', due: '12 Mar 2026', status: 'paid' },
-  { id: 6, num: 'INV-2026-013', patient: 'Pavel Kozlov', initials: 'PK', services: 4, total: 22000, issued: '20 Feb 2026', due: '06 Mar 2026', status: 'cancelled' },
-];
+const formatCurrency = (n: number | string) =>
+  new Intl.NumberFormat('ru-RU').format(Number(n)) + ' ₽';
 
-const statusMap: Record<string, { label: string; cls: string }> = {
-  unpaid: { label: 'Unpaid', cls: 'sp-badge-orange' },
-  paid: { label: 'Paid', cls: 'sp-badge-green' },
-  overdue: { label: 'Overdue', cls: 'sp-badge-red' },
-  cancelled: { label: 'Cancelled', cls: 'sp-badge-gray' },
+const formatDate = (d: string | null) => {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const formatCurrency = (n: number) =>
-  new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
+const initials = (p: any) => {
+  if (!p) return '??';
+  const f = (p.firstName ?? '')[0] ?? '';
+  const l = (p.lastName  ?? '')[0] ?? '';
+  return (f + l).toUpperCase() || '??';
+};
+
+const STATUS_MAP: Record<string, { label: string; cls: string }> = {
+  PENDING:   { label: 'Unpaid',    cls: 'sp-badge-orange' },
+  PARTIAL:   { label: 'Partial',   cls: 'sp-badge-blue'   },
+  PAID:      { label: 'Paid',      cls: 'sp-badge-green'  },
+  CANCELLED: { label: 'Cancelled', cls: 'sp-badge-gray'   },
+  OVERDUE:   { label: 'Overdue',   cls: 'sp-badge-red'    },
+};
 
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -27,17 +32,58 @@ const SearchIcon = () => (
 );
 
 export default function Invoices() {
-  const [search, setSearch] = useState('');
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [search,   setSearch]   = useState('');
+  const [page,     setPage]     = useState(1);
+  const [total,    setTotal]    = useState(0);
+  const LIMIT = 20;
 
-  const filtered = mockInvoices.filter(i =>
-    i.patient.toLowerCase().includes(search.toLowerCase()) ||
-    i.num.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchInvoices = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: Record<string, string> = { page: String(page), limit: String(LIMIT) };
+      if (search) params.search = search;
+      const res: any = await api.get('/invoices', params);
+      const payload = res?.data ?? res;
+      setInvoices(payload?.items ?? (Array.isArray(payload) ? payload : []));
+      setTotal(payload?.total ?? 0);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search]);
 
-  const total = mockInvoices.reduce((s, i) => s + i.total, 0);
-  const paid = mockInvoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.total, 0);
-  const unpaid = mockInvoices.filter(i => i.status === 'unpaid').reduce((s, i) => s + i.total, 0);
-  const overdue = mockInvoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0);
+  useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+
+  // Resets page when search changes
+  useEffect(() => { setPage(1); }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
+  // Summary stats
+  const totalAmt   = invoices.reduce((s, i) => s + Number(i.totalAmount),  0);
+  const paidAmt    = invoices.filter(i => i.status === 'PAID').reduce((s, i) => s + Number(i.totalAmount), 0);
+  const unpaidAmt  = invoices.filter(i => i.status === 'PENDING' || i.status === 'PARTIAL').reduce((s, i) => s + Number(i.totalAmount) - Number(i.paidAmount), 0);
+  const overdueAmt = invoices.filter(i => i.status === 'OVERDUE').reduce((s, i) => s + Number(i.totalAmount), 0);
+
+  const handleMarkPaid = async (invoice: any) => {
+    const remaining = Number(invoice.totalAmount) - Number(invoice.paidAmount);
+    if (remaining <= 0) return;
+    try {
+      await api.post(`/invoices/${invoice.id}/payments`, { amount: remaining, method: 'CASH' });
+      fetchInvoices();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const filtered = invoices.filter(i => {
+    if (!search) return true;
+    const name = `${i.patient?.firstName ?? ''} ${i.patient?.lastName ?? ''}`.toLowerCase();
+    return name.includes(search.toLowerCase()) || (i.invoiceNumber ?? '').toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="sp-page">
@@ -46,59 +92,49 @@ export default function Invoices() {
           <h1>Invoices</h1>
           <p>Track and manage patient invoices and payments</p>
         </div>
-        <button className="sp-btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          New Invoice
-        </button>
       </div>
 
       <div className="sp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <div className="sp-stat-card">
-          <div className="sp-stat-value" style={{ fontSize: '20px' }}>{formatCurrency(total)}</div>
+          <div className="sp-stat-value" style={{ fontSize: '20px' }}>{formatCurrency(totalAmt)}</div>
           <div className="sp-stat-label">Total Invoiced</div>
-          <div className="sp-stat-trend up">This month</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value" style={{ fontSize: '20px', color: '#1a7a4a' }}>{formatCurrency(paid)}</div>
+          <div className="sp-stat-value" style={{ fontSize: '20px', color: '#1a7a4a' }}>{formatCurrency(paidAmt)}</div>
           <div className="sp-stat-label">Paid</div>
-          <div className="sp-stat-trend up">↑ On time</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value" style={{ fontSize: '20px', color: '#aa5a1a' }}>{formatCurrency(unpaid)}</div>
-          <div className="sp-stat-label">Unpaid</div>
-          <div className="sp-stat-trend down">Awaiting payment</div>
+          <div className="sp-stat-value" style={{ fontSize: '20px', color: '#aa5a1a' }}>{formatCurrency(unpaidAmt)}</div>
+          <div className="sp-stat-label">Outstanding</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value" style={{ fontSize: '20px', color: '#aa1a1a' }}>{formatCurrency(overdue)}</div>
+          <div className="sp-stat-value" style={{ fontSize: '20px', color: '#aa1a1a' }}>{formatCurrency(overdueAmt)}</div>
           <div className="sp-stat-label">Overdue</div>
-          <div className="sp-stat-trend down">Action required</div>
         </div>
       </div>
 
-      <div>
-        <div className="sp-toolbar" style={{ marginBottom: 'var(--space-m)' }}>
-          <div className="sp-search">
-            <SearchIcon />
-            <input
-              placeholder="Search invoices..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </div>
+      <div className="sp-toolbar" style={{ marginBottom: 'var(--space-m)' }}>
+        <div className="sp-search">
+          <SearchIcon />
+          <input placeholder="Search invoices..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
+      </div>
 
-        <div className="sp-table-card">
+      <div className="sp-table-card">
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '48px' }}>
+            <div className="loading-spinner" style={{ margin: 'auto' }} />
+          </div>
+        ) : (
           <table className="sp-table">
             <thead>
               <tr>
                 <th>Invoice #</th>
                 <th>Patient</th>
-                <th>Services</th>
+                <th>Items</th>
                 <th>Total</th>
-                <th>Issued</th>
-                <th>Due Date</th>
+                <th>Paid</th>
+                <th>Date</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -106,31 +142,48 @@ export default function Invoices() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr><td colSpan={8} className="sp-empty">No invoices found</td></tr>
-              ) : filtered.map(i => (
-                <tr key={i.id}>
-                  <td style={{ fontWeight: 600, color: 'var(--primary-deep-teal)' }}>{i.num}</td>
-                  <td>
-                    <div className="sp-patient-cell">
-                      <div className="sp-avatar">{i.initials}</div>
-                      <span className="sp-patient-name">{i.patient}</span>
-                    </div>
-                  </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{i.services} {i.services === 1 ? 'service' : 'services'}</td>
-                  <td style={{ fontWeight: 700 }}>{formatCurrency(i.total)}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{i.issued}</td>
-                  <td style={{ color: i.status === 'overdue' ? '#aa1a1a' : 'var(--text-secondary)' }}>{i.due}</td>
-                  <td><span className={`sp-badge ${statusMap[i.status].cls}`}>{statusMap[i.status].label}</span></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="sp-action-btn">View</button>
-                      {i.status === 'unpaid' && <button className="sp-action-btn">Mark Paid</button>}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              ) : filtered.map(i => {
+                const st = STATUS_MAP[i.status] ?? { label: i.status, cls: 'sp-badge-gray' };
+                const canPay = i.status === 'PENDING' || i.status === 'PARTIAL';
+                return (
+                  <tr key={i.id}>
+                    <td style={{ fontWeight: 600, color: 'var(--primary-deep-teal)' }}>{i.invoiceNumber || '—'}</td>
+                    <td>
+                      <div className="sp-patient-cell">
+                        <div className="sp-avatar">{initials(i.patient)}</div>
+                        <span className="sp-patient-name">
+                          {i.patient ? `${i.patient.firstName} ${i.patient.lastName}` : '—'}
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{i.items?.length ?? 0}</td>
+                    <td style={{ fontWeight: 700 }}>{formatCurrency(i.totalAmount)}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{formatCurrency(i.paidAmount)}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{formatDate(i.createdAt)}</td>
+                    <td><span className={`sp-badge ${st.cls}`}>{st.label}</span></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {canPay && (
+                          <button className="sp-action-btn" onClick={() => handleMarkPaid(i)}>
+                            Mark Paid
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-        </div>
+        )}
+
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '16px' }}>
+            <button className="sp-action-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>← Prev</button>
+            <span style={{ fontSize: '14px', opacity: 0.7 }}>Page {page} / {totalPages}</span>
+            <button className="sp-action-btn" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next →</button>
+          </div>
+        )}
       </div>
     </div>
   );

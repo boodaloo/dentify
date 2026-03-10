@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 import './PatientProfile.css';
 
 const IconBack    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
@@ -13,50 +14,48 @@ const IconCheck   = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="
 
 // ─── Dental Chart ─────────────────────────────────────────────────────────────
 
-type ToothStatus = 'healthy' | 'filled' | 'cavity' | 'crown' | 'missing' | 'implant' | 'selected';
+type LocalToothStatus = 'healthy' | 'filled' | 'cavity' | 'crown' | 'missing' | 'implant';
 
-const toothStatusLabel: Record<ToothStatus, string> = {
+const apiToLocal: Record<string, LocalToothStatus> = {
+  HEALTHY: 'healthy', FILLED: 'healthy', CARIES: 'cavity',
+  CROWN: 'crown', EXTRACTED: 'missing', IMPLANT: 'implant',
+  BRIDGE: 'crown', MISSING: 'missing', PROSTHESIS: 'crown',
+  VENEER: 'filled', INLAY: 'filled',
+};
+
+const toothStatusLabel: Record<string, string> = {
   healthy: 'Healthy', filled: 'Filled', cavity: 'Cavity',
-  crown: 'Crown', missing: 'Missing', implant: 'Implant', selected: 'Healthy',
+  crown: 'Crown', missing: 'Missing', implant: 'Implant',
 };
 
-const mockToothData: Record<number, ToothStatus> = {
-  16: 'filled', 24: 'cavity', 36: 'crown', 46: 'missing', 14: 'filled', 25: 'cavity',
-};
-
-const Tooth: React.FC<{
-  number: number;
-  status: ToothStatus;
-  isSelected: boolean;
-  onClick: () => void;
-}> = ({ number, status, isSelected, onClick }) => (
-  <div
-    className={`tooth ${status} ${isSelected ? 'selected' : ''}`}
-    onClick={onClick}
-    title={`#${number} — ${toothStatusLabel[status]}`}
-  >
+const Tooth: React.FC<{ number: number; status: LocalToothStatus; isSelected: boolean; onClick: () => void }> = ({ number, status, isSelected, onClick }) => (
+  <div className={`tooth ${status} ${isSelected ? 'selected' : ''}`} onClick={onClick} title={`#${number} — ${toothStatusLabel[status]}`}>
     <div className="tooth-crown" />
-    <div className="tooth-roots">
-      <div className="tooth-root" />
-      <div className="tooth-root" />
-    </div>
+    <div className="tooth-roots"><div className="tooth-root" /><div className="tooth-root" /></div>
     <span className="tooth-number">{number}</span>
   </div>
 );
 
-const DentalChart: React.FC = () => {
-  const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
-  const [toothData] = useState<Record<number, ToothStatus>>(mockToothData);
+const DentalChartView: React.FC<{ patientId: string }> = ({ patientId }) => {
+  const [toothData, setToothData] = useState<Record<number, LocalToothStatus>>({});
+  const [selected, setSelected]   = useState<number | null>(null);
 
-  // Upper: 18→11 then 21→28; Lower: 48→41 then 31→38
+  useEffect(() => {
+    api.get(`/clinical/patients/${patientId}/dental-chart`).then((res: any) => {
+      const data: any[] = res?.data ?? (Array.isArray(res) ? res : []);
+      const map: Record<number, LocalToothStatus> = {};
+      data.forEach(t => { map[t.toothNumber] = apiToLocal[t.status] ?? 'healthy'; });
+      setToothData(map);
+    }).catch(() => {});
+  }, [patientId]);
+
   const upperRight = [18, 17, 16, 15, 14, 13, 12, 11];
   const upperLeft  = [21, 22, 23, 24, 25, 26, 27, 28];
   const lowerRight = [48, 47, 46, 45, 44, 43, 42, 41];
   const lowerLeft  = [31, 32, 33, 34, 35, 36, 37, 38];
 
-  const statusOf = (n: number): ToothStatus => toothData[n] ?? 'healthy';
-
-  const handleSelect = (n: number) => setSelectedTooth(prev => prev === n ? null : n);
+  const statusOf = (n: number): LocalToothStatus => toothData[n] ?? 'healthy';
+  const handleSelect = (n: number) => setSelected(prev => prev === n ? null : n);
 
   const legend = [
     { status: 'healthy', label: 'Healthy', color: '#E8E8ED' },
@@ -73,17 +72,16 @@ const DentalChart: React.FC = () => {
         <div className="chart-jaw-label">Upper Jaw</div>
         <div className="jaw-row">
           {[...upperRight, ...upperLeft].map(n => (
-            <Tooth key={n} number={n} status={statusOf(n)} isSelected={selectedTooth === n} onClick={() => handleSelect(n)} />
+            <Tooth key={n} number={n} status={statusOf(n)} isSelected={selected === n} onClick={() => handleSelect(n)} />
           ))}
         </div>
         <div className="jaw-divider" />
         <div className="jaw-row">
           {[...lowerRight, ...lowerLeft].map(n => (
-            <Tooth key={n} number={n} status={statusOf(n)} isSelected={selectedTooth === n} onClick={() => handleSelect(n)} />
+            <Tooth key={n} number={n} status={statusOf(n)} isSelected={selected === n} onClick={() => handleSelect(n)} />
           ))}
         </div>
         <div className="chart-jaw-label">Lower Jaw</div>
-
         <div className="chart-legend">
           {legend.map(l => (
             <div key={l.status} className="legend-item">
@@ -95,23 +93,13 @@ const DentalChart: React.FC = () => {
       </div>
 
       <div className="dental-detail-panel card">
-        {selectedTooth ? (
+        {selected ? (
           <div className="tooth-detail">
-            <h3>Tooth #{selectedTooth}</h3>
-            <p className="tooth-status-label">{toothStatusLabel[statusOf(selectedTooth)]}</p>
+            <h3>Tooth #{selected}</h3>
+            <p className="tooth-status-label">{toothStatusLabel[statusOf(selected)]}</p>
             <div className="tooth-detail-info">
-              <div className="detail-info-row"><span>Status</span><span className={`status-chip ${statusOf(selectedTooth)}`}>{toothStatusLabel[statusOf(selectedTooth)]}</span></div>
-              <div className="detail-info-row"><span>Last treated</span><span>Jan 5, 2026</span></div>
-              <div className="detail-info-row"><span>Doctor</span><span>Dr. Johnson</span></div>
+              <div className="detail-info-row"><span>Status</span><span className={`status-chip ${statusOf(selected)}`}>{toothStatusLabel[statusOf(selected)]}</span></div>
             </div>
-            <div className="tooth-history">
-              <h4>History</h4>
-              <div className="tooth-hist-item"><span className="hist-date">Jan 5, 2026</span><span>Amalgam filling</span></div>
-              <div className="tooth-hist-item"><span className="hist-date">Sep 12, 2025</span><span>Checkup — healthy</span></div>
-            </div>
-            <button className="tooth-action-btn">
-              <IconPlus /> Add Treatment
-            </button>
           </div>
         ) : (
           <div className="tooth-detail-empty">
@@ -126,115 +114,134 @@ const DentalChart: React.FC = () => {
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
-const OverviewTab: React.FC<{ patient: any }> = ({ patient: _patient }) => {
-  const visitHistory = [
-    { date: 'Jan 5, 2026', proc: 'Cleaning & Checkup', doctor: 'Dr. Johnson', duration: '45 min', status: 'completed' },
-    { date: 'Dec 10, 2025', proc: 'Filling (Tooth #16)', doctor: 'Dr. Johnson', duration: '60 min', status: 'completed' },
-    { date: 'Oct 3, 2025', proc: 'Regular Checkup', doctor: 'Dr. Smith', duration: '30 min', status: 'completed' },
-  ];
+const OverviewTab: React.FC<{ patient: any }> = ({ patient }) => {
+  const appointments   = (patient?.appointments   ?? []).slice(0, 5);
+  const treatmentPlans = patient?.treatmentPlans   ?? [];
+  const activePlan     = treatmentPlans.find((p: any) => p.status === 'ACTIVE') ?? treatmentPlans[0];
+  const planItems      = activePlan?.items         ?? [];
+  const balance        = patient?.balance;
+  const invoices       = patient?.invoices         ?? [];
+  const totalSpent     = invoices.filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + Number(i.totalAmount), 0);
+  const outstanding    = invoices.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED').reduce((s: number, i: any) => s + Number(i.totalAmount) - Number(i.paidAmount), 0);
 
-  const treatmentPlan = [
-    { text: 'Root canal treatment (#24)', date: 'Next: Jan 15, 2026', done: false },
-    { text: 'Tooth filling (#16)', date: 'Completed: Jan 5, 2026', done: true },
-    { text: 'Crown placement (#24)', date: 'Scheduled: Jan 22, 2026', done: false },
-  ];
+  const upcoming = appointments.find((a: any) => new Date(a.startTime) > new Date());
+  const recent   = appointments.filter((a: any) => new Date(a.startTime) <= new Date());
+
+  const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const fmtTime = (d: string) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const fmtCur = (n: number) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
 
   return (
     <div className="overview-layout">
-      {/* Left column */}
       <div className="overview-left">
 
         {/* Upcoming appointment */}
         <div className="card overview-card">
           <div className="card-header-row">
             <h3>Upcoming Appointment</h3>
-            <span className="badge-coral">Tomorrow</span>
           </div>
-          <div className="upcoming-apt-content">
-            <div className="upcoming-datetime">Monday, Jan 8, 2026 · 09:00 – 10:00</div>
-            <div className="upcoming-meta"><IconUser /> Dr. Johnson</div>
-            <div className="upcoming-meta">🦷 Regular Checkup</div>
-            <div className="upcoming-meta">📍 Room 3</div>
-          </div>
-          <a href="#" className="link-teal">View Details</a>
+          {upcoming ? (
+            <div className="upcoming-apt-content">
+              <div className="upcoming-datetime">{fmt(upcoming.startTime)} · {fmtTime(upcoming.startTime)} – {fmtTime(upcoming.endTime)}</div>
+              {upcoming.doctor && <div className="upcoming-meta"><IconUser /> {upcoming.doctor.name}</div>}
+              {upcoming.branch && <div className="upcoming-meta">📍 {upcoming.branch.name}</div>}
+              <span className={`status-chip ${upcoming.status.toLowerCase()}`}>{upcoming.status}</span>
+            </div>
+          ) : (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>No upcoming appointments</p>
+          )}
         </div>
 
         {/* Visit history */}
         <div className="card overview-card">
           <div className="card-header-row">
             <h3>Visit History</h3>
-            <select className="chart-filter-sm">
-              <option>Last 12 months</option>
-              <option>All time</option>
-            </select>
+            <span style={{ fontSize: '12px', opacity: 0.6 }}>{recent.length} visits</span>
           </div>
-          <div className="visit-timeline">
-            {visitHistory.map((v, i) => (
-              <div key={i} className="visit-item">
-                <div className={`visit-dot ${v.status}`} />
-                <div className="visit-content">
-                  <div className="visit-date">{v.date}</div>
-                  <div className="visit-proc">{v.proc}</div>
-                  <div className="visit-meta">{v.doctor} · {v.duration}</div>
-                  <span className={`status-chip ${v.status}`}>{v.status}</span>
+          {recent.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>No visits yet</p>
+          ) : (
+            <div className="visit-timeline">
+              {recent.map((a: any, i: number) => (
+                <div key={a.id || i} className="visit-item">
+                  <div className={`visit-dot ${a.status?.toLowerCase() ?? 'completed'}`} />
+                  <div className="visit-content">
+                    <div className="visit-date">{fmt(a.startTime)}</div>
+                    {a.services?.length > 0 && <div className="visit-proc">{a.services.map((s: any) => s.service?.name).join(', ')}</div>}
+                    {a.doctor && <div className="visit-meta">{a.doctor.name}</div>}
+                    <span className={`status-chip ${a.status?.toLowerCase() ?? ''}`}>{a.status}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <a href="#" className="link-teal">View all 24 visits</a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Right column */}
       <div className="overview-right">
 
         {/* Treatment plan */}
-        <div className="card overview-card">
-          <h3>Current Treatment Plan</h3>
-          <div className="treatment-list">
-            {treatmentPlan.map((item, i) => (
-              <div key={i} className="treatment-item">
-                <div className={`treatment-check ${item.done ? 'done' : ''}`}>
-                  {item.done && <IconCheck />}
+        {activePlan && (
+          <div className="card overview-card">
+            <h3>Treatment Plan: {activePlan.name}</h3>
+            <div className="treatment-list">
+              {planItems.slice(0, 6).map((item: any, i: number) => (
+                <div key={item.id || i} className="treatment-item">
+                  <div className={`treatment-check ${item.isDone ? 'done' : ''}`}>
+                    {item.isDone && <IconCheck />}
+                  </div>
+                  <div className="treatment-content">
+                    <div className={`treatment-name ${item.isDone ? 'done' : ''}`}>
+                      {item.service?.name ?? 'Service'}
+                      {item.toothNumber ? ` (tooth #${item.toothNumber})` : ''}
+                    </div>
+                    <div className="treatment-date">{item.isDone ? 'Completed' : 'Planned'}</div>
+                  </div>
                 </div>
-                <div className="treatment-content">
-                  <div className={`treatment-name ${item.done ? 'done' : ''}`}>{item.text}</div>
-                  <div className="treatment-date">{item.date}</div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Medical alerts */}
-        <div className="card overview-card medical-alerts">
-          <div className="alerts-header">
-            <IconAlert />
-            <h3>Medical Alerts</h3>
+        {patient?.allergies && (
+          <div className="card overview-card medical-alerts">
+            <div className="alerts-header"><IconAlert /><h3>Medical Alerts</h3></div>
+            <ul className="alerts-list">
+              <li className="alert-item primary">Allergies: {patient.allergies}</li>
+            </ul>
           </div>
-          <ul className="alerts-list">
-            <li className="alert-item primary">Allergy to lidocaine</li>
-            <li className="alert-item">Type 2 Diabetes</li>
-          </ul>
-          <a href="#" className="link-teal" style={{ fontSize: 12 }}>View full medical history</a>
-        </div>
+        )}
 
-        {/* Quick stats */}
+        {/* Stats */}
         <div className="card overview-card">
           <h3>Statistics</h3>
           <div className="stats-grid-2">
-            <div className="stat-cell"><div className="stat-value">24</div><div className="stat-label">Total Visits</div></div>
-            <div className="stat-cell"><div className="stat-value">8</div><div className="stat-label">This Year</div></div>
-            <div className="stat-cell"><div className="stat-value">156k₽</div><div className="stat-label">Total Spent</div></div>
-            <div className="stat-cell"><div className="stat-value">12k₽</div><div className="stat-label">Outstanding</div></div>
+            <div className="stat-cell"><div className="stat-value">{appointments.length}</div><div className="stat-label">Total Visits</div></div>
+            <div className="stat-cell"><div className="stat-value">{invoices.length}</div><div className="stat-label">Invoices</div></div>
+            <div className="stat-cell"><div className="stat-value">{fmtCur(totalSpent)}</div><div className="stat-label">Total Paid</div></div>
+            <div className="stat-cell">
+              <div className="stat-value" style={{ color: outstanding > 0 ? '#aa5a1a' : undefined }}>{fmtCur(outstanding)}</div>
+              <div className="stat-label">Outstanding</div>
+            </div>
+            {balance && (
+              <div className="stat-cell">
+                <div className="stat-value">{fmtCur(Number(balance.cashBalance) + Number(balance.cardBalance))}</div>
+                <div className="stat-label">Deposit Balance</div>
+              </div>
+            )}
+            {patient?.bonuses && (
+              <div className="stat-cell">
+                <div className="stat-value">{patient.bonuses.balance}</div>
+                <div className="stat-label">Bonus Points</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-// ─── Placeholder tab ──────────────────────────────────────────────────────────
 
 const PlaceholderTab: React.FC<{ name: string }> = ({ name }) => (
   <div className="placeholder-tab">
@@ -247,7 +254,7 @@ const PlaceholderTab: React.FC<{ name: string }> = ({ name }) => (
 // ─── PatientProfile ───────────────────────────────────────────────────────────
 
 interface PatientProfileProps {
-  patient: any;
+  patient: any; // summary from list (has .id)
   onBack: () => void;
 }
 
@@ -263,71 +270,87 @@ const TABS = [
   { id: 'history',    label: 'Change Log' },
 ];
 
-const PatientProfile: React.FC<PatientProfileProps> = ({ patient, onBack }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, onBack }) => {
+  const [activeTab,    setActiveTab]    = useState('overview');
+  const [fullPatient,  setFullPatient]  = useState<any>(null);
+  const [loading,      setLoading]      = useState(true);
 
-  const fullName = patient
-    ? `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim()
-    : 'Unknown Patient';
-  const initials = fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+  const patientId = listPatient?.id;
 
-  const dob = patient?.dob ? new Date(patient.dob) : null;
-  const age = dob ? Math.floor((Date.now() - dob.getTime()) / 3.156e10) : null;
+  useEffect(() => {
+    if (!patientId) return;
+    setLoading(true);
+    api.get(`/patients/${patientId}`)
+      .then((res: any) => setFullPatient(res?.data ?? res))
+      .catch(() => setFullPatient(listPatient))
+      .finally(() => setLoading(false));
+  }, [patientId]);
+
+  const patient = fullPatient ?? listPatient;
+
+  const fullName = patient ? `${patient.lastName ?? ''} ${patient.firstName ?? ''}${patient.middleName ? ' ' + patient.middleName : ''}`.trim() : 'Unknown Patient';
+  const initials = (patient?.firstName?.[0] ?? '') + (patient?.lastName?.[0] ?? '');
+
+  const phone = patient?.phone ?? patient?.contacts?.find((c: any) => c.type === 'PHONE')?.value;
+  const email = patient?.email ?? patient?.contacts?.find((c: any) => c.type === 'EMAIL')?.value;
+
+  const dob  = patient?.birthDate ? new Date(patient.birthDate) : null;
+  const age  = dob ? Math.floor((Date.now() - dob.getTime()) / 3.156e10) : null;
+
+  const appointments = patient?.appointments ?? [];
+  const totalSpent   = (patient?.invoices ?? []).filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + Number(i.totalAmount), 0);
+  const fmtCur = (n: number) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
 
   const renderTab = () => {
+    if (loading) return <div style={{ textAlign: 'center', padding: '64px' }}><div className="loading-spinner" style={{ margin: 'auto' }} /></div>;
     switch (activeTab) {
       case 'overview': return <OverviewTab patient={patient} />;
-      case 'dental':   return <DentalChart />;
+      case 'dental':   return <DentalChartView patientId={patientId} />;
       default:         return <PlaceholderTab name={TABS.find(t => t.id === activeTab)?.label ?? ''} />;
     }
   };
 
   return (
     <div className="patient-profile">
-
-      {/* Header */}
       <div className="profile-header">
         <button className="back-btn" onClick={onBack}><IconBack /> Back to Patients</button>
 
         <div className="profile-header-content">
-          {/* Left: avatar + info */}
           <div className="profile-info-block">
             <div className="profile-avatar-wrap">
-              <div className="profile-avatar">{initials}</div>
+              <div className="profile-avatar">{initials.toUpperCase()}</div>
             </div>
             <div className="profile-info">
               <h1 className="profile-name">{fullName}</h1>
               <div className="profile-meta-row">
-                {age && <span className="meta-item"><IconCake /> {age} years old</span>}
-                {patient?.gender && <span className="meta-item"><IconUser /> {patient.gender}</span>}
-                <span className="meta-item">🩸 A+ (II)</span>
+                {age !== null && <span className="meta-item"><IconCake /> {age} years old</span>}
+                {patient?.gender && <span className="meta-item"><IconUser /> {patient.gender === 'MALE' ? 'Male' : 'Female'}</span>}
+                {patient?.patientNumber && <span className="meta-item">#{patient.patientNumber}</span>}
               </div>
               <div className="profile-meta-row">
-                {patient?.phone && <span className="meta-item"><IconPhone /> {patient.phone}</span>}
-                {patient?.email && <span className="meta-item"><IconMail /> {patient.email}</span>}
+                {phone && <span className="meta-item"><IconPhone /> {phone}</span>}
+                {email && <span className="meta-item"><IconMail /> {email}</span>}
               </div>
-              <div className="profile-tags">
-                <span className="tag vip">VIP</span>
-                <span className="tag allergy">Allergy</span>
-                <span className="tag regular">Regular</span>
-              </div>
+              {patient?.allergies && (
+                <div className="profile-tags">
+                  <span className="tag allergy">Allergy: {patient.allergies}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right: actions + mini stats */}
           <div className="profile-actions-block">
             <button className="profile-btn secondary"><IconEdit /> Edit Profile</button>
             <button className="profile-btn primary"><IconPlus /> New Visit</button>
             <div className="profile-mini-stats">
-              <div className="mini-stat"><div className="mini-stat-value">24</div><div className="mini-stat-label">Visits</div></div>
-              <div className="mini-stat"><div className="mini-stat-value">156k₽</div><div className="mini-stat-label">Spent</div></div>
-              <div className="mini-stat"><div className="mini-stat-value">4.8⭐</div><div className="mini-stat-label">Rating</div></div>
+              <div className="mini-stat"><div className="mini-stat-value">{appointments.length}</div><div className="mini-stat-label">Visits</div></div>
+              <div className="mini-stat"><div className="mini-stat-value">{fmtCur(totalSpent)}</div><div className="mini-stat-label">Spent</div></div>
+              <div className="mini-stat"><div className="mini-stat-value">{patient?.bonuses?.balance ?? 0}</div><div className="mini-stat-label">Bonuses</div></div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="profile-tabs">
         {TABS.map(tab => (
           <button
@@ -340,7 +363,6 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient, onBack }) => {
         ))}
       </div>
 
-      {/* Tab content */}
       <div className="profile-tab-content">
         {renderTab()}
       </div>

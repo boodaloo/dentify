@@ -34,9 +34,10 @@ const Patients: React.FC<PatientsProps> = ({ onSelectPatient }) => {
         page: String(page),
         limit: '10'
       });
-      // API returns either array or { items, total }
-      const items = Array.isArray(data) ? data : (data.items || []);
-      const total = Array.isArray(data) ? data.length : (data.total || 0);
+      // API returns { success, data: { items, total, page, limit, pages } }
+      const payload = data?.data ?? data;
+      const items = payload?.items ?? (Array.isArray(payload) ? payload : []);
+      const total = payload?.total ?? items.length;
       setPatients(items);
       setTotalPages(Math.ceil(total / 10));
     } catch (err) {
@@ -115,7 +116,7 @@ const Patients: React.FC<PatientsProps> = ({ onSelectPatient }) => {
                       <div className={`avatar p${patient.id.slice(-1)}`}></div>
                       <div className="name-box">
                         <div className="full-name">{patient.firstName} {patient.lastName}</div>
-                        <div className="dob">{new Date(patient.dateOfBirth).toLocaleDateString(locale)}</div>
+                        <div className="dob">{patient.birthDate ? new Date(patient.birthDate).toLocaleDateString(locale) : ''}</div>
                       </div>
                     </div>
                   </td>

@@ -327,3 +327,43 @@
 }
 
 .sp-chart-bar:hover { opacity: 0.8; }
+
+/* ── Form helpers used in modals ── */
+.sp-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.sp-input {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.sp-input:focus {
+  border-color: var(--primary-deep-teal);
+  background: rgba(255,255,255,0.07);
+}
+
+.sp-form-error {
+  background: rgba(220,38,38,0.15);
+  border: 1px solid rgba(220,38,38,0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #fca5a5;
+}
+
+.sp-badge-blue   { background: rgba(37,99,235,0.15);  color: #93c5fd; }
+.sp-badge-teal   { background: rgba(20,145,155,0.15); color: #5eead4; }
