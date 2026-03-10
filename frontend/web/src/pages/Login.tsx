@@ -29,7 +29,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      const data = await api.post('/auth/login', { email, password });
+      const res = await api.post('/auth/login', { email, password });
+      const data = res?.data ?? res;
       localStorage.setItem('orisios_token', data.token);
       onLogin(data.user);
     } catch (err: any) {
