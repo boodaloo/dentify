@@ -1,144 +1,167 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import prisma from '../prisma';
-import { AuthRequest } from '../middleware/auth';
+import { getPagination } from '../utils/pagination';
+import * as R from '../utils/response';
 
-export const getPatients = async (req: AuthRequest, res: Response) => {
-    try {
-        const clinicId = req.user?.clinicId;
-        const { search, page = '1', limit = '10' } = req.query;
+export const getPatients = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const { search } = req.query;
+    const { page, limit, skip } = getPagination(req);
 
-        const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-
-        const where: any = { clinicId, isDeleted: false };
-        if (search) {
-            where.OR = [
-                { firstName: { contains: search as string, mode: 'insensitive' } },
-                { lastName: { contains: search as string, mode: 'insensitive' } },
-                { middleName: { contains: search as string, mode: 'insensitive' } },
-            ];
-        }
-
-        const [patients, total] = await Promise.all([
-            prisma.patient.findMany({
-                where,
-                include: {
-                    contacts: { where: { isPrimary: true } },
-                    appointments: {
-                        where: { isDeleted: false },
-                        orderBy: { startTime: 'desc' },
-                        take: 1,
-                    },
-                },
-                orderBy: { lastName: 'asc' },
-                skip,
-                take: parseInt(limit as string),
-            }),
-            prisma.patient.count({ where }),
-        ]);
-
-        // Flatten contacts into familiar phone/email fields for frontend compatibility
-        const result = patients.map(p => {
-            const phone = p.contacts.find(c => c.type === 'PHONE')?.value || null;
-            const email = p.contacts.find(c => c.type === 'EMAIL')?.value || null;
-            const lastVisit = p.appointments[0]?.startTime || null;
-            return { ...p, phone, email, lastVisit, dateOfBirth: p.birthDate };
-        });
-
-        res.json({ items: result, total });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error fetching patients' });
+    const where: any = { clinicId, isDeleted: false };
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search as string, mode: 'insensitive' } },
+        { lastName:  { contains: search as string, mode: 'insensitive' } },
+        { middleName:{ contains: search as string, mode: 'insensitive' } },
+        { patientNumber: { contains: search as string, mode: 'insensitive' } },
+      ];
     }
+
+    const [patients, total] = await Promise.all([
+      prisma.patient.findMany({
+        where,
+        include: {
+          contacts: { where: { isPrimary: true } },
+          appointments: { where: { isDeleted: false }, orderBy: { startTime: 'desc' }, take: 1 },
+        },
+        orderBy: { lastName: 'asc' },
+        skip,
+        take: limit,
+      }),
+      prisma.patient.count({ where }),
+    ]);
+
+    const items = patients.map((p) => ({
+      ...p,
+      phone:     p.contacts.find((c) => c.type === 'PHONE')?.value ?? null,
+      email:     p.contacts.find((c) => c.type === 'EMAIL')?.value ?? null,
+      lastVisit: p.appointments[0]?.startTime ?? null,
+    }));
+
+    return R.paginated(res, items, total, page, limit);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
 };
 
-export const createPatient = async (req: AuthRequest, res: Response) => {
-    try {
-        const clinicId = req.user?.clinicId;
-        if (!clinicId) return res.status(400).json({ message: 'Clinic ID not found' });
+export const getPatientById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const clinicId = req.user!.clinicId;
 
-        const { firstName, lastName, middleName, email, phone, dob, gender, allergies, notes } = req.body;
+    const patient = await prisma.patient.findFirst({
+      where: { id, clinicId, isDeleted: false },
+      include: {
+        contacts:   true,
+        relatives:  true,
+        insurances: { include: { company: true } },
+        groupMemberships: { include: { group: true } },
+        doctors:    { include: { specialization: true } },
+        appointments: {
+          where: { isDeleted: false },
+          orderBy: { startTime: 'desc' },
+          include: { branch: true, services: { include: { service: true } } },
+        },
+        dentalChart:   true,
+        invoices:      { where: { isDeleted: false }, orderBy: { createdAt: 'desc' } },
+        treatmentPlans:{ where: { isDeleted: false } },
+        balance:       true,
+        bonuses:       true,
+      },
+    });
 
-        const patient = await prisma.patient.create({
-            data: {
-                firstName,
-                lastName,
-                middleName: middleName || null,
-                birthDate: dob ? new Date(dob) : null,
-                gender: gender || null,
-                allergies: allergies || null,
-                notes: notes || null,
-                clinicId,
-                contacts: {
-                    create: [
-                        ...(phone ? [{ type: 'PHONE' as const, value: phone, isPrimary: true, clinicId }] : []),
-                        ...(email ? [{ type: 'EMAIL' as const, value: email, isPrimary: true, clinicId }] : []),
-                    ],
-                },
-            },
-            include: { contacts: true },
-        });
-
-        res.status(201).json(patient);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error creating patient' });
-    }
+    if (!patient) return R.error(res, 'Patient not found', 404);
+    return R.ok(res, patient);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
 };
 
-export const getPatientById = async (req: AuthRequest, res: Response) => {
-    try {
-        const { id } = req.params;
-        const clinicId = req.user?.clinicId;
+export const createPatient = async (req: Request, res: Response) => {
+  try {
+    const clinicId      = req.user!.clinicId;
+    const createdByUserId = req.user!.userId;
+    const { firstName, lastName, middleName, phone, email, birthDate, gender, allergies, notes, referralSource } = req.body;
 
-        const patient = await prisma.patient.findFirst({
-            where: { id, clinicId, isDeleted: false },
-            include: {
-                contacts: true,
-                doctors: { include: { doctor: true, specialization: true } },
-                appointments: {
-                    where: { isDeleted: false },
-                    orderBy: { startTime: 'desc' },
-                    include: { branch: true },
-                },
-                dentalChart: true,
-                invoices: { where: { isDeleted: false } },
-            },
-        });
+    if (!firstName || !lastName) return R.error(res, 'First and last name are required');
 
-        if (!patient) {
-            return res.status(404).json({ message: 'Patient not found' });
-        }
+    // Генерируем patientNumber
+    const count = await prisma.patient.count({ where: { clinicId } });
+    const patientNumber = `P-${String(count + 1).padStart(5, '0')}`;
 
-        res.json(patient);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching patient' });
-    }
+    const patient = await prisma.patient.create({
+      data: {
+        clinicId,
+        createdByUserId,
+        patientNumber,
+        firstName,
+        lastName,
+        middleName:    middleName    || null,
+        birthDate:     birthDate     ? new Date(birthDate) : null,
+        gender:        gender        || null,
+        allergies:     allergies     || null,
+        notes:         notes         || null,
+        referralSource:referralSource|| null,
+        contacts: {
+          create: [
+            ...(phone ? [{ type: 'PHONE' as const, value: phone, isPrimary: true, clinicId }] : []),
+            ...(email ? [{ type: 'EMAIL' as const, value: email, isPrimary: true, clinicId }] : []),
+          ],
+        },
+      },
+      include: { contacts: true },
+    });
+
+    return R.created(res, patient);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
 };
 
-export const updatePatient = async (req: AuthRequest, res: Response) => {
-    try {
-        const { id } = req.params;
-        const clinicId = req.user?.clinicId;
-        const { firstName, lastName, middleName, dob, gender, allergies, notes } = req.body;
+export const updatePatient = async (req: Request, res: Response) => {
+  try {
+    const { id }   = req.params;
+    const clinicId = req.user!.clinicId;
+    const { firstName, lastName, middleName, birthDate, gender, allergies, notes, snils, inn, referralSource } = req.body;
 
-        const patient = await prisma.patient.findFirst({ where: { id, clinicId, isDeleted: false } });
-        if (!patient) return res.status(404).json({ message: 'Patient not found' });
+    const existing = await prisma.patient.findFirst({ where: { id, clinicId, isDeleted: false } });
+    if (!existing) return R.error(res, 'Patient not found', 404);
 
-        const updatedPatient = await prisma.patient.update({
-            where: { id },
-            data: {
-                firstName,
-                lastName,
-                middleName: middleName || null,
-                birthDate: dob ? new Date(dob) : undefined,
-                gender: gender || null,
-                allergies: allergies || null,
-                notes: notes || null,
-            },
-        });
+    const patient = await prisma.patient.update({
+      where: { id },
+      data: {
+        firstName,
+        lastName,
+        middleName:    middleName    ?? undefined,
+        birthDate:     birthDate     ? new Date(birthDate) : undefined,
+        gender:        gender        ?? undefined,
+        allergies:     allergies     ?? undefined,
+        notes:         notes         ?? undefined,
+        snils:         snils         ?? undefined,
+        inn:           inn           ?? undefined,
+        referralSource:referralSource?? undefined,
+      },
+    });
 
-        res.json(updatedPatient);
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating patient' });
-    }
+    return R.ok(res, patient);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
+};
+
+export const deletePatient = async (req: Request, res: Response) => {
+  try {
+    const { id }   = req.params;
+    const clinicId = req.user!.clinicId;
+
+    const existing = await prisma.patient.findFirst({ where: { id, clinicId, isDeleted: false } });
+    if (!existing) return R.error(res, 'Patient not found', 404);
+
+    await prisma.patient.update({ where: { id }, data: { isDeleted: true, deletedAt: new Date() } });
+    return R.ok(res, { id });
+  } catch (err) {
+    return R.serverError(res, err);
+  }
 };

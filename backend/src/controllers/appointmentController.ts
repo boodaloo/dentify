@@ -1,89 +1,133 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import prisma from '../prisma';
-import { AuthRequest } from '../middleware/auth';
+import { getPagination } from '../utils/pagination';
+import * as R from '../utils/response';
 
-export const getAppointments = async (req: AuthRequest, res: Response) => {
-    try {
-        const clinicId = req.user?.clinicId;
-        const { start, end } = req.query;
-
-        const appointments = await prisma.appointment.findMany({
-            where: {
-                clinicId,
-                isDeleted: false,
-                startTime: {
-                    gte: start ? new Date(start as string) : undefined,
-                    lte: end ? new Date(end as string) : undefined,
-                },
-            },
-            include: {
-                patient: {
-                    select: { id: true, firstName: true, lastName: true, contacts: { where: { type: 'PHONE', isPrimary: true } } },
-                },
-                doctor: {
-                    select: { id: true, name: true, specialization: true },
-                },
-                branch: true,
-                services: { include: { service: true } },
-            },
-            orderBy: { startTime: 'asc' },
-        });
-
-        res.json(appointments);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error fetching appointments' });
-    }
+const APPOINTMENT_INCLUDE = {
+  patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true,
+    contacts: { where: { type: 'PHONE' as const, isPrimary: true } } } },
+  doctor:  { select: { id: true, name: true, avatarUrl: true, color: true } },
+  branch:  { select: { id: true, name: true } },
+  room:    { select: { id: true, name: true } },
+  services:{ include: { service: { select: { id: true, name: true } } } },
 };
 
-export const createAppointment = async (req: AuthRequest, res: Response) => {
-    try {
-        const clinicId = req.user?.clinicId;
-        if (!clinicId) return res.status(400).json({ message: 'Clinic ID not found' });
+export const getAppointments = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const { start, end, doctorId, branchId, status } = req.query;
 
-        const { patientId, doctorId, branchId, roomId, startTime, endTime, notes } = req.body;
+    const where: any = { clinicId, isDeleted: false };
+    if (start)    where.startTime = { ...where.startTime, gte: new Date(start as string) };
+    if (end)      where.startTime = { ...where.startTime, lte: new Date(end   as string) };
+    if (doctorId) where.doctorId  = doctorId;
+    if (branchId) where.branchId  = branchId;
+    if (status)   where.status    = status;
 
-        const appointment = await prisma.appointment.create({
-            data: {
-                clinicId,
-                patientId,
-                doctorId,
-                branchId,
-                roomId: roomId || null,
-                startTime: new Date(startTime),
-                endTime: new Date(endTime),
-                notes: notes || null,
-            },
-            include: {
-                patient: { select: { id: true, firstName: true, lastName: true } },
-                doctor: { select: { id: true, name: true } },
-                branch: true,
-            },
-        });
+    const appointments = await prisma.appointment.findMany({
+      where,
+      include: APPOINTMENT_INCLUDE,
+      orderBy: { startTime: 'asc' },
+    });
 
-        res.status(201).json(appointment);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error creating appointment' });
-    }
+    return R.ok(res, appointments);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
 };
 
-export const updateAppointmentStatus = async (req: AuthRequest, res: Response) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body;
-        const clinicId = req.user?.clinicId;
+export const getAppointmentById = async (req: Request, res: Response) => {
+  try {
+    const { id }   = req.params;
+    const clinicId = req.user!.clinicId;
 
-        const appointment = await prisma.appointment.findFirst({ where: { id, clinicId, isDeleted: false } });
-        if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+    const appt = await prisma.appointment.findFirst({
+      where: { id, clinicId, isDeleted: false },
+      include: { ...APPOINTMENT_INCLUDE, medicalRecord: true, files: true, invoices: true },
+    });
 
-        const updated = await prisma.appointment.update({
-            where: { id },
-            data: { status },
-        });
+    if (!appt) return R.error(res, 'Appointment not found', 404);
+    return R.ok(res, appt);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
+};
 
-        res.json(updated);
-    } catch (error) {
-        res.status(500).json({ message: 'Error updating appointment' });
+export const createAppointment = async (req: Request, res: Response) => {
+  try {
+    const clinicId      = req.user!.clinicId;
+    const createdByUserId = req.user!.userId;
+    const { patientId, doctorId, branchId, roomId, startTime, endTime, notes, color, source } = req.body;
+
+    if (!patientId || !doctorId || !branchId || !startTime || !endTime) {
+      return R.error(res, 'patientId, doctorId, branchId, startTime, endTime are required');
     }
+
+    const appt = await prisma.appointment.create({
+      data: {
+        clinicId,
+        createdByUserId,
+        patientId,
+        doctorId,
+        branchId,
+        roomId:    roomId || null,
+        startTime: new Date(startTime),
+        endTime:   new Date(endTime),
+        notes:     notes  || null,
+        color:     color  || null,
+        source:    source || 'MANUAL',
+      },
+      include: APPOINTMENT_INCLUDE,
+    });
+
+    return R.created(res, appt);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
+};
+
+export const updateAppointment = async (req: Request, res: Response) => {
+  try {
+    const { id }   = req.params;
+    const clinicId = req.user!.clinicId;
+
+    const existing = await prisma.appointment.findFirst({ where: { id, clinicId, isDeleted: false } });
+    if (!existing) return R.error(res, 'Appointment not found', 404);
+
+    const { startTime, endTime, status, notes, color, roomId, cancellationReason } = req.body;
+
+    const data: any = {};
+    if (startTime)          data.startTime = new Date(startTime);
+    if (endTime)            data.endTime   = new Date(endTime);
+    if (status)             data.status    = status;
+    if (notes !== undefined)data.notes     = notes;
+    if (color !== undefined)data.color     = color;
+    if (roomId !== undefined)data.roomId   = roomId;
+    if (cancellationReason) data.cancellationReason = cancellationReason;
+
+    // Автоматически простаавляем временные метки статусов
+    if (status === 'CONFIRMED')  data.confirmedAt  = new Date();
+    if (status === 'IN_PROGRESS')data.startedAt    = new Date();
+    if (status === 'COMPLETED')  data.completedAt  = new Date();
+
+    const appt = await prisma.appointment.update({ where: { id }, data, include: APPOINTMENT_INCLUDE });
+    return R.ok(res, appt);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
+};
+
+export const deleteAppointment = async (req: Request, res: Response) => {
+  try {
+    const { id }   = req.params;
+    const clinicId = req.user!.clinicId;
+
+    const existing = await prisma.appointment.findFirst({ where: { id, clinicId, isDeleted: false } });
+    if (!existing) return R.error(res, 'Appointment not found', 404);
+
+    await prisma.appointment.update({ where: { id }, data: { isDeleted: true, deletedAt: new Date() } });
+    return R.ok(res, { id });
+  } catch (err) {
+    return R.serverError(res, err);
+  }
 };

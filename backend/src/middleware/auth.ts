@@ -1,44 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-    clinicId: string;
-  };
-}
-
-export const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
+export const auth = (req: Request, res: Response, next: NextFunction) => {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, error: 'No token provided' });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = header.split(' ')[1];
   const decoded = verifyToken(token) as any;
-
   if (!decoded) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    return res.status(401).json({ success: false, error: 'Invalid or expired token' });
   }
 
   req.user = {
-    id: decoded.id,
-    email: decoded.email,
-    role: decoded.role,
+    userId:   decoded.userId,
+    email:    decoded.email,
     clinicId: decoded.clinicId,
+    role:     decoded.role,
+    isOwner:  decoded.isOwner,
   };
 
   next();
-};
-
-export const checkRole = (roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    next();
-  };
 };

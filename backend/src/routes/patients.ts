@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import { getPatients, createPatient, getPatientById, updatePatient } from '../controllers/patientController';
+import { getPatients, createPatient, getPatientById, updatePatient, deletePatient } from '../controllers/patientController';
 import { auth } from '../middleware/auth';
 
 const router = Router();
+router.use(auth);
 
-router.use(auth); // Protect all patient routes
-
-router.get('/', getPatients);
-router.post('/', createPatient);
+router.get('/',    getPatients);
+router.post('/',   createPatient);
 router.get('/:id', getPatientById);
 router.put('/:id', updatePatient);
+router.delete('/:id', deletePatient);
 
 export default router;
