@@ -10,7 +10,7 @@ export const getBranches = async (req: Request, res: Response) => {
   try {
     const clinicId = req.user!.clinicId;
 
-    const branches = await prisma.branch.findMany({
+    let branches = await prisma.branch.findMany({
       where: { clinicId, isDeleted: false },
       include: {
         workingHours: { orderBy: { dayOfWeek: 'asc' } },
@@ -18,6 +18,19 @@ export const getBranches = async (req: Request, res: Response) => {
       },
       orderBy: [{ isMain: 'desc' }, { name: 'asc' }],
     });
+
+    // Auto-create a default branch if the clinic has none yet
+    if (branches.length === 0) {
+      const clinic = await prisma.clinic.findUnique({ where: { id: clinicId } });
+      const created = await prisma.branch.create({
+        data: { clinicId, name: clinic?.name ?? 'Main', shortCode: 'MAIN', isMain: true },
+        include: {
+          workingHours: true,
+          _count: { select: { rooms: true, appointments: true } },
+        },
+      });
+      branches = [created];
+    }
 
     return R.ok(res, branches);
   } catch (err) {

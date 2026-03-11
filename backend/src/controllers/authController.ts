@@ -25,6 +25,10 @@ export const register = async (req: Request, res: Response) => {
       const userClinic = await tx.userClinic.create({
         data: { userId: user.id, clinicId: clinic.id, role: 'OWNER', isOwner: true, isActive: true },
       });
+      // Create a default main branch for every new clinic
+      await tx.branch.create({
+        data: { clinicId: clinic.id, name: clinicName, shortCode: 'MAIN', isMain: true },
+      });
       return { user, clinic, userClinic };
     });
 
