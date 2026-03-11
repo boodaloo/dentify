@@ -6,6 +6,15 @@ import * as R from '../utils/response';
 // Branches
 // ============================================================
 
+const DEFAULT_WORKING_HOURS = (branchId: string) =>
+  [0, 1, 2, 3, 4, 5, 6].map(day => ({
+    branchId,
+    dayOfWeek: day,
+    isOpen:    day < 5,
+    startTime: '09:00',
+    endTime:   '21:00',
+  }));
+
 export const getBranches = async (req: Request, res: Response) => {
   try {
     const clinicId = req.user!.clinicId;
@@ -30,6 +39,24 @@ export const getBranches = async (req: Request, res: Response) => {
         },
       });
       branches = [created];
+    }
+
+    // Lazily seed default working hours for any branch that has none yet
+    const branchesWithoutHours = branches.filter(b => b.workingHours.length === 0);
+    if (branchesWithoutHours.length > 0) {
+      await prisma.branchWorkingHours.createMany({
+        data: branchesWithoutHours.flatMap(b => DEFAULT_WORKING_HOURS(b.id)),
+        skipDuplicates: true,
+      });
+      // Re-fetch to include the newly created hours
+      branches = await prisma.branch.findMany({
+        where: { clinicId, isDeleted: false },
+        include: {
+          workingHours: { orderBy: { dayOfWeek: 'asc' } },
+          _count: { select: { rooms: true, appointments: true } },
+        },
+        orderBy: [{ isMain: 'desc' }, { name: 'asc' }],
+      });
     }
 
     return R.ok(res, branches);
