@@ -529,6 +529,7 @@ model Patient {
   reminders            Reminder[]
   calls                Call[]
   issuedDocuments      IssuedDocument[]
+  labels               PatientLabelAssignment[]
 
   @@unique([clinicId, patientNumber])
   @@map("core_patients")
@@ -561,6 +562,33 @@ model PatientComment {
   updatedAt DateTime @updatedAt
 
   @@map("core_patient_comments")
+}
+
+model PatientLabel {
+  id          String                  @id @default(uuid())
+  clinicId    String
+  name        String
+  color       String                  @default("#14919B")
+  textColor   String                  @default("#ffffff")
+  isSystem    Boolean                 @default(false)
+  createdAt   DateTime                @default(now())
+  assignments PatientLabelAssignment[]
+
+  @@unique([clinicId, name])
+  @@map("core_patient_labels")
+}
+
+model PatientLabelAssignment {
+  id        String       @id @default(uuid())
+  clinicId  String
+  patientId String
+  patient   Patient      @relation(fields: [patientId], references: [id])
+  labelId   String
+  label     PatientLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  assignedAt DateTime    @default(now())
+
+  @@unique([patientId, labelId])
+  @@map("core_patient_label_assignments")
 }
 
 model PatientDoctor {
