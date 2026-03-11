@@ -6,17 +6,9 @@ const IconSparkles = () => <svg width="16" height="16" viewBox="0 0 24 24" fill=
 const IconBell = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>;
 const IconMessage = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
 const IconChevronDown = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
-const IconGlobe = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
 
 const TopHeader: React.FC = () => {
-  const { t, i18n } = useTranslation();
-
-  const toggleLanguage = () => {
-    const currentLang = i18n.language || 'en';
-    const newLang = currentLang.startsWith('en') ? 'ru' : 'en';
-    i18n.changeLanguage(newLang);
-    localStorage.setItem('orisios_lang', newLang);
-  };
+  const { t } = useTranslation();
 
   return (
     <header className="top-header">
@@ -37,11 +29,6 @@ const TopHeader: React.FC = () => {
       </div>
 
       <div className="header-right">
-        <button className="lang-switcher" onClick={toggleLanguage}>
-          <IconGlobe />
-          <span>{i18n.language?.startsWith('ru') ? 'РУССКИЙ' : 'ENGLISH'}</span>
-        </button>
-
         <button className="oris-ai-btn">
           <IconSparkles />
           <span>{t('common.oris_ai')}</span>
