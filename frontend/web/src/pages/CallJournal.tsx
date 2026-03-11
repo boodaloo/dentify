@@ -1,26 +1,24 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 import './shared-page.css';
 
-const mockCalls = [
-  { id: 1, datetime: '08 Mar 2026, 09:14', patient: 'Ekaterina Sokolova', initials: 'ES', phone: '+7 (916) 234-56-78', type: 'incoming', duration: '4:32', outcome: 'appointment', manager: 'Irina K.' },
-  { id: 2, datetime: '08 Mar 2026, 10:05', patient: 'Mikhail Petrov', initials: 'MP', phone: '+7 (903) 345-67-89', type: 'outgoing', duration: '2:18', outcome: 'spoke', manager: 'Irina K.' },
-  { id: 3, datetime: '08 Mar 2026, 10:47', patient: 'Unknown', initials: '?', phone: '+7 (926) 000-11-22', type: 'incoming', duration: '0:00', outcome: 'no-answer', manager: '—' },
-  { id: 4, datetime: '08 Mar 2026, 11:30', patient: 'Anna Volkova', initials: 'AV', phone: '+7 (926) 456-78-90', type: 'outgoing', duration: '6:05', outcome: 'appointment', manager: 'Marina S.' },
-  { id: 5, datetime: '08 Mar 2026, 12:15', patient: 'Dmitry Novikov', initials: 'DN', phone: '+7 (985) 567-89-01', type: 'incoming', duration: '1:44', outcome: 'callback', manager: 'Irina K.' },
-  { id: 6, datetime: '08 Mar 2026, 13:00', patient: 'Olga Smirnova', initials: 'OS', phone: '+7 (965) 678-90-12', type: 'outgoing', duration: '3:20', outcome: 'spoke', manager: 'Marina S.' },
-  { id: 7, datetime: '08 Mar 2026, 14:22', patient: 'Pavel Kozlov', initials: 'PK', phone: '+7 (977) 789-01-23', type: 'incoming', duration: '5:11', outcome: 'appointment', manager: 'Irina K.' },
-];
-
-const typeConfig: Record<string, { label: string; cls: string }> = {
-  incoming: { label: 'Incoming', cls: 'sp-badge-teal' },
-  outgoing: { label: 'Outgoing', cls: 'sp-badge-blue' },
+const directionConfig: Record<string, { label: string; cls: string }> = {
+  INBOUND:  { label: 'Incoming', cls: 'sp-badge-teal' },
+  OUTBOUND: { label: 'Outgoing', cls: 'sp-badge-blue' },
 };
 
-const outcomeConfig: Record<string, { label: string; cls: string }> = {
-  'no-answer': { label: 'No Answer', cls: 'sp-badge-red' },
-  spoke: { label: 'Spoke', cls: 'sp-badge-gray' },
-  callback: { label: 'Callback', cls: 'sp-badge-orange' },
-  appointment: { label: 'Appointment Made', cls: 'sp-badge-green' },
+const resultConfig: Record<string, { label: string; cls: string }> = {
+  ANSWERED:  { label: 'Answered',  cls: 'sp-badge-green' },
+  MISSED:    { label: 'Missed',    cls: 'sp-badge-red' },
+  BUSY:      { label: 'Busy',      cls: 'sp-badge-orange' },
+  VOICEMAIL: { label: 'Voicemail', cls: 'sp-badge-gray' },
+};
+
+const formatDuration = (secs: number | null) => {
+  if (!secs) return '0:00';
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
 };
 
 const SearchIcon = () => (
@@ -30,16 +28,32 @@ const SearchIcon = () => (
 );
 
 export default function CallJournal() {
+  const [calls, setCalls] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const filtered = mockCalls.filter(c =>
-    c.patient.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.includes(search)
-  );
+  const fetchCalls = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, string> = {};
+      if (search) params.search = search;
+      const res = await api.get('/calls', params) as any;
+      const items = res?.data?.items ?? res?.data ?? [];
+      const t = res?.data?.total ?? items.length;
+      setCalls(items);
+      setTotal(t);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const totalCalls = mockCalls.length;
-  const appointmentsMade = mockCalls.filter(c => c.outcome === 'appointment').length;
-  const missed = mockCalls.filter(c => c.outcome === 'no-answer').length;
+  useEffect(() => { fetchCalls(); }, [search]);
+
+  const answered  = calls.filter(c => c.result === 'ANSWERED').length;
+  const missed    = calls.filter(c => c.result === 'MISSED').length;
 
   return (
     <div className="sp-page">
@@ -58,17 +72,19 @@ export default function CallJournal() {
 
       <div className="sp-stats-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">{totalCalls}</div>
-          <div className="sp-stat-label">Total Calls Today</div>
-          <div className="sp-stat-trend up">↑ 2 vs yesterday</div>
+          <div className="sp-stat-value">{isLoading ? '…' : total}</div>
+          <div className="sp-stat-label">Total Calls</div>
+          <div className="sp-stat-trend up">All time</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value" style={{ color: '#1a7a4a' }}>{appointmentsMade}</div>
-          <div className="sp-stat-label">Appointments Made</div>
-          <div className="sp-stat-trend up">43% conversion</div>
+          <div className="sp-stat-value" style={{ color: '#1a7a4a' }}>{isLoading ? '…' : answered}</div>
+          <div className="sp-stat-label">Answered</div>
+          <div className="sp-stat-trend up">
+            {calls.length > 0 ? Math.round(answered / calls.length * 100) : 0}% answer rate
+          </div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value" style={{ color: '#aa1a1a' }}>{missed}</div>
+          <div className="sp-stat-value" style={{ color: '#aa1a1a' }}>{isLoading ? '…' : missed}</div>
           <div className="sp-stat-label">Missed Calls</div>
           <div className="sp-stat-trend down">Needs follow-up</div>
         </div>
@@ -93,33 +109,48 @@ export default function CallJournal() {
                 <th>Date / Time</th>
                 <th>Patient</th>
                 <th>Phone</th>
-                <th>Type</th>
+                <th>Direction</th>
                 <th>Duration</th>
-                <th>Outcome</th>
+                <th>Result</th>
                 <th>Manager</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {isLoading ? (
+                <tr><td colSpan={7} className="sp-empty">Loading...</td></tr>
+              ) : calls.length === 0 ? (
                 <tr><td colSpan={7} className="sp-empty">No calls found</td></tr>
-              ) : filtered.map(c => (
-                <tr key={c.id}>
-                  <td style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{c.datetime}</td>
-                  <td>
-                    <div className="sp-patient-cell">
-                      <div className="sp-avatar" style={{ background: c.patient === 'Unknown' ? '#e0e0e8' : undefined, color: c.patient === 'Unknown' ? '#888' : undefined }}>
-                        {c.initials}
+              ) : calls.map(c => {
+                const initials = c.patient
+                  ? `${c.patient.firstName?.[0] ?? ''}${c.patient.lastName?.[0] ?? ''}`.toUpperCase()
+                  : '?';
+                const patientName = c.patient
+                  ? `${c.patient.firstName} ${c.patient.lastName}`
+                  : 'Unknown';
+                const managerName = c.user?.name ?? '—';
+                const dir = directionConfig[c.direction] ?? { label: c.direction, cls: 'sp-badge-gray' };
+                const res = resultConfig[c.result] ?? { label: c.result, cls: 'sp-badge-gray' };
+                return (
+                  <tr key={c.id}>
+                    <td style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                      {new Date(c.calledAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                    <td>
+                      <div className="sp-patient-cell">
+                        <div className="sp-avatar" style={!c.patient ? { background: '#e0e0e8', color: '#888' } : undefined}>
+                          {initials}
+                        </div>
+                        <span className="sp-patient-name">{patientName}</span>
                       </div>
-                      <span className="sp-patient-name">{c.patient}</span>
-                    </div>
-                  </td>
-                  <td>{c.phone}</td>
-                  <td><span className={`sp-badge ${typeConfig[c.type].cls}`}>{typeConfig[c.type].label}</span></td>
-                  <td style={{ fontFamily: 'monospace' }}>{c.duration}</td>
-                  <td><span className={`sp-badge ${outcomeConfig[c.outcome].cls}`}>{outcomeConfig[c.outcome].label}</span></td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{c.manager}</td>
-                </tr>
-              ))}
+                    </td>
+                    <td>{c.phone}</td>
+                    <td><span className={`sp-badge ${dir.cls}`}>{dir.label}</span></td>
+                    <td style={{ fontFamily: 'monospace' }}>{formatDuration(c.durationSeconds)}</td>
+                    <td><span className={`sp-badge ${res.cls}`}>{res.label}</span></td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{managerName}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

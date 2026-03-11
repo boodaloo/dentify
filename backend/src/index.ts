@@ -15,6 +15,8 @@ import clinicalRoutes    from './routes/clinical';
 import labRoutes              from './routes/labs';
 import notificationRoutes    from './routes/notifications';
 import financeRoutes         from './routes/finance';
+import callRoutes            from './routes/calls';
+import documentRoutes        from './routes/documents';
 
 dotenv.config();
 
@@ -38,6 +40,8 @@ app.use('/api/clinical',     clinicalRoutes);
 app.use('/api/labs',              labRoutes);
 app.use('/api/notifications',    notificationRoutes);
 app.use('/api/finance',          financeRoutes);
+app.use('/api/calls',            callRoutes);
+app.use('/api/documents',        documentRoutes);
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

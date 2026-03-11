@@ -1,20 +1,6 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 import './shared-page.css';
-
-const mockDocuments = [
-  { id: 1, name: 'Informed Consent — Tooth Extraction', patient: 'Ekaterina Sokolova', initials: 'ES', created: '08 Mar 2026', status: 'signed' },
-  { id: 2, name: 'Informed Consent — Root Canal Treatment', patient: 'Mikhail Petrov', initials: 'MP', created: '07 Mar 2026', status: 'sent' },
-  { id: 3, name: 'Informed Consent — Implant Placement', patient: 'Anna Volkova', initials: 'AV', created: '07 Mar 2026', status: 'draft' },
-  { id: 4, name: 'Personal Data Processing Agreement', patient: 'Dmitry Novikov', initials: 'DN', created: '06 Mar 2026', status: 'signed' },
-  { id: 5, name: 'Informed Consent — Whitening Procedure', patient: 'Olga Smirnova', initials: 'OS', created: '06 Mar 2026', status: 'sent' },
-  { id: 6, name: 'Treatment Plan Agreement', patient: 'Pavel Kozlov', initials: 'PK', created: '05 Mar 2026', status: 'draft' },
-];
-
-const statusMap: Record<string, { label: string; cls: string }> = {
-  draft: { label: 'Draft', cls: 'sp-badge-gray' },
-  sent: { label: 'Sent', cls: 'sp-badge-orange' },
-  signed: { label: 'Signed', cls: 'sp-badge-green' },
-};
 
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -22,17 +8,47 @@ const SearchIcon = () => (
   </svg>
 );
 
+const DocIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+  </svg>
+);
+
+// Documents don't have a status field in DB — derive from fileKey/validTo
+const getStatus = (doc: any) => {
+  if (doc.fileKey) return { label: 'Signed', cls: 'sp-badge-green' };
+  if (doc.validTo && new Date(doc.validTo) > new Date()) return { label: 'Sent', cls: 'sp-badge-orange' };
+  return { label: 'Draft', cls: 'sp-badge-gray' };
+};
+
 export default function Documents() {
+  const [docs, setDocs] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const filtered = mockDocuments.filter(d =>
-    d.name.toLowerCase().includes(search.toLowerCase()) ||
-    d.patient.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchDocs = async () => {
+    setIsLoading(true);
+    try {
+      const params: Record<string, string> = {};
+      if (search) params.search = search;
+      const res = await api.get('/documents', params) as any;
+      const items = res?.data?.items ?? res?.data ?? [];
+      const t = res?.data?.total ?? items.length;
+      setDocs(items);
+      setTotal(t);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const totalDocs = mockDocuments.length;
-  const awaitingSig = mockDocuments.filter(d => d.status === 'sent').length;
-  const signedToday = mockDocuments.filter(d => d.status === 'signed' && d.created === '08 Mar 2026').length;
+  useEffect(() => { fetchDocs(); }, [search]);
+
+  const awaitingSig = docs.filter(d => getStatus(d).label === 'Sent').length;
+  const signedCount = docs.filter(d => getStatus(d).label === 'Signed').length;
 
   return (
     <div className="sp-page">
@@ -51,19 +67,19 @@ export default function Documents() {
 
       <div className="sp-stats-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">{totalDocs}</div>
+          <div className="sp-stat-value">{isLoading ? '…' : total}</div>
           <div className="sp-stat-label">Total Documents</div>
-          <div className="sp-stat-trend up">↑ 3 this week</div>
+          <div className="sp-stat-trend up">All time</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">{awaitingSig}</div>
+          <div className="sp-stat-value">{isLoading ? '…' : awaitingSig}</div>
           <div className="sp-stat-label">Awaiting Signature</div>
-          <div className="sp-stat-trend down">Action required</div>
+          <div className="sp-stat-trend down">{awaitingSig > 0 ? 'Action required' : 'All clear'}</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">{signedToday}</div>
-          <div className="sp-stat-label">Signed Today</div>
-          <div className="sp-stat-trend up">↑ 1 vs yesterday</div>
+          <div className="sp-stat-value">{isLoading ? '…' : signedCount}</div>
+          <div className="sp-stat-label">Signed</div>
+          <div className="sp-stat-trend up">Total</div>
         </div>
       </div>
 
@@ -83,43 +99,59 @@ export default function Documents() {
           <table className="sp-table">
             <thead>
               <tr>
-                <th>Document Name</th>
+                <th>Document Type</th>
                 <th>Patient</th>
-                <th>Date Created</th>
+                <th>Date Issued</th>
+                <th>Valid To</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="sp-empty">No documents found</td></tr>
-              ) : filtered.map(d => (
-                <tr key={d.id}>
-                  <td style={{ fontWeight: 500 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                      </svg>
-                      {d.name}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="sp-patient-cell">
-                      <div className="sp-avatar">{d.initials}</div>
-                      <span className="sp-patient-name">{d.patient}</span>
-                    </div>
-                  </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{d.created}</td>
-                  <td><span className={`sp-badge ${statusMap[d.status].cls}`}>{statusMap[d.status].label}</span></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="sp-action-btn">Print</button>
-                      {d.status !== 'signed' && <button className="sp-action-btn">Send</button>}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading ? (
+                <tr><td colSpan={6} className="sp-empty">Loading...</td></tr>
+              ) : docs.length === 0 ? (
+                <tr><td colSpan={6} className="sp-empty">No documents found</td></tr>
+              ) : docs.map(d => {
+                const status = getStatus(d);
+                const initials = d.patient
+                  ? `${d.patient.firstName?.[0] ?? ''}${d.patient.lastName?.[0] ?? ''}`.toUpperCase()
+                  : '—';
+                const patientName = d.patient
+                  ? `${d.patient.firstName} ${d.patient.lastName}`
+                  : '—';
+                return (
+                  <tr key={d.id}>
+                    <td style={{ fontWeight: 500 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <DocIcon />
+                        {d.docType}{d.docNumber ? ` #${d.docNumber}` : ''}
+                      </div>
+                    </td>
+                    <td>
+                      {d.patient ? (
+                        <div className="sp-patient-cell">
+                          <div className="sp-avatar">{initials}</div>
+                          <span className="sp-patient-name">{patientName}</span>
+                        </div>
+                      ) : <span style={{ color: 'var(--text-secondary)' }}>—</span>}
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>
+                      {new Date(d.issuedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>
+                      {d.validTo ? new Date(d.validTo).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                    </td>
+                    <td><span className={`sp-badge ${status.cls}`}>{status.label}</span></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="sp-action-btn">Print</button>
+                        {status.label !== 'Signed' && <button className="sp-action-btn">Send</button>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
