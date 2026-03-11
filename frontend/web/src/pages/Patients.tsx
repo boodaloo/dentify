@@ -113,7 +113,11 @@ const Patients: React.FC<PatientsProps> = ({ onSelectPatient }) => {
                 <tr key={patient.id} className="patient-row" onClick={() => onSelectPatient?.(patient)} onDoubleClick={() => handleEditPatient(patient)}>
                   <td>
                     <div className="patient-identity flex items-center gap-m">
-                      <div className={`avatar p${patient.id.slice(-1)}`}></div>
+                      <img
+                        className="avatar"
+                        src={`https://source.boringavatars.com/beam/40/${encodeURIComponent(`${patient.firstName} ${patient.lastName}`)}?colors=0D7377,14919B,45B7A0,F2CC8F,FF6B6B`}
+                        alt={`${patient.firstName} ${patient.lastName}`}
+                      />
                       <div className="name-box">
                         <div className="full-name">{patient.firstName} {patient.lastName}</div>
                         <div className="dob">{patient.birthDate ? new Date(patient.birthDate).toLocaleDateString(locale) : ''}</div>
