@@ -48,6 +48,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ initialData, defaultD
   const [patientResults, setPatientResults] = useState<any[]>([]);
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
   const [doctors, setDoctors] = useState<any[]>([]);
+  const [branchId, setBranchId] = useState<string>(initialData?.branchId || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,6 +58,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ initialData, defaultD
       const items = res?.data?.items ?? res?.data ?? res ?? [];
       setDoctors(Array.isArray(items) ? items : []);
     }).catch(() => {});
+
+    // Auto-pick the main branch
+    if (!branchId) {
+      api.get('/branches').then((res: any) => {
+        const branches: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+        const main = branches.find((b: any) => b.isMain) ?? branches[0];
+        if (main) setBranchId(main.id);
+      }).catch(() => {});
+    }
   }, []);
 
   const handlePatientSearch = (value: string) => {
@@ -87,12 +97,15 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ initialData, defaultD
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.patientId) { setError('Please select a patient'); return; }
+    if (!formData.doctorId)  { setError('Please select a doctor'); return; }
+    if (!branchId) { setError('No branch found. Please configure a branch in Settings.'); return; }
     setIsSubmitting(true);
     setError('');
     try {
       const payload = {
         patientId: formData.patientId,
         doctorId:  formData.doctorId  || undefined,
+        branchId,
         startTime: formData.startTime,
         endTime:   formData.endTime,
         notes:     formData.notes     || undefined,
