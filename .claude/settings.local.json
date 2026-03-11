@@ -4,7 +4,20 @@
       "WebSearch",
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nРеструктуризация документации: модульная архитектура\n\n- Разбит ARCHITECTURE.md \\(2500 строк\\) на 12 модульных файлов\n- schema/: CORE, CLINICAL, FINANCE, INVENTORY\n- features/: AUTH, WIDGET, PATIENT_APP, DENTAI, IMPORT_EXPORT\n- infrastructure/: REDIS, DOCKER, CICD\n- Главный файл теперь оглавление со ссылками\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(rsync -avz \\\\\n  -e \"ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no\" \\\\\n  /home/booda/dent_app/backend/prisma/schema.prisma \\\\\n  root@37.230.162.148:/opt/orisios/backend/prisma/ 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cd /opt/orisios/backend && npx prisma migrate reset --force 2>&1\")",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cd /opt/orisios && docker compose exec postgres psql -U orisios -d orisios -c \\\\\"\\\\dt\\\\\" 2>&1\" 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cat /opt/orisios/backend/.env | grep DATABASE_URL\" 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cd /opt/orisios && docker compose exec postgres psql -U user -d orisios -c \\\\\"\\\\dt\\\\\" 2>&1\" 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cd /opt/orisios && docker compose exec postgres psql -U user -d orisios -c \\\\\"\\\\dt\\\\\" 2>&1 | wc -l\" 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cd /opt/orisios && docker compose exec postgres psql -U user -d orisios -c \\\\\"\nDROP TABLE IF EXISTS \\\\\\\\\\\\\"_UserBranches\\\\\\\\\\\\\" CASCADE;\nDROP TABLE IF EXISTS \\\\\\\\\\\\\"Appointment\\\\\\\\\\\\\" CASCADE;\nDROP TABLE IF EXISTS \\\\\\\\\\\\\"Patient\\\\\\\\\\\\\" CASCADE;\nDROP TABLE IF EXISTS \\\\\\\\\\\\\"Branch\\\\\\\\\\\\\" CASCADE;\nDROP TABLE IF EXISTS \\\\\\\\\\\\\"User\\\\\\\\\\\\\" CASCADE;\nDROP TABLE IF EXISTS \\\\\\\\\\\\\"Clinic\\\\\\\\\\\\\" CASCADE;\nDROP TABLE IF EXISTS \\\\\\\\\\\\\"_prisma_migrations\\\\\\\\\\\\\" CASCADE;\nSELECT 'Done';\n\\\\\" 2>&1\" 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"head -30 /opt/orisios/backend/prisma/schema.prisma\" 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cat /opt/orisios/docker-compose.yml\" 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cd /opt/orisios && docker compose build backend 2>&1 | tail -5\" 2>&1)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cd /opt/orisios && docker compose build backend 2>&1 | grep -E 'error|Error|ERROR' | head -10\" 2>&1)",
+      "Bash(rsync -avz \\\\\n  -e \"ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no\" \\\\\n  /home/booda/dent_app/backend/src/controllers/ \\\\\n  root@37.230.162.148:/opt/orisios/backend/src/controllers/ && \\\\\nrsync -avz \\\\\n  -e \"ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no\" \\\\\n  /home/booda/dent_app/backend/prisma/seed.ts \\\\\n  root@37.230.162.148:/opt/orisios/backend/prisma/ 2>&1 | tail -5)",
+      "Bash(ssh -i ~/.ssh/claude_orisios -o StrictHostKeyChecking=no root@37.230.162.148 \\\\\n  \"cd /opt/orisios && docker compose build backend 2>&1 | tail -6\" 2>&1)"
     ]
   }
 }

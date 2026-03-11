@@ -45,7 +45,7 @@ const navItems: NavItem[] = [
   { id: 'templates', translationKey: 'nav.templates', icon: IconFile },
   { id: 'documents', translationKey: 'nav.documents', icon: IconFileText },
   { id: 'labs', translationKey: 'nav.labs', icon: IconFlask },
-  { id: 'oms', translationKey: 'nav.oms', icon: IconHospital },
+  { id: 'insurance', translationKey: 'nav.insurance', icon: IconHospital },
 
   { type: 'group', labelKey: 'nav.group_finance' },
   { id: 'price_list', translationKey: 'nav.price_list', icon: IconTag },

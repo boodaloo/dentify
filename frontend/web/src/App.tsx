@@ -10,7 +10,7 @@ import OnlineBooking from './pages/OnlineBooking'
 import Templates from './pages/Templates'
 import Documents from './pages/Documents'
 import Labs from './pages/Labs'
-import OMS from './pages/OMS'
+import Insurance from './pages/Insurance'
 import PriceList from './pages/PriceList'
 import Invoices from './pages/Invoices'
 import Inventory from './pages/Inventory'
@@ -87,8 +87,8 @@ function App() {
         return <Documents />
       case 'labs':
         return <Labs />
-      case 'oms':
-        return <OMS />
+      case 'insurance':
+        return <Insurance />
       case 'price_list':
         return <PriceList />
       case 'invoices':
