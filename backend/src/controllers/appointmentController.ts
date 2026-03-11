@@ -6,7 +6,7 @@ import * as R from '../utils/response';
 const APPOINTMENT_INCLUDE = {
   patient: { select: { id: true, firstName: true, lastName: true, patientNumber: true,
     contacts: { where: { type: 'PHONE' as const, isPrimary: true } } } },
-  doctor:  { select: { id: true, name: true, avatarUrl: true, color: true } },
+  doctor:  { select: { id: true, name: true, avatarUrl: true } },
   branch:  { select: { id: true, name: true } },
   room:    { select: { id: true, name: true } },
   services:{ include: { service: { select: { id: true, name: true } } } },
