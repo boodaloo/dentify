@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import './shared-page.css';
 
@@ -118,7 +118,7 @@ export default function Documents() {
                   ? `${d.patient.firstName?.[0] ?? ''}${d.patient.lastName?.[0] ?? ''}`.toUpperCase()
                   : '—';
                 const patientName = d.patient
-                  ? `${d.patient.firstName} ${d.patient.lastName}`
+                  ? `${d.patient.lastName} ${d.patient.firstName}`
                   : '—';
                 return (
                   <tr key={d.id}>

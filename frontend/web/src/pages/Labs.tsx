@@ -33,13 +33,12 @@ interface NewOrderFormProps {
 }
 
 const NewOrderForm: React.FC<NewOrderFormProps> = ({ onSuccess, onCancel }) => {
-  const [form, setForm]       = useState({ patientSearch: '', patientId: '', technicianId: '', notes: '', dueDate: '', toothColor: '' });
+  const [form, setForm]       = useState({ patientSearch: '', patientId: '', technicianId: '', notes: '', dueDate: new Date().toISOString().slice(0, 10), toothColor: '' });
   const [patients, setPatients] = useState<any[]>([]);
   const [techs,    setTechs]    = useState<any[]>([]);
   const [showDD,   setShowDD]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const searchRef = { current: null as any };
 
   useEffect(() => {
     api.get('/labs/technicians').then((r: any) => {
@@ -91,8 +90,8 @@ const NewOrderForm: React.FC<NewOrderFormProps> = ({ onSuccess, onCancel }) => {
           <div className="patient-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1e2a38', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', zIndex: 100 }}>
             {patients.map(p => (
               <div key={p.id} style={{ padding: '10px 14px', cursor: 'pointer' }}
-                onMouseDown={() => { setForm(f => ({ ...f, patientId: p.id, patientSearch: `${p.firstName} ${p.lastName}` })); setPatients([]); setShowDD(false); }}>
-                {p.firstName} {p.lastName} {p.phone ? `· ${p.phone}` : ''}
+                onMouseDown={() => { setForm(f => ({ ...f, patientId: p.id, patientSearch: `${p.lastName} ${p.firstName}` })); setPatients([]); setShowDD(false); }}>
+                {p.lastName} {p.firstName} {p.phone ? `· ${p.phone}` : ''}
               </div>
             ))}
           </div>
@@ -177,7 +176,7 @@ export default function Labs() {
 
   const filtered = orders.filter(o => {
     if (!search) return true;
-    const name = `${o.patient?.firstName ?? ''} ${o.patient?.lastName ?? ''}`.toLowerCase();
+    const name = `${o.patient?.lastName ?? ''} ${o.patient?.firstName ?? ''}`.toLowerCase();
     return name.includes(search.toLowerCase()) || (o.orderNumber ?? '').toLowerCase().includes(search.toLowerCase());
   });
 
@@ -257,7 +256,7 @@ export default function Labs() {
                       <div className="sp-patient-cell">
                         <div className="sp-avatar">{initials(o.patient)}</div>
                         <span className="sp-patient-name">
-                          {o.patient ? `${o.patient.firstName} ${o.patient.lastName}` : '—'}
+                          {o.patient ? `${o.patient.lastName} ${o.patient.firstName}` : '—'}
                         </span>
                       </div>
                     </td>

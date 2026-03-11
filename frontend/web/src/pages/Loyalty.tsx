@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import './shared-page.css';
 
@@ -47,8 +47,6 @@ export default function Loyalty() {
     r.name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalMembers = tiers.reduce((s, t) => s + (t._count?.patients ?? 0), 0);
-  const totalPoints = tiers.reduce((s, t) => s + (t.totalPoints ?? 0), 0);
 
   return (
     <div className="sp-page">

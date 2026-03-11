@@ -4,21 +4,22 @@ import { getLabels, createLabel, updateLabel, deleteLabel } from '../controllers
 import { getPatientLabels, assignLabel, unassignLabel } from '../controllers/labelController';
 import { getComments, createComment, updateComment, deleteComment } from '../controllers/commentController';
 
+// ── Clinic-wide label management (mounted at /api/labels) ─────────────────────
+export const clinicLabelRouter = Router();
+clinicLabelRouter.use(auth);
+clinicLabelRouter.get   ('/',          getLabels);
+clinicLabelRouter.post  ('/',          createLabel);
+clinicLabelRouter.put   ('/:labelId',  updateLabel);
+clinicLabelRouter.delete('/:labelId',  deleteLabel);
+
+// ── Patient-specific: label assignments + comments (mounted at /api/patients) ─
 const router = Router();
 router.use(auth);
 
-// Clinic-wide label management
-router.get   ('/labels',                   getLabels);
-router.post  ('/labels',                   createLabel);
-router.put   ('/labels/:labelId',          updateLabel);
-router.delete('/labels/:labelId',          deleteLabel);
-
-// Patient label assignments
 router.get   ('/:patientId/labels',              getPatientLabels);
 router.post  ('/:patientId/labels',              assignLabel);
 router.delete('/:patientId/labels/:labelId',     unassignLabel);
 
-// Patient comments
 router.get   ('/:patientId/comments',            getComments);
 router.post  ('/:patientId/comments',            createComment);
 router.put   ('/:patientId/comments/:commentId', updateComment);

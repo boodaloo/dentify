@@ -69,6 +69,7 @@ export const getPatientById = async (req: Request, res: Response) => {
         treatmentPlans:{ where: { isDeleted: false } },
         balance:       true,
         bonuses:       true,
+        labels:        { include: { label: true }, orderBy: { assignedAt: 'asc' } },
       },
     });
 

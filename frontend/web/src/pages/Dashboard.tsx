@@ -22,7 +22,7 @@ const BirthdayItem: React.FC<{ patient: any }> = ({ patient }) => {
     <div className="birthday-item flex items-center">
       <div className="birthday-avatar">{initials}</div>
       <div className="birthday-info flex-1">
-        <div className="birthday-name">{patient.firstName} {patient.lastName}</div>
+        <div className="birthday-name">{patient.lastName} {patient.firstName}</div>
         <div className="birthday-meta">{patient.age} years · {patient.phone || '—'}</div>
       </div>
       <div className="birthday-actions flex">
@@ -264,7 +264,7 @@ const Dashboard: React.FC = () => {
                   key={apt.id}
                   className={`apt-block ${apt.status.toLowerCase()}`}
                   style={{ left: `${left}%`, width: '8%' }}
-                  title={`${apt.patient?.firstName} ${apt.patient?.lastName}`}
+                  title={`${apt.patient?.lastName} ${apt.patient?.firstName}`}
                 >
                   {apt.patient?.lastName}
                 </div>
@@ -324,7 +324,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="apt-info">
                     <div className="apt-top flex justify-between">
-                      <span className="patient-name">{apt.patient?.firstName} {apt.patient?.lastName}</span>
+                      <span className="patient-name">{apt.patient?.lastName} {apt.patient?.firstName}</span>
                       <span className="apt-time">
                         {new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>

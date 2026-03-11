@@ -115,10 +115,10 @@ const Patients: React.FC<PatientsProps> = ({ onSelectPatient }) => {
                   <td>
                     <div className="patient-identity flex items-center gap-m">
                       <span className="avatar">
-                        <Avatar size={40} name={`${patient.firstName} ${patient.lastName}`} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
+                        <Avatar size={40} name={`${patient.lastName} ${patient.firstName}`} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
                       </span>
                       <div className="name-box">
-                        <div className="full-name">{patient.firstName} {patient.lastName}</div>
+                        <div className="full-name">{patient.lastName} {patient.firstName}</div>
                         <div className="dob">{patient.birthDate ? new Date(patient.birthDate).toLocaleDateString(locale) : ''}</div>
                       </div>
                     </div>

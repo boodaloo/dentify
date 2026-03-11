@@ -450,8 +450,8 @@ const DiaryTab: React.FC<{ patientId: string }> = ({ patientId }) => {
 
 // ─── Labels Block ─────────────────────────────────────────────────────────────
 
-const LabelsBlock: React.FC<{ patientId: string; initialLabels: any[] }> = ({ patientId, initialLabels }) => {
-  const [assigned, setAssigned]     = useState<any[]>(initialLabels);
+const LabelsBlock: React.FC<{ patientId: string; compact?: boolean }> = ({ patientId, compact }) => {
+  const [assigned, setAssigned]     = useState<any[]>([]);
   const [allLabels, setAllLabels]   = useState<any[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -460,8 +460,9 @@ const LabelsBlock: React.FC<{ patientId: string; initialLabels: any[] }> = ({ pa
   const [saving, setSaving]         = useState(false);
 
   useEffect(() => {
-    api.get('/patients/labels').then((res: any) => setAllLabels(res?.data ?? [])).catch(() => {});
-  }, []);
+    api.get(`/patients/${patientId}/labels`).then((res: any) => setAssigned(res?.data ?? [])).catch(() => {});
+    api.get('/labels').then((res: any) => setAllLabels(res?.data ?? [])).catch(() => {});
+  }, [patientId]);
 
   const assign = async (label: any) => {
     if (assigned.find(l => l.id === label.id)) { unassign(label.id); return; }
@@ -482,7 +483,7 @@ const LabelsBlock: React.FC<{ patientId: string; initialLabels: any[] }> = ({ pa
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      const res: any = await api.post('/patients/labels', { name: newName.trim(), color: newColor, textColor: '#ffffff' });
+      const res: any = await api.post('/labels', { name: newName.trim(), color: newColor, textColor: '#ffffff' });
       const label = res?.data ?? res;
       setAllLabels(prev => [...prev, label]);
       setNewName(''); setShowCreate(false);
@@ -490,6 +491,70 @@ const LabelsBlock: React.FC<{ patientId: string; initialLabels: any[] }> = ({ pa
   };
 
   const PRESET_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#8b5cf6','#ec4899','#6b7280','#0D7377'];
+
+  const picker = showPicker && (
+    <div className={compact ? 'label-picker label-picker-header' : 'label-picker'}>
+      <div className="label-picker-list">
+        {allLabels.map(l => {
+          const isOn = !!assigned.find(a => a.id === l.id);
+          return (
+            <button key={l.id} className={`label-picker-item ${isOn ? 'on' : ''}`} onClick={() => assign(l)}>
+              <span className="label-dot" style={{ background: l.color }} />
+              <span>{l.name}</span>
+              {isOn && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--secondary-seafoam)' }}>✓</span>}
+            </button>
+          );
+        })}
+        {allLabels.length === 0 && <div className="pp-empty-sm">No tags yet — create one below</div>}
+      </div>
+      <div className="label-picker-divider" />
+      {showCreate ? (
+        <div className="label-create-form">
+          <input
+            className="pp-input" placeholder="Tag name…" autoFocus
+            value={newName} onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && createLabel()}
+          />
+          <div className="color-presets">
+            {PRESET_COLORS.map(c => (
+              <button key={c} className={`color-preset ${newColor === c ? 'selected' : ''}`}
+                style={{ background: c }} onClick={() => setNewColor(c)} />
+            ))}
+            <input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="color-input-custom" title="Custom color" />
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+            <button className="pp-btn-primary" onClick={createLabel} disabled={saving || !newName.trim()}>
+              {saving ? 'Creating…' : 'Create'}
+            </button>
+            <button className="pp-btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button className="label-picker-new" onClick={() => setShowCreate(true)}>
+          <IconPlus /> Create new tag
+        </button>
+      )}
+    </div>
+  );
+
+  if (compact) {
+    return (
+      <div className="header-labels-wrap">
+        <div className="header-labels-row">
+          {assigned.map(l => (
+            <span key={l.id} className="label-chip" style={{ background: l.color, color: l.textColor ?? '#fff' }}>
+              {l.name}
+              <button className="label-chip-remove" onClick={() => unassign(l.id)}>×</button>
+            </span>
+          ))}
+          <button className="header-label-add-btn" onClick={() => { setShowPicker(p => !p); setShowCreate(false); }} title="Manage tags">
+            <IconPlus />
+          </button>
+        </div>
+        {picker}
+      </div>
+    );
+  }
 
   return (
     <div className="pp-card">
@@ -499,8 +564,6 @@ const LabelsBlock: React.FC<{ patientId: string; initialLabels: any[] }> = ({ pa
           <IconPlus /> Add tag
         </button>
       </div>
-
-      {/* Assigned tags */}
       <div className="labels-assigned">
         {assigned.length === 0
           ? <span className="info-row-empty">No tags assigned</span>
@@ -512,52 +575,7 @@ const LabelsBlock: React.FC<{ patientId: string; initialLabels: any[] }> = ({ pa
             ))
         }
       </div>
-
-      {/* Tag picker dropdown */}
-      {showPicker && (
-        <div className="label-picker">
-          <div className="label-picker-list">
-            {allLabels.map(l => {
-              const isOn = !!assigned.find(a => a.id === l.id);
-              return (
-                <button key={l.id} className={`label-picker-item ${isOn ? 'on' : ''}`} onClick={() => assign(l)}>
-                  <span className="label-dot" style={{ background: l.color }} />
-                  <span>{l.name}</span>
-                  {isOn && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--secondary-seafoam)' }}>✓</span>}
-                </button>
-              );
-            })}
-            {allLabels.length === 0 && <div className="pp-empty-sm">No tags yet — create one below</div>}
-          </div>
-          <div className="label-picker-divider" />
-          {showCreate ? (
-            <div className="label-create-form">
-              <input
-                className="pp-input" placeholder="Tag name…" autoFocus
-                value={newName} onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && createLabel()}
-              />
-              <div className="color-presets">
-                {PRESET_COLORS.map(c => (
-                  <button key={c} className={`color-preset ${newColor === c ? 'selected' : ''}`}
-                    style={{ background: c }} onClick={() => setNewColor(c)} />
-                ))}
-                <input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="color-input-custom" title="Custom color" />
-              </div>
-              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                <button className="pp-btn-primary" onClick={createLabel} disabled={saving || !newName.trim()}>
-                  {saving ? 'Creating…' : 'Create'}
-                </button>
-                <button className="pp-btn-ghost" onClick={() => setShowCreate(false)}>Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <button className="label-picker-new" onClick={() => setShowCreate(true)}>
-              <IconPlus /> Create new tag
-            </button>
-          )}
-        </div>
-      )}
+      {picker}
     </div>
   );
 };
@@ -852,11 +870,8 @@ const OverviewTab: React.FC<{ patient: any; patientId: string; onTabChange: (tab
         </div>
       </div>
 
-      {/* ── Bottom row: Labels + Comments ── */}
-      <div className="overview-bottom-row">
-        <LabelsBlock patientId={patientId} initialLabels={patient?.labels?.map((a: any) => a.label ?? a) ?? []} />
-        <CommentsBlock patientId={patientId} />
-      </div>
+      {/* ── Comments ── */}
+      <CommentsBlock patientId={patientId} />
 
     </div>
   );
@@ -1192,100 +1207,6 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
   );
 };
 
-// ─── (VisitsTab kept as alias for backward compat) ────────────────────────────
-
-const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
-  const [filter, setFilter]       = useState<string>('ALL');
-  const [expandedId, setExpanded] = useState<string | null>(null);
-  const [records, setRecords]     = useState<Record<string, any>>({});
-
-  const appointments: any[] = patient?.appointments ?? [];
-  const filtered = filter === 'ALL' ? appointments : appointments.filter((a: any) => a.status === filter);
-
-  const toggleExpand = async (id: string) => {
-    if (expandedId === id) { setExpanded(null); return; }
-    setExpanded(id);
-    if (!records[id]) {
-      try {
-        const res: any = await api.get('/clinical/medical-records', { appointmentId: id });
-        const items = res?.data?.items ?? res?.data ?? [];
-        setRecords(prev => ({ ...prev, [id]: items[0] ?? null }));
-      } catch { setRecords(prev => ({ ...prev, [id]: null })); }
-    }
-  };
-
-  const filters = ['ALL', 'COMPLETED', 'SCHEDULED', 'CONFIRMED', 'CANCELLED', 'NO_SHOW'];
-
-  return (
-    <div className="pp-section">
-      <div className="pp-filter-row">
-        {filters.map(f => (
-          <button key={f} className={`pp-filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-            {f === 'ALL' ? `All (${appointments.length})` : (STATUS_LABELS[f]?.label ?? f)}
-          </button>
-        ))}
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="pp-empty">No visits found</div>
-      ) : (
-        <div className="visits-list">
-          {filtered.map((a: any) => (
-            <div key={a.id} className={`visit-card ${expandedId === a.id ? 'expanded' : ''}`}>
-              <div className="visit-card-main" onClick={() => toggleExpand(a.id)}>
-                <div className="visit-card-left">
-                  <div className="visit-card-date">{fmtDate(a.startTime)}</div>
-                  <div className="visit-card-time">{fmtTime(a.startTime)} – {fmtTime(a.endTime)}</div>
-                </div>
-                <div className="visit-card-center">
-                  {a.services?.length > 0
-                    ? <div className="visit-card-services">{a.services.map((s: any) => s.service?.name).filter(Boolean).join(' · ')}</div>
-                    : <div className="visit-card-services" style={{ opacity: 0.5 }}>No services recorded</div>
-                  }
-                  {a.doctor && <div className="visit-card-meta">👨‍⚕️ Dr. {a.doctor.name}</div>}
-                  {a.branch && <div className="visit-card-meta">📍 {a.branch.name}</div>}
-                  {a.notes && <div className="visit-card-meta" style={{ fontStyle: 'italic' }}>"{a.notes}"</div>}
-                </div>
-                <div className="visit-card-right">
-                  <StatusChip status={a.status} map={STATUS_LABELS} />
-                  <div className={`visit-chevron ${expandedId === a.id ? 'open' : ''}`}><IconChevron /></div>
-                </div>
-              </div>
-
-              {expandedId === a.id && (
-                <div className="visit-record-expand">
-                  {records[a.id] === undefined ? (
-                    <div className="pp-loading-sm">Loading medical record…</div>
-                  ) : records[a.id] === null ? (
-                    <div className="pp-empty-sm">No medical record for this visit</div>
-                  ) : (
-                    <div className="medical-record-view">
-                      {records[a.id].complaints   && <div className="mr-field"><span className="mr-label">Complaints</span><span>{records[a.id].complaints}</span></div>}
-                      {records[a.id].anamnesis    && <div className="mr-field"><span className="mr-label">Anamnesis</span><span>{records[a.id].anamnesis}</span></div>}
-                      {records[a.id].diagnoses?.length > 0 && (
-                        <div className="mr-field">
-                          <span className="mr-label">Diagnoses</span>
-                          <div className="mr-diagnoses">
-                            {records[a.id].diagnoses.map((d: any, i: number) => (
-                              <span key={i} className="pp-chip chip-teal">{d.diagnosis?.code} — {d.diagnosis?.name}</span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {records[a.id].treatmentPlan && <div className="mr-field"><span className="mr-label">Treatment done</span><span>{records[a.id].treatmentPlan}</span></div>}
-                      {records[a.id].notes        && <div className="mr-field"><span className="mr-label">Doctor's notes</span><span>{records[a.id].notes}</span></div>}
-                      {records[a.id].createdBy    && <div className="mr-field"><span className="mr-label">Recorded by</span><span>{records[a.id].createdBy.name}</span></div>}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 
 // ─── Treatment Plans Tab ──────────────────────────────────────────────────────
@@ -1518,7 +1439,6 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
 
   const patient  = fullPatient ?? listPatient;
   const fullName = patient ? `${patient.lastName ?? ''} ${patient.firstName ?? ''}${patient.middleName ? ' ' + patient.middleName : ''}`.trim() : 'Unknown';
-  const initials = ((patient?.firstName?.[0] ?? '') + (patient?.lastName?.[0] ?? '')).toUpperCase();
   const phone    = patient?.contacts?.find((c: any) => c.type === 'PHONE' && c.isPrimary)?.value
                 ?? patient?.contacts?.find((c: any) => c.type === 'PHONE')?.value;
   const email    = patient?.contacts?.find((c: any) => c.type === 'EMAIL')?.value;
@@ -1550,7 +1470,7 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
         <div className="profile-hero">
           <div className="profile-avatar-wrap">
             <div className="profile-avatar">
-              <Avatar size={80} name={fullName || 'Patient'} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
+              <Avatar size={80} name={`${patient?.lastName ?? ''} ${patient?.firstName ?? ''}`.trim() || 'Patient'} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
             </div>
             {patient?.allergies && <div className="avatar-alert" title="Has allergies">!</div>}
           </div>
@@ -1568,15 +1488,13 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
               {email && <span className="contact-item"><IconMail /> {email}</span>}
             </div>
 
-            {(patient?.allergies || patient?.labels?.length > 0) && (
-              <div className="profile-tags">
-                {patient?.allergies && <span className="tag tag-allergy"><IconAlert /> {patient.allergies}</span>}
-                {(patient?.labels ?? []).map((a: any) => {
-                  const l = a.label ?? a;
-                  return <span key={l.id} className="tag" style={{ background: l.color + '22', color: l.color, border: `1px solid ${l.color}55` }}>{l.name}</span>;
-                })}
+            {patient?.allergies && (
+              <div className="profile-allergy-row">
+                <span className="tag tag-allergy"><IconAlert /> {patient.allergies}</span>
               </div>
             )}
+
+            <LabelsBlock compact patientId={patientId} />
           </div>
 
           <div className="profile-stats">

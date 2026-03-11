@@ -81,7 +81,7 @@ export default function Invoices() {
 
   const filtered = invoices.filter(i => {
     if (!search) return true;
-    const name = `${i.patient?.firstName ?? ''} ${i.patient?.lastName ?? ''}`.toLowerCase();
+    const name = `${i.patient?.lastName ?? ''} ${i.patient?.firstName ?? ''}`.toLowerCase();
     return name.includes(search.toLowerCase()) || (i.invoiceNumber ?? '').toLowerCase().includes(search.toLowerCase());
   });
 
@@ -152,7 +152,7 @@ export default function Invoices() {
                       <div className="sp-patient-cell">
                         <div className="sp-avatar">{initials(i.patient)}</div>
                         <span className="sp-patient-name">
-                          {i.patient ? `${i.patient.firstName} ${i.patient.lastName}` : '—'}
+                          {i.patient ? `${i.patient.lastName} ${i.patient.firstName}` : '—'}
                         </span>
                       </div>
                     </td>

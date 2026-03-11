@@ -74,7 +74,7 @@ function App() {
       case 'dashboard':
         return <Dashboard />
       case 'schedule':
-        return <Calendar />
+        return <Calendar onOpenPatient={(id) => { setSelectedPatient({ id }); setActiveTab('patient-profile'); }} />
       case 'patients':
         return <Patients onSelectPatient={handleSelectPatient} />
       case 'patient-profile':

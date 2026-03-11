@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import './shared-page.css';
 
@@ -125,7 +125,7 @@ export default function CallJournal() {
                   ? `${c.patient.firstName?.[0] ?? ''}${c.patient.lastName?.[0] ?? ''}`.toUpperCase()
                   : '?';
                 const patientName = c.patient
-                  ? `${c.patient.firstName} ${c.patient.lastName}`
+                  ? `${c.patient.lastName} ${c.patient.firstName}`
                   : 'Unknown';
                 const managerName = c.user?.name ?? '—';
                 const dir = directionConfig[c.direction] ?? { label: c.direction, cls: 'sp-badge-gray' };
