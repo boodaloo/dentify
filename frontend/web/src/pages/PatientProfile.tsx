@@ -198,7 +198,7 @@ const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: 
         </div>
 
         {/* Last exam + Diagnoses */}
-        <div style={{ display: 'flex', flex-direction: 'column' as const, gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* External exam / initial exam */}
           <div className="pp-card">
