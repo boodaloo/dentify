@@ -845,6 +845,47 @@
 }
 .payment-row:last-child { border-bottom: none; }
 
+/* ── Clinical Tab ─────────────────────────────────────────────────────────── */
+
+.clinical-tab { display: flex; flex-direction: column; gap: 0; }
+
+.clinical-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-m);
+}
+
+.clinical-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-m);
+  align-items: start;
+}
+
+.exam-view  { display: flex; flex-direction: column; gap: 10px; }
+.exam-meta  { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+
+.diagnosis-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+.diagnosis-chip  { font-size: 12px !important; padding: 4px 10px !important; }
+
+/* ── Diary Tab ────────────────────────────────────────────────────────────── */
+
+.diary-list  { display: flex; flex-direction: column; gap: var(--space-m); }
+
+.diary-entry { display: flex; flex-direction: column; gap: 8px; }
+
+.diary-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+}
+.diary-date    { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.diary-doctor  { font-size: 13px; color: var(--text-secondary); }
+.diary-content { font-size: 14px; color: var(--text-primary); line-height: 1.6; white-space: pre-wrap; }
+
 /* ── Dental Chart ─────────────────────────────────────────────────────────── */
 
 .dental-chart-layout {

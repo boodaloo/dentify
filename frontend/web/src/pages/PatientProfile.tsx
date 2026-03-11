@@ -50,7 +50,7 @@ const StatusChip: React.FC<{ status: string; map: Record<string, { label: string
   return <span className={`pp-chip ${cfg.cls}`}>{cfg.label}</span>;
 };
 
-// ─── Dental Chart ─────────────────────────────────────────────────────────────
+// ─── Dental Chart (внутри Clinical) ──────────────────────────────────────────
 
 type LocalToothStatus = 'healthy' | 'filled' | 'cavity' | 'crown' | 'missing' | 'implant';
 const apiToLocal: Record<string, LocalToothStatus> = {
@@ -72,9 +72,17 @@ const Tooth: React.FC<{ number: number; status: LocalToothStatus; isSelected: bo
   </div>
 );
 
-const DentalChartView: React.FC<{ patientId: string }> = ({ patientId }) => {
-  const [toothData, setToothData] = useState<Record<number, LocalToothStatus>>({});
-  const [selected, setSelected]   = useState<number | null>(null);
+// ─── Clinical Tab (Зубная карта + Здоровье + Диагнозы) ───────────────────────
+
+const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void }> = ({ patient, patientId, onPatientUpdate }) => {
+  const [toothData, setToothData]   = useState<Record<number, LocalToothStatus>>({});
+  const [selected, setSelected]     = useState<number | null>(null);
+  const [allergies, setAllergies]   = useState(patient?.allergies ?? '');
+  const [notes, setNotes]           = useState(patient?.notes ?? '');
+  const [saving, setSaving]         = useState(false);
+  const [saved, setSaved]           = useState(false);
+  const [records, setRecords]       = useState<any[]>([]);
+  const [recLoading, setRecLoading] = useState(true);
 
   useEffect(() => {
     api.get(`/clinical/patients/${patientId}/dental-chart`).then((res: any) => {
@@ -83,7 +91,21 @@ const DentalChartView: React.FC<{ patientId: string }> = ({ patientId }) => {
       data.forEach(t => { map[t.toothNumber] = apiToLocal[t.status] ?? 'healthy'; });
       setToothData(map);
     }).catch(() => {});
+
+    api.get('/clinical/medical-records', { patientId, limit: '20' }).then((res: any) => {
+      setRecords(res?.data?.items ?? res?.data ?? []);
+    }).catch(() => {}).finally(() => setRecLoading(false));
   }, [patientId]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put(`/patients/${patientId}`, { allergies, notes });
+      onPatientUpdate({ ...patient, allergies, notes });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch { } finally { setSaving(false); }
+  };
 
   const upperRight = [18, 17, 16, 15, 14, 13, 12, 11];
   const upperLeft  = [21, 22, 23, 24, 25, 26, 27, 28];
@@ -100,36 +122,203 @@ const DentalChartView: React.FC<{ patientId: string }> = ({ patientId }) => {
     { status: 'implant', label: 'Implant', color: 'rgba(90,90,114,0.2)' },
   ];
 
+  // Collect all unique diagnoses from all records
+  const allDiagnoses: any[] = [];
+  records.forEach(r => (r.diagnoses ?? []).forEach((d: any) => {
+    if (d.diagnosis && !allDiagnoses.find(x => x.id === d.diagnosis.id)) allDiagnoses.push(d.diagnosis);
+  }));
+
+  const initialExams = records.filter(r => r.recordType === 'INITIAL_EXAM' || r.recordType === 'EXAMINATION');
+  const lastExam     = initialExams[0];
+
   return (
-    <div className="dental-chart-layout">
-      <div className="dental-chart-main card">
-        <div className="chart-jaw-label">Upper Jaw</div>
-        <div className="jaw-row">{[...upperRight, ...upperLeft].map(n => <Tooth key={n} number={n} status={statusOf(n)} isSelected={selected === n} onClick={() => setSelected(p => p === n ? null : n)} />)}</div>
-        <div className="jaw-divider" />
-        <div className="jaw-row">{[...lowerRight, ...lowerLeft].map(n => <Tooth key={n} number={n} status={statusOf(n)} isSelected={selected === n} onClick={() => setSelected(p => p === n ? null : n)} />)}</div>
-        <div className="chart-jaw-label">Lower Jaw</div>
-        <div className="chart-legend">
-          {legend.map(l => (
-            <div key={l.status} className="legend-item">
-              <div className="legend-swatch" style={{ background: l.color, border: l.status === 'missing' ? '2px dashed #C0C0CC' : `2px solid ${l.color}` }} />
-              <span>{l.label}</span>
+    <div className="clinical-tab">
+
+      {/* ── Row 1: Dental Chart ── */}
+      <div className="clinical-section-title">Dental Chart</div>
+      <div className="dental-chart-layout">
+        <div className="dental-chart-main pp-card">
+          <div className="chart-jaw-label">Upper Jaw</div>
+          <div className="jaw-row">{[...upperRight, ...upperLeft].map(n => <Tooth key={n} number={n} status={statusOf(n)} isSelected={selected === n} onClick={() => setSelected(p => p === n ? null : n)} />)}</div>
+          <div className="jaw-divider" />
+          <div className="jaw-row">{[...lowerRight, ...lowerLeft].map(n => <Tooth key={n} number={n} status={statusOf(n)} isSelected={selected === n} onClick={() => setSelected(p => p === n ? null : n)} />)}</div>
+          <div className="chart-jaw-label">Lower Jaw</div>
+          <div className="chart-legend">
+            {legend.map(l => (
+              <div key={l.status} className="legend-item">
+                <div className="legend-swatch" style={{ background: l.color, border: l.status === 'missing' ? '2px dashed #C0C0CC' : `2px solid ${l.color}` }} />
+                <span>{l.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="dental-detail-panel pp-card">
+          {selected ? (
+            <div className="tooth-detail">
+              <h3>Tooth #{selected}</h3>
+              <p className="tooth-status-label">{toothStatusLabel[statusOf(selected)]}</p>
+              <div className="tooth-detail-info">
+                <div className="detail-info-row"><span>Status</span><span className="pp-chip chip-teal">{toothStatusLabel[statusOf(selected)]}</span></div>
+              </div>
             </div>
-          ))}
+          ) : (
+            <div className="tooth-detail-empty"><div style={{ fontSize: 40, opacity: 0.35 }}>🦷</div><p>Click a tooth to view details</p></div>
+          )}
         </div>
       </div>
-      <div className="dental-detail-panel card">
-        {selected ? (
-          <div className="tooth-detail">
-            <h3>Tooth #{selected}</h3>
-            <p className="tooth-status-label">{toothStatusLabel[statusOf(selected)]}</p>
-            <div className="tooth-detail-info">
-              <div className="detail-info-row"><span>Status</span><span className="pp-chip chip-teal">{toothStatusLabel[statusOf(selected)]}</span></div>
-            </div>
+
+      {/* ── Row 2: Health Profile + Diagnoses ── */}
+      <div className="clinical-section-title" style={{ marginTop: 24 }}>Anamnesis & Health Profile</div>
+      <div className="clinical-bottom-grid">
+
+        {/* Allergies & Notes */}
+        <div className="pp-card">
+          <div className="pp-card-title">Allergies & Contraindications</div>
+          <textarea
+            className="pp-textarea"
+            rows={3}
+            value={allergies}
+            onChange={e => setAllergies(e.target.value)}
+            placeholder="Penicillin allergy, latex allergy, local anesthetics…"
+          />
+          <div className="pp-card-title" style={{ marginTop: 14 }}>Clinical Notes</div>
+          <textarea
+            className="pp-textarea"
+            rows={3}
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder="Chronic conditions, medications, relevant history…"
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+            <button className="pp-btn-primary" onClick={handleSave} disabled={saving}>
+              <IconSave /> {saving ? 'Saving…' : 'Save'}
+            </button>
+            {saved && <span style={{ fontSize: 13, color: 'var(--secondary-seafoam)' }}>✓ Saved</span>}
           </div>
-        ) : (
-          <div className="tooth-detail-empty"><div style={{ fontSize: 40, opacity: 0.35 }}>🦷</div><p>Click a tooth to view details</p></div>
-        )}
+        </div>
+
+        {/* Last exam + Diagnoses */}
+        <div style={{ display: 'flex', flex-direction: 'column' as const, gap: 12 }}>
+
+          {/* External exam / initial exam */}
+          <div className="pp-card">
+            <div className="pp-card-title">Initial Examination</div>
+            {recLoading ? (
+              <div className="pp-loading-sm">Loading…</div>
+            ) : lastExam ? (
+              <div className="exam-view">
+                <div className="exam-meta">{fmtDate(lastExam.createdAt)}{lastExam.createdBy && <span> · Dr. {lastExam.createdBy.name}</span>}</div>
+                {lastExam.complaints && <div className="mr-field"><span className="mr-label">Complaints</span><span>{lastExam.complaints}</span></div>}
+                {lastExam.anamnesis  && <div className="mr-field"><span className="mr-label">Anamnesis</span><span>{lastExam.anamnesis}</span></div>}
+                {lastExam.notes      && <div className="mr-field"><span className="mr-label">Notes</span><span>{lastExam.notes}</span></div>}
+              </div>
+            ) : (
+              <div className="pp-empty-sm">No examination records yet</div>
+            )}
+          </div>
+
+          {/* All-time diagnoses */}
+          <div className="pp-card">
+            <div className="pp-card-header">
+              <div className="pp-card-title">Diagnoses</div>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{allDiagnoses.length} unique</span>
+            </div>
+            {allDiagnoses.length === 0 ? (
+              <div className="pp-empty-sm">No diagnoses recorded</div>
+            ) : (
+              <div className="diagnosis-cloud">
+                {allDiagnoses.map((d: any) => (
+                  <span key={d.id} className="pp-chip chip-teal diagnosis-chip">{d.code} — {d.name}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
+    </div>
+  );
+};
+
+// ─── Diary Tab ────────────────────────────────────────────────────────────────
+
+const DiaryTab: React.FC<{ patientId: string }> = ({ patientId }) => {
+  const [diary, setDiary]       = useState<any[]>([]);
+  const [records, setRecords]   = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [activeView, setActiveView] = useState<'diary' | 'records'>('diary');
+
+  useEffect(() => {
+    Promise.all([
+      api.get(`/clinical/patients/${patientId}/diary`).then((res: any) => res?.data?.items ?? res?.data ?? []).catch(() => []),
+      api.get('/clinical/medical-records', { patientId, limit: '50' }).then((res: any) => res?.data?.items ?? res?.data ?? []).catch(() => []),
+    ]).then(([d, r]) => {
+      setDiary(d);
+      setRecords(r);
+    }).finally(() => setLoading(false));
+  }, [patientId]);
+
+  if (loading) return <div className="pp-loading"><div className="loading-spinner" /></div>;
+
+  return (
+    <div className="pp-section">
+      <div className="pp-filter-row">
+        <button className={`pp-filter-btn ${activeView === 'diary' ? 'active' : ''}`} onClick={() => setActiveView('diary')}>
+          Diary ({diary.length})
+        </button>
+        <button className={`pp-filter-btn ${activeView === 'records' ? 'active' : ''}`} onClick={() => setActiveView('records')}>
+          Medical Records ({records.length})
+        </button>
+      </div>
+
+      {activeView === 'diary' && (
+        diary.length === 0 ? (
+          <div className="pp-empty">No diary entries yet</div>
+        ) : (
+          <div className="diary-list">
+            {diary.map((entry: any, i: number) => (
+              <div key={entry.id || i} className="diary-entry pp-card">
+                <div className="diary-entry-meta">
+                  <span className="diary-date">{fmtDate(entry.recordDate ?? entry.createdAt)}</span>
+                  {entry.doctor && <span className="diary-doctor">Dr. {entry.doctor.name}</span>}
+                  {entry.appointment && <span className="pp-chip chip-gray" style={{ fontSize: 11 }}>Linked to visit</span>}
+                </div>
+                <div className="diary-content">{entry.content}</div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {activeView === 'records' && (
+        records.length === 0 ? (
+          <div className="pp-empty">No medical records yet</div>
+        ) : (
+          <div className="records-timeline">
+            {records.map((r: any, i: number) => (
+              <div key={r.id || i} className="record-entry">
+                <div className="record-entry-meta">
+                  <span className="record-date">{fmtDateTime(r.createdAt)}</span>
+                  {r.createdBy && <span className="record-doctor">{r.createdBy.name}</span>}
+                  <span className="pp-chip chip-gray" style={{ fontSize: 10 }}>{r.recordType?.replace(/_/g, ' ')}</span>
+                </div>
+                <div className="record-entry-body">
+                  {r.complaints  && <div className="mr-field"><span className="mr-label">Complaints</span><span>{r.complaints}</span></div>}
+                  {r.anamnesis   && <div className="mr-field"><span className="mr-label">Anamnesis</span><span>{r.anamnesis}</span></div>}
+                  {r.diagnoses?.length > 0 && (
+                    <div className="mr-field">
+                      <span className="mr-label">Diagnoses</span>
+                      <div className="mr-diagnoses">{r.diagnoses.map((d: any, j: number) => <span key={j} className="pp-chip chip-teal">{d.diagnosis?.code} {d.diagnosis?.name}</span>)}</div>
+                    </div>
+                  )}
+                  {r.treatmentPlan && <div className="mr-field"><span className="mr-label">Treatment done</span><span>{r.treatmentPlan}</span></div>}
+                  {r.notes       && <div className="mr-field"><span className="mr-label">Notes</span><span>{r.notes}</span></div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
     </div>
   );
 };
@@ -171,9 +360,9 @@ const OverviewTab: React.FC<{ patient: any; onTabChange: (tab: string) => void }
           <div className="qa-icon qa-icon-coral"><IconClipboard /></div>
           <span>Treatment Plan</span>
         </button>
-        <button className="qa-btn" onClick={() => onTabChange('dental')}>
+        <button className="qa-btn" onClick={() => onTabChange('clinical')}>
           <div className="qa-icon qa-icon-purple"><IconTooth /></div>
-          <span>Dental Chart</span>
+          <span>Clinical</span>
         </button>
         <button className="qa-btn" onClick={() => onTabChange('info')}>
           <div className="qa-icon qa-icon-blue"><IconShield /></div>
@@ -667,104 +856,6 @@ const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
   );
 };
 
-// ─── Anamnesis Tab (clinical only) ────────────────────────────────────────────
-
-const AnamnesisTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void }> = ({ patient, patientId, onPatientUpdate }) => {
-  const [allergies, setAllergies]     = useState(patient?.allergies ?? '');
-  const [notes, setNotes]             = useState(patient?.notes ?? '');
-  const [saving, setSaving]           = useState(false);
-  const [saved, setSaved]             = useState(false);
-  const [records, setRecords]         = useState<any[]>([]);
-  const [recLoading, setRecLoading]   = useState(true);
-
-  useEffect(() => {
-    api.get('/clinical/medical-records', { patientId, limit: '50' }).then((res: any) => {
-      setRecords(res?.data?.items ?? res?.data ?? []);
-    }).catch(() => {}).finally(() => setRecLoading(false));
-  }, [patientId]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await api.put(`/patients/${patientId}`, { allergies, notes });
-      onPatientUpdate({ ...patient, allergies, notes });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch { } finally { setSaving(false); }
-  };
-
-  return (
-    <div className="pp-section">
-      <div className="anamnesis-grid">
-
-        <div className="pp-card">
-          <div className="pp-card-title">Allergies & Contraindications</div>
-          <textarea
-            className="pp-textarea"
-            rows={4}
-            value={allergies}
-            onChange={e => setAllergies(e.target.value)}
-            placeholder="Penicillin allergy, latex allergy, local anesthetics…"
-          />
-        </div>
-
-        <div className="pp-card">
-          <div className="pp-card-title">Clinical Notes</div>
-          <textarea
-            className="pp-textarea"
-            rows={4}
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder="Chronic conditions, medications, relevant history…"
-          />
-        </div>
-
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-        <button className="pp-btn-primary" onClick={handleSave} disabled={saving}>
-          <IconSave /> {saving ? 'Saving…' : 'Save Changes'}
-        </button>
-        {saved && <span style={{ fontSize: 13, color: 'var(--secondary-seafoam)' }}>✓ Saved</span>}
-      </div>
-
-      {/* Medical records timeline */}
-      <div className="pp-card" style={{ marginTop: 20 }}>
-        <div className="pp-card-header">
-          <div className="pp-card-title">Medical Records Timeline</div>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{records.length} records</span>
-        </div>
-        {recLoading ? (
-          <div className="pp-loading-sm">Loading…</div>
-        ) : records.length === 0 ? (
-          <div className="pp-empty-sm">No medical records yet</div>
-        ) : (
-          <div className="records-timeline">
-            {records.map((r: any, i: number) => (
-              <div key={r.id || i} className="record-entry">
-                <div className="record-entry-meta">
-                  <span className="record-date">{fmtDateTime(r.createdAt)}</span>
-                  {r.createdBy && <span className="record-doctor">{r.createdBy.name}</span>}
-                  <span className="pp-chip chip-gray" style={{ fontSize: 10 }}>{r.recordType?.replace(/_/g, ' ')}</span>
-                </div>
-                <div className="record-entry-body">
-                  {r.complaints  && <div className="mr-field"><span className="mr-label">Complaints</span><span>{r.complaints}</span></div>}
-                  {r.diagnoses?.length > 0 && (
-                    <div className="mr-field">
-                      <span className="mr-label">Diagnoses</span>
-                      <div className="mr-diagnoses">{r.diagnoses.map((d: any, j: number) => <span key={j} className="pp-chip chip-teal">{d.diagnosis?.code} {d.diagnosis?.name}</span>)}</div>
-                    </div>
-                  )}
-                  {r.notes && <div className="mr-field"><span className="mr-label">Notes</span><span>{r.notes}</span></div>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // ─── Treatment Plans Tab ──────────────────────────────────────────────────────
 
@@ -971,10 +1062,10 @@ interface PatientProfileProps {
 const TABS = [
   { id: 'overview',   label: 'Overview' },
   { id: 'info',       label: 'Patient Info' },
-  { id: 'dental',     label: 'Dental Chart' },
+  { id: 'clinical',   label: 'Clinical' },
+  { id: 'diary',      label: 'Diary' },
   { id: 'visits',     label: 'Visits' },
   { id: 'treatment',  label: 'Treatment Plan' },
-  { id: 'anamnesis',  label: 'Anamnesis' },
   { id: 'finances',   label: 'Finances' },
   { id: 'documents',  label: 'Documents' },
 ];
@@ -1011,10 +1102,10 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
     switch (activeTab) {
       case 'overview':  return <OverviewTab patient={patient} onTabChange={setActiveTab} />;
       case 'info':      return <InfoTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
-      case 'dental':    return <DentalChartView patientId={patientId} />;
+      case 'clinical':  return <ClinicalTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
+      case 'diary':     return <DiaryTab patientId={patientId} />;
       case 'visits':    return <VisitsTab patient={patient} />;
       case 'treatment': return <TreatmentTab patientId={patientId} />;
-      case 'anamnesis': return <AnamnesisTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
       case 'finances':  return <FinancesTab patient={patient} />;
       default:          return <PlaceholderTab name={TABS.find(t => t.id === activeTab)?.label ?? ''} />;
     }
