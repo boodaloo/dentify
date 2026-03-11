@@ -4,23 +4,28 @@ import './PatientProfile.css';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-const IconBack    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
-const IconEdit    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
-const IconPlus    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
-const IconPhone   = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.18 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>;
-const IconMail    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
-const IconCake    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v2"/><path d="M12 8v2"/><path d="M17 8v2"/></svg>;
-const IconAlert   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>;
-const IconCheck   = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
-const IconChevron = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
-const IconSave    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+const IconBack      = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
+const IconEdit      = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+const IconPlus      = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
+const IconPhone     = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.18 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>;
+const IconMail      = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
+const IconCake      = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v2"/><path d="M12 8v2"/><path d="M17 8v2"/></svg>;
+const IconAlert     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>;
+const IconCheck     = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+const IconChevron   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
+const IconSave      = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+const IconCalendar  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>;
+const IconReceipt   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg>;
+const IconClipboard = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
+const IconTooth     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5.5c-1.5-2-4-2.5-5.5-1C4.5 6 4 8 4.5 10c.5 2 1 3.5 1 5.5 0 1.5.5 3 2 3s2-1.5 2-1.5.5 1.5 2.5 1.5 2.5-1.5 2.5-1.5 .5 1.5 2 1.5 2-1.5 2-3c0-2 .5-3.5 1-5.5.5-2 0-4-2-5.5-1.5-1-4-.5-5.5 1Z"/></svg>;
+const IconShield    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate    = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-const fmtDateTime= (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-const fmtTime    = (d: string) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-const fmtCur     = (n: number) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
+const fmtDate     = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+const fmtDateTime = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const fmtTime     = (d: string) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+const fmtCur      = (n: number) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   SCHEDULED:   { label: 'Scheduled',   cls: 'chip-yellow' },
@@ -45,7 +50,7 @@ const StatusChip: React.FC<{ status: string; map: Record<string, { label: string
   return <span className={`pp-chip ${cfg.cls}`}>{cfg.label}</span>;
 };
 
-// ─── Dental Chart (unchanged) ─────────────────────────────────────────────────
+// ─── Dental Chart ─────────────────────────────────────────────────────────────
 
 type LocalToothStatus = 'healthy' | 'filled' | 'cavity' | 'crown' | 'missing' | 'implant';
 const apiToLocal: Record<string, LocalToothStatus> = {
@@ -118,7 +123,7 @@ const DentalChartView: React.FC<{ patientId: string }> = ({ patientId }) => {
             <h3>Tooth #{selected}</h3>
             <p className="tooth-status-label">{toothStatusLabel[statusOf(selected)]}</p>
             <div className="tooth-detail-info">
-              <div className="detail-info-row"><span>Status</span><span className={`pp-chip chip-teal`}>{toothStatusLabel[statusOf(selected)]}</span></div>
+              <div className="detail-info-row"><span>Status</span><span className="pp-chip chip-teal">{toothStatusLabel[statusOf(selected)]}</span></div>
             </div>
           </div>
         ) : (
@@ -138,104 +143,428 @@ const OverviewTab: React.FC<{ patient: any; onTabChange: (tab: string) => void }
   const invoices       = patient?.invoices ?? [];
   const totalSpent     = invoices.filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + Number(i.totalAmount), 0);
   const outstanding    = invoices.filter((i: any) => i.status !== 'PAID' && i.status !== 'CANCELLED').reduce((s: number, i: any) => s + Number(i.totalAmount) - Number(i.paidAmount ?? 0), 0);
+  const deposit        = patient?.balance ? Number(patient.balance.cashBalance ?? 0) + Number(patient.balance.cardBalance ?? 0) : 0;
+  const bonuses        = patient?.bonuses?.balance ?? 0;
 
-  const upcoming = [...appointments].reverse().find((a: any) => new Date(a.startTime) > new Date());
-  const recent   = appointments.filter((a: any) => new Date(a.startTime) <= new Date()).slice(0, 5);
+  const now      = new Date();
+  const upcoming = [...appointments].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()).find((a: any) => new Date(a.startTime) > now);
+  const recent   = [...appointments].filter((a: any) => new Date(a.startTime) <= now).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()).slice(0, 4);
+
+  const planItems  = activePlan?.items ?? [];
+  const doneItems  = planItems.filter((i: any) => i.isDone).length;
+  const planPct    = planItems.length > 0 ? Math.round(doneItems / planItems.length * 100) : 0;
 
   return (
     <div className="overview-layout">
-      <div className="overview-col">
 
-        {/* Upcoming */}
-        <div className="pp-card">
-          <div className="pp-card-title">Upcoming Appointment</div>
-          {upcoming ? (
-            <div className="upcoming-block">
-              <div className="upcoming-date">{fmtDate(upcoming.startTime)} · {fmtTime(upcoming.startTime)} – {fmtTime(upcoming.endTime)}</div>
-              {upcoming.branch && <div className="upcoming-meta">📍 {upcoming.branch.name}</div>}
-              {upcoming.notes && <div className="upcoming-meta" style={{ fontStyle: 'italic' }}>"{upcoming.notes}"</div>}
-              <StatusChip status={upcoming.status} map={STATUS_LABELS} />
+      {/* ── Quick Actions ── */}
+      <div className="quick-actions-bar">
+        <button className="qa-btn" onClick={() => onTabChange('visits')}>
+          <div className="qa-icon qa-icon-teal"><IconCalendar /></div>
+          <span>New Appointment</span>
+        </button>
+        <button className="qa-btn" onClick={() => onTabChange('finances')}>
+          <div className="qa-icon qa-icon-green"><IconReceipt /></div>
+          <span>New Invoice</span>
+        </button>
+        <button className="qa-btn" onClick={() => onTabChange('treatment')}>
+          <div className="qa-icon qa-icon-coral"><IconClipboard /></div>
+          <span>Treatment Plan</span>
+        </button>
+        <button className="qa-btn" onClick={() => onTabChange('dental')}>
+          <div className="qa-icon qa-icon-purple"><IconTooth /></div>
+          <span>Dental Chart</span>
+        </button>
+        <button className="qa-btn" onClick={() => onTabChange('info')}>
+          <div className="qa-icon qa-icon-blue"><IconShield /></div>
+          <span>Patient Info</span>
+        </button>
+      </div>
+
+      {/* ── Medical alert banner ── */}
+      {patient?.allergies && (
+        <div className="alert-banner">
+          <IconAlert />
+          <div>
+            <strong>Allergy / Contraindication</strong>
+            <span>{patient.allergies}</span>
+          </div>
+          <button className="pp-link" onClick={() => onTabChange('anamnesis')}>Edit →</button>
+        </div>
+      )}
+
+      <div className="overview-grid">
+
+        {/* ── Left column ── */}
+        <div className="overview-col">
+
+          {/* Next appointment */}
+          <div className="pp-card">
+            <div className="pp-card-header">
+              <div className="pp-card-title">Next Appointment</div>
+              <button className="pp-link" onClick={() => onTabChange('visits')}>All visits →</button>
+            </div>
+            {upcoming ? (
+              <div className="upcoming-block">
+                <div className="upcoming-date">{fmtDate(upcoming.startTime)}</div>
+                <div className="upcoming-time">{fmtTime(upcoming.startTime)} – {fmtTime(upcoming.endTime)}</div>
+                <div className="upcoming-row">
+                  {upcoming.doctor && <span className="upcoming-meta">👨‍⚕️ Dr. {upcoming.doctor.name}</span>}
+                  {upcoming.branch && <span className="upcoming-meta">📍 {upcoming.branch.name}</span>}
+                </div>
+                {upcoming.services?.length > 0 && (
+                  <div className="upcoming-services">{upcoming.services.map((s: any) => s.service?.name).filter(Boolean).join(' · ')}</div>
+                )}
+                {upcoming.notes && <div className="upcoming-notes">"{upcoming.notes}"</div>}
+                <StatusChip status={upcoming.status} map={STATUS_LABELS} />
+              </div>
+            ) : (
+              <div className="pp-empty-sm">No upcoming appointments</div>
+            )}
+          </div>
+
+          {/* Recent visits */}
+          <div className="pp-card">
+            <div className="pp-card-header">
+              <div className="pp-card-title">Recent Visits</div>
+              <button className="pp-link" onClick={() => onTabChange('visits')}>{appointments.length} total →</button>
+            </div>
+            {recent.length === 0 ? (
+              <div className="pp-empty-sm">No visits yet</div>
+            ) : (
+              <div className="visit-timeline">
+                {recent.map((a: any, i: number) => (
+                  <div key={a.id || i} className="visit-item">
+                    <div className={`visit-dot ${(a.status ?? 'completed').toLowerCase()}`} />
+                    <div className="visit-content">
+                      <div className="visit-header-row">
+                        <div className="visit-date">{fmtDate(a.startTime)}</div>
+                        <StatusChip status={a.status} map={STATUS_LABELS} />
+                      </div>
+                      {a.services?.length > 0 && <div className="visit-proc">{a.services.map((s: any) => s.service?.name).filter(Boolean).join(', ')}</div>}
+                      {a.doctor && <div className="visit-meta">👨‍⚕️ Dr. {a.doctor.name}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Right column ── */}
+        <div className="overview-col">
+
+          {/* Finance summary */}
+          <div className="pp-card">
+            <div className="pp-card-header">
+              <div className="pp-card-title">Finances</div>
+              <button className="pp-link" onClick={() => onTabChange('finances')}>Details →</button>
+            </div>
+            <div className="fin-grid">
+              <div className="fin-cell">
+                <div className="fin-val">{fmtCur(totalSpent)}</div>
+                <div className="fin-lbl">Total Paid</div>
+              </div>
+              <div className="fin-cell">
+                <div className="fin-val" style={{ color: outstanding > 0 ? '#c0390a' : undefined }}>{fmtCur(outstanding)}</div>
+                <div className="fin-lbl">Outstanding</div>
+              </div>
+              <div className="fin-cell">
+                <div className="fin-val">{fmtCur(deposit)}</div>
+                <div className="fin-lbl">Deposit</div>
+              </div>
+              <div className="fin-cell">
+                <div className="fin-val">{bonuses}</div>
+                <div className="fin-lbl">Bonuses</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Active treatment plan */}
+          {activePlan ? (
+            <div className="pp-card">
+              <div className="pp-card-header">
+                <div className="pp-card-title">Active Treatment Plan</div>
+                <button className="pp-link" onClick={() => onTabChange('treatment')}>Details →</button>
+              </div>
+              <div className="plan-name">{activePlan.name}</div>
+              {planItems.length > 0 && (
+                <>
+                  <div className="plan-progress" style={{ marginTop: 10 }}>
+                    <div className="plan-progress-bar">
+                      <div className="plan-progress-fill" style={{ width: `${planPct}%` }} />
+                    </div>
+                    <span className="plan-progress-label">{doneItems}/{planItems.length} steps · {planPct}%</span>
+                  </div>
+                  <div className="plan-items-preview">
+                    {planItems.slice(0, 4).map((item: any, i: number) => (
+                      <div key={i} className={`plan-item-row ${item.isDone ? 'done' : ''}`}>
+                        <div className={`plan-item-dot ${item.isDone ? 'done' : ''}`} />
+                        <span>{item.service?.name ?? '—'}</span>
+                        {item.toothNumber && <span className="plan-item-tooth">#{item.toothNumber}</span>}
+                        {item.isDone && <span className="pp-chip chip-green" style={{ fontSize: 10 }}>Done</span>}
+                      </div>
+                    ))}
+                    {planItems.length > 4 && <div className="pp-empty-sm">+{planItems.length - 4} more items</div>}
+                  </div>
+                </>
+              )}
             </div>
           ) : (
-            <div className="pp-empty-sm">No upcoming appointments
-              <button className="pp-link" onClick={() => onTabChange('visits')}>View all visits →</button>
+            <div className="pp-card pp-card-empty-action">
+              <div className="pp-card-title">Treatment Plan</div>
+              <div className="pp-empty-sm">No active plan</div>
+              <button className="pp-btn-secondary" style={{ marginTop: 8 }} onClick={() => onTabChange('treatment')}>
+                <IconPlus /> Create Plan
+              </button>
+            </div>
+          )}
+
+          {/* Clinical notes */}
+          {patient?.notes && (
+            <div className="pp-card">
+              <div className="pp-card-header">
+                <div className="pp-card-title">Clinical Notes</div>
+                <button className="pp-link" onClick={() => onTabChange('anamnesis')}>Edit →</button>
+              </div>
+              <p className="clinical-notes-text">{patient.notes}</p>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Patient Info Tab ──────────────────────────────────────────────────────────
+
+const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void }> = ({ patient, patientId, onPatientUpdate }) => {
+  const contacts  = patient?.contacts ?? [];
+  const relatives = patient?.relatives ?? [];
+  const insurances = patient?.insurances ?? [];
+  const groups    = patient?.groupMemberships ?? [];
+  const promotions = patient?.promotionUsages ?? [];
+
+  const phones = contacts.filter((c: any) => c.type === 'PHONE');
+  const emails  = contacts.filter((c: any) => c.type === 'EMAIL');
+  const address = contacts.find((c: any) => c.type === 'ADDRESS')?.value;
+
+  // Edit mode
+  const [editing, setEditing] = useState(false);
+  const [form, setForm]       = useState({
+    passportSeries: patient?.passportSeries ?? '',
+    passportNumber: patient?.passportNumber ?? '',
+    snils:          patient?.snils ?? '',
+    inn:            patient?.inn ?? '',
+    referralSource: patient?.referralSource ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put(`/patients/${patientId}`, form);
+      onPatientUpdate({ ...patient, ...form });
+      setEditing(false);
+    } catch { } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="pp-section">
+      <div className="info-tab-grid">
+
+        {/* ── Contacts ── */}
+        <div className="pp-card">
+          <div className="pp-card-title">Contact Information</div>
+          <div className="info-rows">
+            {phones.length > 0
+              ? phones.map((c: any, i: number) => (
+                  <div key={i} className="info-row">
+                    <span className="info-row-label">
+                      <IconPhone /> {c.isPrimary ? 'Primary Phone' : (c.label || 'Phone')}
+                    </span>
+                    <span className="info-row-val">
+                      <a href={`tel:${c.value}`} className="pp-link-plain">{c.value}</a>
+                      {c.isPrimary && <span className="pp-chip chip-teal" style={{ fontSize: 10, marginLeft: 6 }}>Primary</span>}
+                    </span>
+                  </div>
+                ))
+              : <div className="info-row"><span className="info-row-label"><IconPhone /> Phone</span><span className="info-row-empty">—</span></div>
+            }
+            {emails.length > 0
+              ? emails.map((c: any, i: number) => (
+                  <div key={i} className="info-row">
+                    <span className="info-row-label"><IconMail /> {c.label || 'Email'}</span>
+                    <span className="info-row-val"><a href={`mailto:${c.value}`} className="pp-link-plain">{c.value}</a></span>
+                  </div>
+                ))
+              : <div className="info-row"><span className="info-row-label"><IconMail /> Email</span><span className="info-row-empty">—</span></div>
+            }
+            {address && (
+              <div className="info-row">
+                <span className="info-row-label">📍 Address</span>
+                <span className="info-row-val">{address}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Documents ── */}
+        <div className="pp-card">
+          <div className="pp-card-header">
+            <div className="pp-card-title">Documents & IDs</div>
+            <button className="pp-btn-ghost" onClick={() => setEditing(e => !e)}><IconEdit /> Edit</button>
+          </div>
+          {editing ? (
+            <div className="edit-form">
+              <div className="edit-row">
+                <div className="pp-field">
+                  <label className="pp-label">Passport Series</label>
+                  <input className="pp-input" value={form.passportSeries} onChange={e => setForm(f => ({ ...f, passportSeries: e.target.value }))} placeholder="1234" />
+                </div>
+                <div className="pp-field">
+                  <label className="pp-label">Passport Number</label>
+                  <input className="pp-input" value={form.passportNumber} onChange={e => setForm(f => ({ ...f, passportNumber: e.target.value }))} placeholder="567890" />
+                </div>
+              </div>
+              <div className="edit-row">
+                <div className="pp-field">
+                  <label className="pp-label">SNILS</label>
+                  <input className="pp-input" value={form.snils} onChange={e => setForm(f => ({ ...f, snils: e.target.value }))} placeholder="XXX-XXX-XXX XX" />
+                </div>
+                <div className="pp-field">
+                  <label className="pp-label">INN</label>
+                  <input className="pp-input" value={form.inn} onChange={e => setForm(f => ({ ...f, inn: e.target.value }))} placeholder="123456789012" />
+                </div>
+              </div>
+              <div className="pp-field">
+                <label className="pp-label">Referral Source</label>
+                <select className="pp-input" value={form.referralSource} onChange={e => setForm(f => ({ ...f, referralSource: e.target.value }))}>
+                  <option value="">— Not specified —</option>
+                  <option value="SOCIAL_MEDIA">Social Media</option>
+                  <option value="RECOMMENDATION">Recommendation</option>
+                  <option value="SEARCH_ENGINE">Search Engine</option>
+                  <option value="ADVERTISEMENT">Advertisement</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div className="edit-actions">
+                <button className="pp-btn-primary" onClick={handleSave} disabled={saving}><IconSave /> {saving ? 'Saving…' : 'Save'}</button>
+                <button className="pp-btn-ghost" onClick={() => setEditing(false)}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="info-rows">
+              <div className="info-row"><span className="info-row-label">Passport</span><span className="info-row-val">{patient?.passportSeries || patient?.passportNumber ? `${patient.passportSeries ?? ''} ${patient.passportNumber ?? ''}`.trim() : <span className="info-row-empty">—</span>}</span></div>
+              <div className="info-row"><span className="info-row-label">SNILS</span><span className="info-row-val">{patient?.snils || <span className="info-row-empty">—</span>}</span></div>
+              <div className="info-row"><span className="info-row-label">INN</span><span className="info-row-val">{patient?.inn || <span className="info-row-empty">—</span>}</span></div>
+              <div className="info-row"><span className="info-row-label">Referral</span><span className="info-row-val">{patient?.referralSource ? patient.referralSource.replace(/_/g, ' ') : <span className="info-row-empty">—</span>}</span></div>
             </div>
           )}
         </div>
 
-        {/* Visit history */}
+        {/* ── Insurance / Policies ── */}
         <div className="pp-card">
           <div className="pp-card-header">
-            <div className="pp-card-title">Recent Visits</div>
-            <button className="pp-link" onClick={() => onTabChange('visits')}>{appointments.length} total →</button>
+            <div className="pp-card-title">Insurance & Policies</div>
+            <button className="pp-btn-ghost"><IconPlus /> Add</button>
           </div>
-          {recent.length === 0 ? (
-            <div className="pp-empty-sm">No visits yet</div>
+          {insurances.length === 0 ? (
+            <div className="pp-empty-sm">No insurance policies on file</div>
           ) : (
-            <div className="visit-timeline">
-              {recent.map((a: any, i: number) => (
-                <div key={a.id || i} className="visit-item">
-                  <div className={`visit-dot ${a.status?.toLowerCase() ?? 'completed'}`} />
-                  <div className="visit-content">
-                    <div className="visit-date">{fmtDate(a.startTime)}</div>
-                    {a.services?.length > 0 && <div className="visit-proc">{a.services.map((s: any) => s.service?.name).filter(Boolean).join(', ')}</div>}
-                    {a.branch && <div className="visit-meta">📍 {a.branch.name}</div>}
-                    <StatusChip status={a.status} map={STATUS_LABELS} />
+            <div className="insurance-list">
+              {insurances.map((ins: any, i: number) => (
+                <div key={i} className={`insurance-row ${ins.isActive ? '' : 'inactive'}`}>
+                  <div className="insurance-row-left">
+                    <div className="insurance-company">{ins.company?.name ?? '—'}</div>
+                    {ins.policyNumber && <div className="insurance-policy">Policy: {ins.policyNumber}</div>}
+                    {ins.validFrom && ins.validTo && (
+                      <div className="insurance-dates">{fmtDate(ins.validFrom)} — {fmtDate(ins.validTo)}</div>
+                    )}
+                  </div>
+                  <div className="insurance-row-right">
+                    <span className={`pp-chip ${ins.type === 'OMS' || ins.type === 'PUBLIC' ? 'chip-teal' : 'chip-yellow'}`}>{ins.type}</span>
+                    {!ins.isActive && <span className="pp-chip chip-gray" style={{ fontSize: 10 }}>Expired</span>}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </div>
 
-      <div className="overview-col">
-
-        {/* Medical alerts */}
-        {(patient?.allergies || patient?.notes) && (
-          <div className="pp-card pp-card-alert">
-            <div className="pp-card-header">
-              <div className="pp-card-title" style={{ color: '#8a4800' }}><IconAlert /> Medical Alerts</div>
-              <button className="pp-link" onClick={() => onTabChange('anamnesis')}>Edit →</button>
-            </div>
-            {patient.allergies && <div className="alert-item"><strong>Allergies:</strong> {patient.allergies}</div>}
-            {patient.notes && <div className="alert-item" style={{ marginTop: 6 }}><strong>Notes:</strong> {patient.notes}</div>}
-          </div>
-        )}
-
-        {/* Active treatment plan */}
-        {activePlan && (
-          <div className="pp-card">
-            <div className="pp-card-header">
-              <div className="pp-card-title">Treatment Plan</div>
-              <button className="pp-link" onClick={() => onTabChange('treatment')}>Details →</button>
-            </div>
-            <div className="plan-name">{activePlan.name}</div>
-            <StatusChip status={activePlan.status} map={{ DRAFT: { label: 'Draft', cls: 'chip-gray' }, ACTIVE: { label: 'Active', cls: 'chip-teal' }, COMPLETED: { label: 'Completed', cls: 'chip-green' }, CANCELLED: { label: 'Cancelled', cls: 'chip-gray' } }} />
-          </div>
-        )}
-
-        {/* Stats */}
+        {/* ── Relatives & Emergency contacts ── */}
         <div className="pp-card">
-          <div className="pp-card-title">Summary</div>
-          <div className="stats-grid">
-            <div className="stat-cell"><div className="stat-value">{appointments.length}</div><div className="stat-lbl">Visits</div></div>
-            <div className="stat-cell"><div className="stat-value">{invoices.length}</div><div className="stat-lbl">Invoices</div></div>
-            <div className="stat-cell"><div className="stat-value">{fmtCur(totalSpent)}</div><div className="stat-lbl">Total Paid</div></div>
-            <div className="stat-cell">
-              <div className="stat-value" style={{ color: outstanding > 0 ? '#c0390a' : undefined }}>{fmtCur(outstanding)}</div>
-              <div className="stat-lbl">Outstanding</div>
+          <div className="pp-card-header">
+            <div className="pp-card-title">Relatives & Emergency Contacts</div>
+            <button className="pp-btn-ghost"><IconPlus /> Add</button>
+          </div>
+          {relatives.length === 0 ? (
+            <div className="pp-empty-sm">No contacts added</div>
+          ) : (
+            <div className="relatives-list">
+              {relatives.map((r: any, i: number) => (
+                <div key={i} className="relative-row">
+                  <div className="relative-info">
+                    <div className="relative-name">
+                      {r.name}
+                      {r.isGuardian && <span className="pp-chip chip-coral" style={{ fontSize: 10, marginLeft: 6 }}>Guardian</span>}
+                    </div>
+                    <div className="relative-type">{r.relativeType?.replace(/_/g, ' ')}</div>
+                  </div>
+                  <div className="relative-contacts">
+                    {r.phone && <a href={`tel:${r.phone}`} className="pp-link-plain relative-contact"><IconPhone /> {r.phone}</a>}
+                    {r.email && <a href={`mailto:${r.email}`} className="pp-link-plain relative-contact"><IconMail /> {r.email}</a>}
+                  </div>
+                  {r.notes && <div className="relative-notes">{r.notes}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Loyalty & Groups ── */}
+        <div className="pp-card">
+          <div className="pp-card-title">Loyalty & Discount Groups</div>
+          <div className="info-rows">
+            <div className="info-row">
+              <span className="info-row-label">Loyalty Tier</span>
+              <span className="info-row-val">
+                {patient?.loyaltyTier
+                  ? <><span className="pp-chip chip-teal">{patient.loyaltyTier.name}</span>{patient.bonuses?.balance != null && <span style={{ marginLeft: 8, color: 'var(--text-secondary)', fontSize: 13 }}>{patient.bonuses.balance} pts</span>}</>
+                  : <span className="info-row-empty">Not enrolled</span>
+                }
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-row-label">Discount Groups</span>
+              <span className="info-row-val">
+                {groups.length > 0
+                  ? groups.map((g: any, i: number) => <span key={i} className="pp-chip chip-yellow" style={{ marginRight: 4 }}>{g.group?.name ?? g.groupId}</span>)
+                  : <span className="info-row-empty">None</span>
+                }
+              </span>
             </div>
             {patient?.balance && (
-              <div className="stat-cell">
-                <div className="stat-value">{fmtCur(Number(patient.balance.cashBalance ?? 0) + Number(patient.balance.cardBalance ?? 0))}</div>
-                <div className="stat-lbl">Deposit</div>
+              <div className="info-row">
+                <span className="info-row-label">Deposit Balance</span>
+                <span className="info-row-val">{fmtCur(Number(patient.balance.cashBalance ?? 0) + Number(patient.balance.cardBalance ?? 0))}</span>
               </div>
             )}
-            {patient?.bonuses && (
-              <div className="stat-cell"><div className="stat-value">{patient.bonuses.balance ?? 0}</div><div className="stat-lbl">Bonuses</div></div>
-            )}
           </div>
+          {promotions.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div className="pp-sub-title">Active Promotions</div>
+              <div className="promo-list">
+                {promotions.map((p: any, i: number) => (
+                  <div key={i} className="promo-row">
+                    <span>{p.promotion?.name ?? '—'}</span>
+                    {p.usedAt && <span className="info-row-empty" style={{ fontSize: 12 }}>Used {fmtDate(p.usedAt)}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
@@ -251,10 +580,7 @@ const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
   const [records, setRecords]     = useState<Record<string, any>>({});
 
   const appointments: any[] = patient?.appointments ?? [];
-
-  const filtered = filter === 'ALL'
-    ? appointments
-    : appointments.filter((a: any) => a.status === filter);
+  const filtered = filter === 'ALL' ? appointments : appointments.filter((a: any) => a.status === filter);
 
   const toggleExpand = async (id: string) => {
     if (expandedId === id) { setExpanded(null); return; }
@@ -272,14 +598,12 @@ const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
 
   return (
     <div className="pp-section">
-      <div className="pp-section-header">
-        <div className="pp-filter-row">
-          {filters.map(f => (
-            <button key={f} className={`pp-filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-              {f === 'ALL' ? `All (${appointments.length})` : (STATUS_LABELS[f]?.label ?? f)}
-            </button>
-          ))}
-        </div>
+      <div className="pp-filter-row">
+        {filters.map(f => (
+          <button key={f} className={`pp-filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
+            {f === 'ALL' ? `All (${appointments.length})` : (STATUS_LABELS[f]?.label ?? f)}
+          </button>
+        ))}
       </div>
 
       {filtered.length === 0 ? (
@@ -298,6 +622,7 @@ const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
                     ? <div className="visit-card-services">{a.services.map((s: any) => s.service?.name).filter(Boolean).join(' · ')}</div>
                     : <div className="visit-card-services" style={{ opacity: 0.5 }}>No services recorded</div>
                   }
+                  {a.doctor && <div className="visit-card-meta">👨‍⚕️ Dr. {a.doctor.name}</div>}
                   {a.branch && <div className="visit-card-meta">📍 {a.branch.name}</div>}
                   {a.notes && <div className="visit-card-meta" style={{ fontStyle: 'italic' }}>"{a.notes}"</div>}
                 </div>
@@ -315,8 +640,8 @@ const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
                     <div className="pp-empty-sm">No medical record for this visit</div>
                   ) : (
                     <div className="medical-record-view">
-                      {records[a.id].complaints && <div className="mr-field"><span className="mr-label">Complaints</span><span>{records[a.id].complaints}</span></div>}
-                      {records[a.id].anamnesis  && <div className="mr-field"><span className="mr-label">Anamnesis</span><span>{records[a.id].anamnesis}</span></div>}
+                      {records[a.id].complaints   && <div className="mr-field"><span className="mr-label">Complaints</span><span>{records[a.id].complaints}</span></div>}
+                      {records[a.id].anamnesis    && <div className="mr-field"><span className="mr-label">Anamnesis</span><span>{records[a.id].anamnesis}</span></div>}
                       {records[a.id].diagnoses?.length > 0 && (
                         <div className="mr-field">
                           <span className="mr-label">Diagnoses</span>
@@ -328,8 +653,8 @@ const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
                         </div>
                       )}
                       {records[a.id].treatmentPlan && <div className="mr-field"><span className="mr-label">Treatment done</span><span>{records[a.id].treatmentPlan}</span></div>}
-                      {records[a.id].notes && <div className="mr-field"><span className="mr-label">Doctor's notes</span><span>{records[a.id].notes}</span></div>}
-                      {records[a.id].createdBy && <div className="mr-field"><span className="mr-label">Recorded by</span><span>{records[a.id].createdBy.name}</span></div>}
+                      {records[a.id].notes        && <div className="mr-field"><span className="mr-label">Doctor's notes</span><span>{records[a.id].notes}</span></div>}
+                      {records[a.id].createdBy    && <div className="mr-field"><span className="mr-label">Recorded by</span><span>{records[a.id].createdBy.name}</span></div>}
                     </div>
                   )}
                 </div>
@@ -342,15 +667,15 @@ const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
   );
 };
 
-// ─── Anamnesis Tab ────────────────────────────────────────────────────────────
+// ─── Anamnesis Tab (clinical only) ────────────────────────────────────────────
 
 const AnamnesisTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void }> = ({ patient, patientId, onPatientUpdate }) => {
-  const [allergies, setAllergies] = useState(patient?.allergies ?? '');
-  const [notes, setNotes]         = useState(patient?.notes ?? '');
-  const [saving, setSaving]       = useState(false);
-  const [saved, setSaved]         = useState(false);
-  const [records, setRecords]     = useState<any[]>([]);
-  const [recLoading, setRecLoading] = useState(true);
+  const [allergies, setAllergies]     = useState(patient?.allergies ?? '');
+  const [notes, setNotes]             = useState(patient?.notes ?? '');
+  const [saving, setSaving]           = useState(false);
+  const [saved, setSaved]             = useState(false);
+  const [records, setRecords]         = useState<any[]>([]);
+  const [recLoading, setRecLoading]   = useState(true);
 
   useEffect(() => {
     api.get('/clinical/medical-records', { patientId, limit: '50' }).then((res: any) => {
@@ -372,64 +697,43 @@ const AnamnesisTab: React.FC<{ patient: any; patientId: string; onPatientUpdate:
     <div className="pp-section">
       <div className="anamnesis-grid">
 
-        {/* Permanent health profile */}
         <div className="pp-card">
-          <div className="pp-card-title">Health Profile</div>
-
-          <div className="pp-field">
-            <label className="pp-label">Allergies & Contraindications</label>
-            <textarea
-              className="pp-textarea"
-              rows={3}
-              value={allergies}
-              onChange={e => setAllergies(e.target.value)}
-              placeholder="e.g. Penicillin allergy, latex allergy…"
-            />
-          </div>
-
-          <div className="pp-field">
-            <label className="pp-label">Clinical Notes</label>
-            <textarea
-              className="pp-textarea"
-              rows={4}
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Chronic conditions, medications, relevant history…"
-            />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-            <button className="pp-btn-primary" onClick={handleSave} disabled={saving}>
-              <IconSave /> {saving ? 'Saving…' : 'Save Changes'}
-            </button>
-            {saved && <span style={{ fontSize: 13, color: 'var(--secondary-seafoam)' }}>✓ Saved</span>}
-          </div>
+          <div className="pp-card-title">Allergies & Contraindications</div>
+          <textarea
+            className="pp-textarea"
+            rows={4}
+            value={allergies}
+            onChange={e => setAllergies(e.target.value)}
+            placeholder="Penicillin allergy, latex allergy, local anesthetics…"
+          />
         </div>
 
-        {/* Patient identifiers */}
         <div className="pp-card">
-          <div className="pp-card-title">Patient Information</div>
-          <div className="info-rows">
-            {patient?.referralSource && <div className="info-row"><span>Referral Source</span><span>{patient.referralSource.replace(/_/g, ' ')}</span></div>}
-            {patient?.snils     && <div className="info-row"><span>SNILS</span><span>{patient.snils}</span></div>}
-            {patient?.inn       && <div className="info-row"><span>INN</span><span>{patient.inn}</span></div>}
-            {patient?.passportSeries && <div className="info-row"><span>Passport</span><span>{patient.passportSeries} {patient.passportNumber}</span></div>}
-            {patient?.loyaltyTier && <div className="info-row"><span>Loyalty Tier</span><span>{patient.loyaltyTier.name}</span></div>}
-            {!patient?.referralSource && !patient?.snils && !patient?.inn && (
-              <div className="pp-empty-sm">No additional information</div>
-            )}
-          </div>
+          <div className="pp-card-title">Clinical Notes</div>
+          <textarea
+            className="pp-textarea"
+            rows={4}
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder="Chronic conditions, medications, relevant history…"
+          />
         </div>
 
       </div>
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+        <button className="pp-btn-primary" onClick={handleSave} disabled={saving}>
+          <IconSave /> {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+        {saved && <span style={{ fontSize: 13, color: 'var(--secondary-seafoam)' }}>✓ Saved</span>}
+      </div>
+
       {/* Medical records timeline */}
-      <div className="pp-card" style={{ marginTop: 16 }}>
+      <div className="pp-card" style={{ marginTop: 20 }}>
         <div className="pp-card-header">
-          <div className="pp-card-title">Visit Medical Records</div>
+          <div className="pp-card-title">Medical Records Timeline</div>
           <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{records.length} records</span>
         </div>
-
         {recLoading ? (
           <div className="pp-loading-sm">Loading…</div>
         ) : records.length === 0 ? (
@@ -444,14 +748,14 @@ const AnamnesisTab: React.FC<{ patient: any; patientId: string; onPatientUpdate:
                   <span className="pp-chip chip-gray" style={{ fontSize: 10 }}>{r.recordType?.replace(/_/g, ' ')}</span>
                 </div>
                 <div className="record-entry-body">
-                  {r.complaints   && <div className="mr-field"><span className="mr-label">Complaints</span><span>{r.complaints}</span></div>}
+                  {r.complaints  && <div className="mr-field"><span className="mr-label">Complaints</span><span>{r.complaints}</span></div>}
                   {r.diagnoses?.length > 0 && (
                     <div className="mr-field">
                       <span className="mr-label">Diagnoses</span>
                       <div className="mr-diagnoses">{r.diagnoses.map((d: any, j: number) => <span key={j} className="pp-chip chip-teal">{d.diagnosis?.code} {d.diagnosis?.name}</span>)}</div>
                     </div>
                   )}
-                  {r.notes        && <div className="mr-field"><span className="mr-label">Notes</span><span>{r.notes}</span></div>}
+                  {r.notes && <div className="mr-field"><span className="mr-label">Notes</span><span>{r.notes}</span></div>}
                 </div>
               </div>
             ))}
@@ -465,15 +769,14 @@ const AnamnesisTab: React.FC<{ patient: any; patientId: string; onPatientUpdate:
 // ─── Treatment Plans Tab ──────────────────────────────────────────────────────
 
 const TreatmentTab: React.FC<{ patientId: string }> = ({ patientId }) => {
-  const [plans, setPlans]     = useState<any[]>([]);
+  const [plans, setPlans]         = useState<any[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]     = useState(true);
 
   const fetchPlans = useCallback(() => {
     setLoading(true);
     api.get('/clinical/treatment-plans', { patientId, limit: '20' }).then((res: any) => {
-      const items = res?.data?.items ?? res?.data ?? [];
-      setPlans(items);
+      setPlans(res?.data?.items ?? res?.data ?? []);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [patientId]);
 
@@ -489,15 +792,14 @@ const TreatmentTab: React.FC<{ patientId: string }> = ({ patientId }) => {
   if (loading) return <div className="pp-loading">Loading treatment plans…</div>;
   if (plans.length === 0) return <div className="pp-empty">No treatment plans yet</div>;
 
-  const plan = plans[activeIdx];
-  const items = plan?.items ?? [];
+  const plan     = plans[activeIdx];
+  const items    = plan?.items ?? [];
   const doneCount = items.filter((i: any) => i.isDone).length;
-  const pct = items.length > 0 ? Math.round(doneCount / items.length * 100) : 0;
+  const pct      = items.length > 0 ? Math.round(doneCount / items.length * 100) : 0;
   const totalCost = items.reduce((s: number, i: any) => s + ((i.price ?? i.service?.basePrice ?? 0) * (i.quantity ?? 1) - (i.discount ?? 0)), 0);
 
   return (
     <div className="pp-section">
-      {/* Plan selector */}
       {plans.length > 1 && (
         <div className="plan-tabs">
           {plans.map((p: any, i: number) => (
@@ -518,7 +820,6 @@ const TreatmentTab: React.FC<{ patientId: string }> = ({ patientId }) => {
           <StatusChip status={plan.status} map={{ DRAFT: { label: 'Draft', cls: 'chip-gray' }, ACTIVE: { label: 'Active', cls: 'chip-teal' }, COMPLETED: { label: 'Completed', cls: 'chip-green' }, CANCELLED: { label: 'Cancelled', cls: 'chip-gray' } }} />
         </div>
 
-        {/* Progress bar */}
         {items.length > 0 && (
           <div className="plan-progress">
             <div className="plan-progress-bar">
@@ -528,7 +829,6 @@ const TreatmentTab: React.FC<{ patientId: string }> = ({ patientId }) => {
           </div>
         )}
 
-        {/* Items table */}
         {items.length === 0 ? (
           <div className="pp-empty-sm">No items in this plan</div>
         ) : (
@@ -544,22 +844,14 @@ const TreatmentTab: React.FC<{ patientId: string }> = ({ patientId }) => {
                   <td>{item.quantity ?? 1}</td>
                   <td>{item.price ? fmtCur(item.price * (item.quantity ?? 1) - (item.discount ?? 0)) : '—'}</td>
                   <td>{item.isDone ? <span className="pp-chip chip-green">Done</span> : <span className="pp-chip chip-yellow">Planned</span>}</td>
-                  <td>
-                    {!item.isDone && (
-                      <button className="pp-action-btn" onClick={() => markDone(plan.id, item.id)}>
-                        <IconCheck /> Mark done
-                      </button>
-                    )}
-                  </td>
+                  <td>{!item.isDone && <button className="pp-action-btn" onClick={() => markDone(plan.id, item.id)}><IconCheck /> Mark done</button>}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
 
-        {totalCost > 0 && (
-          <div className="plan-total">Total cost: <strong>{fmtCur(totalCost)}</strong></div>
-        )}
+        {totalCost > 0 && <div className="plan-total">Total cost: <strong>{fmtCur(totalCost)}</strong></div>}
       </div>
     </div>
   );
@@ -572,10 +864,10 @@ const FinancesTab: React.FC<{ patient: any }> = ({ patient }) => {
   const [details, setDetails]     = useState<Record<string, any>>({});
 
   const invoices: any[] = patient?.invoices ?? [];
-  const totalPaid    = invoices.filter(i => i.status === 'PAID').reduce((s, i) => s + Number(i.totalAmount), 0);
-  const outstanding  = invoices.filter(i => i.status !== 'PAID' && i.status !== 'CANCELLED').reduce((s, i) => s + Number(i.totalAmount) - Number(i.paidAmount ?? 0), 0);
-  const deposit      = patient?.balance ? Number(patient.balance.cashBalance ?? 0) + Number(patient.balance.cardBalance ?? 0) : 0;
-  const bonuses      = patient?.bonuses?.balance ?? 0;
+  const totalPaid   = invoices.filter(i => i.status === 'PAID').reduce((s, i) => s + Number(i.totalAmount), 0);
+  const outstanding = invoices.filter(i => i.status !== 'PAID' && i.status !== 'CANCELLED').reduce((s, i) => s + Number(i.totalAmount) - Number(i.paidAmount ?? 0), 0);
+  const deposit     = patient?.balance ? Number(patient.balance.cashBalance ?? 0) + Number(patient.balance.cardBalance ?? 0) : 0;
+  const bonuses     = patient?.bonuses?.balance ?? 0;
 
   const toggleExpand = async (id: string) => {
     if (expandedId === id) { setExpanded(null); return; }
@@ -590,15 +882,14 @@ const FinancesTab: React.FC<{ patient: any }> = ({ patient }) => {
 
   return (
     <div className="pp-section">
-      {/* Summary bar */}
       <div className="finance-summary">
         <div className="finance-stat"><div className="finance-stat-val">{fmtCur(totalPaid)}</div><div className="finance-stat-lbl">Total Paid</div></div>
         <div className="finance-stat-divider" />
         <div className="finance-stat"><div className="finance-stat-val" style={{ color: outstanding > 0 ? '#c0390a' : undefined }}>{fmtCur(outstanding)}</div><div className="finance-stat-lbl">Outstanding</div></div>
         <div className="finance-stat-divider" />
-        <div className="finance-stat"><div className="finance-stat-val">{fmtCur(deposit)}</div><div className="finance-stat-lbl">Deposit Balance</div></div>
+        <div className="finance-stat"><div className="finance-stat-val">{fmtCur(deposit)}</div><div className="finance-stat-lbl">Deposit</div></div>
         <div className="finance-stat-divider" />
-        <div className="finance-stat"><div className="finance-stat-val">{bonuses}</div><div className="finance-stat-lbl">Bonus Points</div></div>
+        <div className="finance-stat"><div className="finance-stat-val">{bonuses}</div><div className="finance-stat-lbl">Bonuses</div></div>
       </div>
 
       {invoices.length === 0 ? (
@@ -679,13 +970,13 @@ interface PatientProfileProps {
 
 const TABS = [
   { id: 'overview',   label: 'Overview' },
+  { id: 'info',       label: 'Patient Info' },
   { id: 'dental',     label: 'Dental Chart' },
   { id: 'visits',     label: 'Visits' },
   { id: 'treatment',  label: 'Treatment Plan' },
   { id: 'anamnesis',  label: 'Anamnesis' },
   { id: 'finances',   label: 'Finances' },
   { id: 'documents',  label: 'Documents' },
-  { id: 'files',      label: 'Files' },
 ];
 
 const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, onBack }) => {
@@ -707,17 +998,19 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
   const patient  = fullPatient ?? listPatient;
   const fullName = patient ? `${patient.lastName ?? ''} ${patient.firstName ?? ''}${patient.middleName ? ' ' + patient.middleName : ''}`.trim() : 'Unknown';
   const initials = ((patient?.firstName?.[0] ?? '') + (patient?.lastName?.[0] ?? '')).toUpperCase();
-  const phone    = patient?.phone ?? patient?.contacts?.find((c: any) => c.type === 'PHONE')?.value;
-  const email    = patient?.email ?? patient?.contacts?.find((c: any) => c.type === 'EMAIL')?.value;
+  const phone    = patient?.contacts?.find((c: any) => c.type === 'PHONE' && c.isPrimary)?.value
+                ?? patient?.contacts?.find((c: any) => c.type === 'PHONE')?.value;
+  const email    = patient?.contacts?.find((c: any) => c.type === 'EMAIL')?.value;
   const dob      = patient?.birthDate ? new Date(patient.birthDate) : null;
   const age      = dob ? Math.floor((Date.now() - dob.getTime()) / 3.156e10) : null;
-  const appointments  = patient?.appointments ?? [];
-  const totalSpent    = (patient?.invoices ?? []).filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + Number(i.totalAmount), 0);
+  const appointments = patient?.appointments ?? [];
+  const totalSpent   = (patient?.invoices ?? []).filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + Number(i.totalAmount), 0);
 
   const renderTab = () => {
     if (loading) return <div className="pp-loading"><div className="loading-spinner" /></div>;
     switch (activeTab) {
       case 'overview':  return <OverviewTab patient={patient} onTabChange={setActiveTab} />;
+      case 'info':      return <InfoTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
       case 'dental':    return <DentalChartView patientId={patientId} />;
       case 'visits':    return <VisitsTab patient={patient} />;
       case 'treatment': return <TreatmentTab patientId={patientId} />;
@@ -767,7 +1060,7 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
           </div>
 
           <div className="profile-actions">
-            <button className="profile-btn profile-btn-secondary"><IconEdit /> Edit</button>
+            <button className="profile-btn profile-btn-secondary" onClick={() => setActiveTab('info')}><IconEdit /> Edit Info</button>
             <button className="profile-btn profile-btn-primary"><IconPlus /> New Visit</button>
           </div>
         </div>
