@@ -1,29 +1,14 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 import './shared-page.css';
 
-type TabKey = 'bonus' | 'referral';
-
-const mockMembers = [
-  { id: 1, name: 'Ekaterina Sokolova', initials: 'ES', phone: '+7 (916) 234-56-78', points: 1850, tier: 'Gold', joined: '15 Jan 2025', lastActivity: '08 Mar 2026' },
-  { id: 2, name: 'Mikhail Petrov', initials: 'MP', phone: '+7 (903) 345-67-89', points: 720, tier: 'Silver', joined: '03 Mar 2025', lastActivity: '07 Mar 2026' },
-  { id: 3, name: 'Anna Volkova', initials: 'AV', phone: '+7 (926) 456-78-90', points: 2400, tier: 'Gold', joined: '22 Nov 2024', lastActivity: '05 Mar 2026' },
-  { id: 4, name: 'Dmitry Novikov', initials: 'DN', phone: '+7 (985) 567-89-01', points: 310, tier: 'Bronze', joined: '10 Jul 2025', lastActivity: '01 Mar 2026' },
-  { id: 5, name: 'Olga Smirnova', initials: 'OS', phone: '+7 (965) 678-90-12', points: 990, tier: 'Silver', joined: '18 Apr 2025', lastActivity: '06 Mar 2026' },
-  { id: 6, name: 'Pavel Kozlov', initials: 'PK', phone: '+7 (977) 789-01-23', points: 150, tier: 'Bronze', joined: '01 Feb 2026', lastActivity: '28 Feb 2026' },
-];
+type TabKey = 'tiers' | 'rules';
 
 const tierConfig: Record<string, { cls: string; icon: string }> = {
   Bronze: { cls: 'sp-badge-orange', icon: '🥉' },
   Silver: { cls: 'sp-badge-gray', icon: '🥈' },
-  Gold: { cls: 'sp-badge-teal', icon: '🥇' },
+  Gold:   { cls: 'sp-badge-teal', icon: '🥇' },
 };
-
-const referralData = [
-  { id: 1, name: 'Ekaterina Sokolova', initials: 'ES', phone: '+7 (916) 234-56-78', referrals: 4, bonus: 2000, status: 'active' },
-  { id: 2, name: 'Anna Volkova', initials: 'AV', phone: '+7 (926) 456-78-90', referrals: 7, bonus: 3500, status: 'active' },
-  { id: 3, name: 'Olga Smirnova', initials: 'OS', phone: '+7 (965) 678-90-12', referrals: 2, bonus: 1000, status: 'active' },
-  { id: 4, name: 'Mikhail Petrov', initials: 'MP', phone: '+7 (903) 345-67-89', referrals: 1, bonus: 500, status: 'pending' },
-];
 
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -31,54 +16,68 @@ const SearchIcon = () => (
   </svg>
 );
 
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
+
 export default function Loyalty() {
-  const [activeTab, setActiveTab] = useState<TabKey>('bonus');
+  const [activeTab, setActiveTab] = useState<TabKey>('tiers');
+  const [tiers, setTiers] = useState<any[]>([]);
+  const [rules, setRules] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const filteredMembers = mockMembers.filter(m =>
-    m.name.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    setIsLoading(true);
+    Promise.all([
+      api.get('/finance/loyalty-tiers'),
+      api.get('/finance/bonus-rules'),
+    ]).then(([tiersRes, rulesRes]: any[]) => {
+      setTiers(Array.isArray(tiersRes) ? tiersRes : (tiersRes?.data ?? []));
+      setRules(Array.isArray(rulesRes) ? rulesRes : (rulesRes?.data ?? []));
+    }).catch(() => {}).finally(() => setIsLoading(false));
+  }, []);
+
+  const filteredTiers = tiers.filter(t =>
+    t.name?.toLowerCase().includes(search.toLowerCase())
+  );
+  const filteredRules = rules.filter(r =>
+    r.name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalMembers = mockMembers.length;
-  const totalPoints = mockMembers.reduce((s, m) => s + m.points, 0);
-  const redeemedThisMonth = 3200;
-  const totalReferrals = referralData.reduce((s, r) => s + r.referrals, 0);
+  const totalMembers = tiers.reduce((s, t) => s + (t._count?.patients ?? 0), 0);
+  const totalPoints = tiers.reduce((s, t) => s + (t.totalPoints ?? 0), 0);
 
   return (
     <div className="sp-page">
       <div className="sp-header">
         <div>
           <h1>Loyalty Program</h1>
-          <p>Manage bonus points, tiers and referral rewards</p>
+          <p>Manage bonus tiers and earning rules for your clinic</p>
         </div>
         <button className="sp-btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Add Member
+          <PlusIcon />
+          {activeTab === 'tiers' ? 'Add Tier' : 'Add Rule'}
         </button>
       </div>
 
-      <div className="sp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="sp-stats-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">{totalMembers}</div>
-          <div className="sp-stat-label">Total Members</div>
-          <div className="sp-stat-trend up">↑ 2 this month</div>
+          <div className="sp-stat-value">{tiers.length}</div>
+          <div className="sp-stat-label">Loyalty Tiers</div>
+          <div className="sp-stat-trend up">Active tiers</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">{totalPoints.toLocaleString()}</div>
-          <div className="sp-stat-label">Active Bonus Points</div>
-          <div className="sp-stat-trend up">↑ 420 pts earned today</div>
+          <div className="sp-stat-value">{rules.length}</div>
+          <div className="sp-stat-label">Bonus Rules</div>
+          <div className="sp-stat-trend up">Earning rules configured</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">{redeemedThisMonth.toLocaleString()}</div>
-          <div className="sp-stat-label">Redeemed This Month</div>
-          <div className="sp-stat-trend up">pts redeemed</div>
-        </div>
-        <div className="sp-stat-card">
-          <div className="sp-stat-value">{totalReferrals}</div>
-          <div className="sp-stat-label">Total Referrals</div>
-          <div className="sp-stat-trend up">↑ 3 this month</div>
+          <div className="sp-stat-value">{rules.filter(r => r.isActive).length}</div>
+          <div className="sp-stat-label">Active Rules</div>
+          <div className="sp-stat-trend up">Currently active</div>
         </div>
       </div>
 
@@ -87,7 +86,7 @@ export default function Loyalty() {
           <div className="sp-search">
             <SearchIcon />
             <input
-              placeholder="Search members..."
+              placeholder="Search..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -96,53 +95,50 @@ export default function Loyalty() {
 
         <div className="sp-table-card">
           <div className="sp-tabs">
-            <button
-              className={`sp-tab${activeTab === 'bonus' ? ' active' : ''}`}
-              onClick={() => setActiveTab('bonus')}
-            >
-              Bonus Program
+            <button className={`sp-tab${activeTab === 'tiers' ? ' active' : ''}`} onClick={() => setActiveTab('tiers')}>
+              Loyalty Tiers
             </button>
-            <button
-              className={`sp-tab${activeTab === 'referral' ? ' active' : ''}`}
-              onClick={() => setActiveTab('referral')}
-            >
-              Referral Program
+            <button className={`sp-tab${activeTab === 'rules' ? ' active' : ''}`} onClick={() => setActiveTab('rules')}>
+              Bonus Rules
             </button>
           </div>
 
-          {activeTab === 'bonus' ? (
+          {isLoading ? (
+            <div style={{ padding: 'var(--space-l)', color: 'var(--text-secondary)', fontSize: '13px' }}>Loading...</div>
+          ) : activeTab === 'tiers' ? (
             <table className="sp-table">
               <thead>
                 <tr>
-                  <th>Patient</th>
-                  <th>Phone</th>
-                  <th>Bonus Points</th>
-                  <th>Tier</th>
-                  <th>Joined</th>
-                  <th>Last Activity</th>
+                  <th>Tier Name</th>
+                  <th>Min Points</th>
+                  <th>Bonus %</th>
+                  <th>Discount %</th>
+                  <th>Color</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredMembers.map(m => (
-                  <tr key={m.id}>
-                    <td>
-                      <div className="sp-patient-cell">
-                        <div className="sp-avatar">{m.initials}</div>
-                        <span className="sp-patient-name">{m.name}</span>
-                      </div>
+                {filteredTiers.length === 0 ? (
+                  <tr><td colSpan={6} className="sp-empty">No loyalty tiers configured</td></tr>
+                ) : filteredTiers.map(tier => (
+                  <tr key={tier.id}>
+                    <td style={{ fontWeight: 600 }}>
+                      {tierConfig[tier.name]?.icon ?? '⭐'} {tier.name}
                     </td>
-                    <td>{m.phone}</td>
-                    <td style={{ fontWeight: 700 }}>{m.points.toLocaleString()} pts</td>
-                    <td>
-                      <span className={`sp-badge ${tierConfig[m.tier].cls}`}>
-                        {tierConfig[m.tier].icon} {m.tier}
-                      </span>
+                    <td>{(tier.minPoints ?? 0).toLocaleString()} pts</td>
+                    <td style={{ color: 'var(--color-teal-500)', fontWeight: 600 }}>
+                      {tier.bonusPercent ?? 0}%
                     </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{m.joined}</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{m.lastActivity}</td>
+                    <td style={{ color: 'var(--accent-coral)', fontWeight: 600 }}>
+                      {tier.discountPercent ?? 0}%
+                    </td>
                     <td>
-                      <button className="sp-action-btn">Adjust Points</button>
+                      {tier.color && (
+                        <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: tier.color, border: '1px solid rgba(0,0,0,0.1)' }} />
+                      )}
+                    </td>
+                    <td>
+                      <button className="sp-action-btn">Edit</button>
                     </td>
                   </tr>
                 ))}
@@ -152,33 +148,32 @@ export default function Loyalty() {
             <table className="sp-table">
               <thead>
                 <tr>
-                  <th>Patient</th>
-                  <th>Phone</th>
-                  <th>Referrals Made</th>
-                  <th>Bonus Earned</th>
+                  <th>Rule Name</th>
+                  <th>Type</th>
+                  <th>Earn Rate</th>
+                  <th>Min Purchase</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {referralData.map(r => (
-                  <tr key={r.id}>
+                {filteredRules.length === 0 ? (
+                  <tr><td colSpan={6} className="sp-empty">No bonus rules configured</td></tr>
+                ) : filteredRules.map(rule => (
+                  <tr key={rule.id}>
+                    <td style={{ fontWeight: 500 }}>{rule.name}</td>
                     <td>
-                      <div className="sp-patient-cell">
-                        <div className="sp-avatar">{r.initials}</div>
-                        <span className="sp-patient-name">{r.name}</span>
-                      </div>
+                      <span className="sp-badge sp-badge-blue">{rule.ruleType ?? 'PURCHASE'}</span>
                     </td>
-                    <td>{r.phone}</td>
-                    <td style={{ fontWeight: 700 }}>{r.referrals}</td>
-                    <td style={{ fontWeight: 700 }}>{r.bonus.toLocaleString()} ₽</td>
+                    <td style={{ fontWeight: 600 }}>{rule.earnRate ?? 0} pts / 100₽</td>
+                    <td>{rule.minPurchaseAmount ? `${Number(rule.minPurchaseAmount).toLocaleString()} ₽` : '—'}</td>
                     <td>
-                      <span className={`sp-badge ${r.status === 'active' ? 'sp-badge-green' : 'sp-badge-orange'}`}>
-                        {r.status === 'active' ? 'Active' : 'Pending'}
+                      <span className={`sp-badge ${rule.isActive ? 'sp-badge-green' : 'sp-badge-gray'}`}>
+                        {rule.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td>
-                      <button className="sp-action-btn">View</button>
+                      <button className="sp-action-btn">Edit</button>
                     </td>
                   </tr>
                 ))}

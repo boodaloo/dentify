@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { api } from '../services/api';
 import './Settings.css';
 
 const IconUser = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
@@ -10,14 +11,53 @@ const IconLock = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="non
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
+  const [branchId, setBranchId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const [clinicData, setClinicData] = useState({
-    name: 'Orisios Dental Care',
-    address: '123 Medical Plaza, Suites 4',
-    phone: '+1 (555) 000-1234',
-    email: 'contact@orisios.com',
-    website: 'https://orisios.com'
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
   });
+
+  useEffect(() => {
+    api.get('/branches').then((res: any) => {
+      const branches: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+      const main = branches.find(b => b.isMain) ?? branches[0];
+      if (main) {
+        setBranchId(main.id);
+        setClinicData({
+          name:    main.name    ?? '',
+          address: main.address ?? '',
+          phone:   main.phone   ?? '',
+          email:   main.email   ?? '',
+          website: '',
+        });
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleSave = async () => {
+    if (!branchId) return;
+    setIsSaving(true);
+    setSaveStatus('idle');
+    try {
+      await api.put(`/branches/${branchId}`, {
+        name:    clinicData.name,
+        address: clinicData.address,
+        phone:   clinicData.phone,
+      });
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch {
+      setSaveStatus('error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
@@ -32,28 +72,28 @@ const Settings: React.FC = () => {
 
       <div className="settings-container flex gap-xl">
         <aside className="settings-sidebar card">
-          <button 
+          <button
             className={`settings-nav-item ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
             <IconUser />
             <span>{t('settings.profile')}</span>
           </button>
-          <button 
+          <button
             className={`settings-nav-item ${activeTab === 'localization' ? 'active' : ''}`}
             onClick={() => setActiveTab('localization')}
           >
             <IconGlobe />
             <span>{t('settings.localization')}</span>
           </button>
-          <button 
+          <button
             className={`settings-nav-item ${activeTab === 'notifications' ? 'active' : ''}`}
             onClick={() => setActiveTab('notifications')}
           >
             <IconBell />
             <span>{t('settings.notifications')}</span>
           </button>
-          <button 
+          <button
             className={`settings-nav-item ${activeTab === 'security' ? 'active' : ''}`}
             onClick={() => setActiveTab('security')}
           >
@@ -69,22 +109,34 @@ const Settings: React.FC = () => {
               <div className="form-grid">
                 <div className="form-group">
                   <label>{t('settings.clinic_name')}</label>
-                  <input type="text" value={clinicData.name} onChange={(e) => setClinicData({...clinicData, name: e.target.value})} />
+                  <input type="text" value={clinicData.name} onChange={(e) => setClinicData({ ...clinicData, name: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>{t('settings.address')}</label>
-                  <input type="text" value={clinicData.address} onChange={(e) => setClinicData({...clinicData, address: e.target.value})} />
+                  <input type="text" value={clinicData.address} onChange={(e) => setClinicData({ ...clinicData, address: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>{t('settings.phone')}</label>
-                  <input type="text" value={clinicData.phone} onChange={(e) => setClinicData({...clinicData, phone: e.target.value})} />
+                  <input type="text" value={clinicData.phone} onChange={(e) => setClinicData({ ...clinicData, phone: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>{t('settings.email')}</label>
-                  <input type="email" value={clinicData.email} onChange={(e) => setClinicData({...clinicData, email: e.target.value})} />
+                  <input type="email" value={clinicData.email} onChange={(e) => setClinicData({ ...clinicData, email: e.target.value })} />
                 </div>
               </div>
-              <button className="primary mt-l">{t('settings.save_changes')}</button>
+              {saveStatus === 'success' && (
+                <div style={{ color: 'var(--color-teal-500)', fontSize: '13px', marginBottom: '12px' }}>
+                  ✓ Changes saved successfully
+                </div>
+              )}
+              {saveStatus === 'error' && (
+                <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>
+                  Failed to save changes
+                </div>
+              )}
+              <button className="primary mt-l" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : t('settings.save_changes')}
+              </button>
             </div>
           )}
 
@@ -92,7 +144,7 @@ const Settings: React.FC = () => {
             <div className="settings-section">
               <h3>{t('settings.localization_title')}</h3>
               <div className="lang-options flex-col gap-m mt-m">
-                <div 
+                <div
                   className={`lang-card flex items-center justify-between ${i18n.language.startsWith('en') ? 'selected' : ''}`}
                   onClick={() => handleLanguageChange('en')}
                 >
@@ -105,7 +157,7 @@ const Settings: React.FC = () => {
                   </div>
                   {i18n.language.startsWith('en') && <div className="check-mark">✓</div>}
                 </div>
-                <div 
+                <div
                   className={`lang-card flex items-center justify-between ${i18n.language.startsWith('ru') ? 'selected' : ''}`}
                   onClick={() => handleLanguageChange('ru')}
                 >

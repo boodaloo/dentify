@@ -16,103 +16,125 @@ const IconCake = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="non
 
 // ─── Birthday Widget ─────────────────────────────────────────────────────────
 
-const mockBirthdays = {
-  today: [
-    { id: '1', name: 'Emma Wilson', age: 42, phone: '+7 999 123-4567', initials: 'EW' },
-    { id: '2', name: 'Mark Peterson', age: 35, phone: '+7 985 456-7890', initials: 'MP' },
-  ],
-  tomorrow: [
-    { id: '3', name: 'Sarah Davis', age: 28, phone: '+7 916 234-5678', initials: 'SD' },
-  ],
-  soon: [
-    { id: '4', name: 'Alex Johnson', age: 51, phone: '+7 901 345-6789', initials: 'AJ' },
-    { id: '5', name: 'Nina Brown', age: 39, phone: '+7 977 567-8901', initials: 'NB' },
-    { id: '6', name: 'Tom White', age: 44, phone: '+7 903 678-9012', initials: 'TW' },
-  ],
+const BirthdayItem: React.FC<{ patient: any }> = ({ patient }) => {
+  const initials = `${patient.firstName?.[0] ?? ''}${patient.lastName?.[0] ?? ''}`.toUpperCase();
+  return (
+    <div className="birthday-item flex items-center">
+      <div className="birthday-avatar">{initials}</div>
+      <div className="birthday-info flex-1">
+        <div className="birthday-name">{patient.firstName} {patient.lastName}</div>
+        <div className="birthday-meta">{patient.age} years · {patient.phone || '—'}</div>
+      </div>
+      <div className="birthday-actions flex">
+        <button className="birthday-action-btn call" title="Call"><IconPhone /></button>
+        <button className="birthday-action-btn sms" title="SMS"><IconMail /></button>
+      </div>
+    </div>
+  );
 };
 
-const BirthdayItem: React.FC<{ patient: typeof mockBirthdays.today[0] }> = ({ patient }) => (
-  <div className="birthday-item flex items-center">
-    <div className="birthday-avatar">{patient.initials}</div>
-    <div className="birthday-info flex-1">
-      <div className="birthday-name">{patient.name}</div>
-      <div className="birthday-meta">{patient.age} years · {patient.phone}</div>
+const BirthdayWidget: React.FC = () => {
+  const [data, setData] = useState<{ today: any[]; tomorrow: any[]; soon: any[] }>({ today: [], tomorrow: [], soon: [] });
+
+  useEffect(() => {
+    api.get('/patients/birthdays', { days: '7' }).then((res: any) => {
+      const list: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+      setData({
+        today:    list.filter(p => p.daysUntil === 0),
+        tomorrow: list.filter(p => p.daysUntil === 1),
+        soon:     list.filter(p => p.daysUntil >= 2),
+      });
+    }).catch(() => {});
+  }, []);
+
+  const total = data.today.length + data.tomorrow.length + data.soon.length;
+
+  return (
+    <div className="birthday-widget card">
+      <div className="column-header flex justify-between items-center">
+        <h3 className="flex items-center gap-s"><IconCake /> Upcoming Birthdays</h3>
+        <a href="#" className="view-all">View All</a>
+      </div>
+
+      {total === 0 && (
+        <div style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '8px 0' }}>No upcoming birthdays this week</div>
+      )}
+
+      {data.today.length > 0 && (
+        <>
+          <div className="birthday-group-label">🎉 Today ({data.today.length})</div>
+          {data.today.map(p => <BirthdayItem key={p.id} patient={p} />)}
+        </>
+      )}
+      {data.tomorrow.length > 0 && (
+        <>
+          <div className="birthday-group-label">📅 Tomorrow ({data.tomorrow.length})</div>
+          {data.tomorrow.map(p => <BirthdayItem key={p.id} patient={p} />)}
+        </>
+      )}
+      {data.soon.length > 0 && (
+        <>
+          <div className="birthday-group-label">📆 In 2–7 days ({data.soon.length})</div>
+          {data.soon.slice(0, 2).map(p => <BirthdayItem key={p.id} patient={p} />)}
+          {data.soon.length > 2 && (
+            <a href="#" className="birthday-show-more">... {data.soon.length - 2} more</a>
+          )}
+        </>
+      )}
     </div>
-    <div className="birthday-actions flex">
-      <button className="birthday-action-btn call" title="Call"><IconPhone /></button>
-      <button className="birthday-action-btn sms" title="SMS"><IconMail /></button>
-    </div>
-  </div>
-);
+  );
+};
 
-const BirthdayWidget: React.FC = () => (
-  <div className="birthday-widget card">
-    <div className="column-header flex justify-between items-center">
-      <h3 className="flex items-center gap-s"><IconCake /> Upcoming Birthdays</h3>
-      <a href="#" className="view-all">View All</a>
-    </div>
-
-    {mockBirthdays.today.length > 0 && (
-      <>
-        <div className="birthday-group-label">🎉 Today ({mockBirthdays.today.length})</div>
-        {mockBirthdays.today.map(p => <BirthdayItem key={p.id} patient={p} />)}
-      </>
-    )}
-    {mockBirthdays.tomorrow.length > 0 && (
-      <>
-        <div className="birthday-group-label">📅 Tomorrow ({mockBirthdays.tomorrow.length})</div>
-        {mockBirthdays.tomorrow.map(p => <BirthdayItem key={p.id} patient={p} />)}
-      </>
-    )}
-    {mockBirthdays.soon.length > 0 && (
-      <>
-        <div className="birthday-group-label">📆 In 2–3 days ({mockBirthdays.soon.length})</div>
-        {mockBirthdays.soon.slice(0, 2).map(p => <BirthdayItem key={p.id} patient={p} />)}
-        {mockBirthdays.soon.length > 2 && (
-          <a href="#" className="birthday-show-more">... {mockBirthdays.soon.length - 2} more</a>
-        )}
-      </>
-    )}
-  </div>
-);
-
-// ─── Weekly Revenue Chart ────────────────────────────────────────────────────
-
-const weekChartData = [
-  { day: 'Mon', value: 42000 },
-  { day: 'Tue', value: 55000 },
-  { day: 'Wed', value: 38000 },
-  { day: 'Thu', value: 67000 },
-  { day: 'Fri', value: 51000 },
-  { day: 'Sat', value: 29000 },
-  { day: 'Sun', value: 44000 },
-];
+// ─── Weekly Visits Chart ─────────────────────────────────────────────────────
 
 const WeeklyChart: React.FC = () => {
   const [hovered, setHovered] = useState<number | null>(null);
-  const W = 900;
-  const H = 200;
+  const [chartData, setChartData] = useState<{ day: string; value: number }[]>([]);
+
+  useEffect(() => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+
+    api.get('/appointments', { start: start.toISOString(), end: end.toISOString() }).then((res: any) => {
+      const apts: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+      const days: { day: string; value: number }[] = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const dayApts = apts.filter(a => new Date(a.startTime).toDateString() === d.toDateString());
+        return {
+          day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+          value: dayApts.length,
+        };
+      });
+      setChartData(days);
+    }).catch(() => {});
+  }, []);
+
+  if (chartData.length === 0) return null;
+
+  const W = 900, H = 200;
   const pad = { top: 16, bottom: 32, left: 48, right: 24 };
   const innerW = W - pad.left - pad.right;
   const innerH = H - pad.top - pad.bottom;
-  const maxVal = Math.max(...weekChartData.map(d => d.value));
-  const minVal = Math.min(...weekChartData.map(d => d.value));
+  const maxVal = Math.max(...chartData.map(d => d.value), 1);
+  const minVal = 0;
 
-  const px = (i: number) => pad.left + (i / (weekChartData.length - 1)) * innerW;
+  const px = (i: number) => pad.left + (i / (chartData.length - 1)) * innerW;
   const py = (v: number) => pad.top + innerH - ((v - minVal) / (maxVal - minVal || 1)) * innerH * 0.9;
 
-  const linePath = weekChartData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${px(i)} ${py(d.value)}`).join(' ');
-  const areaPath = `${linePath} L ${px(weekChartData.length - 1)} ${H - pad.bottom} L ${px(0)} ${H - pad.bottom} Z`;
-
-  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(t => minVal + t * (maxVal - minVal));
+  const linePath = chartData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${px(i)} ${py(d.value)}`).join(' ');
+  const areaPath = `${linePath} L ${px(chartData.length - 1)} ${H - pad.bottom} L ${px(0)} ${H - pad.bottom} Z`;
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(t => Math.round(t * maxVal));
 
   return (
     <section className="weekly-chart-section card">
       <div className="column-header flex justify-between items-center">
-        <h3>Weekly Revenue</h3>
+        <h3>Visits This Week</h3>
         <select className="chart-filter">
           <option>Last 7 days</option>
-          <option>Last 30 days</option>
         </select>
       </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="revenue-chart">
@@ -122,39 +144,23 @@ const WeeklyChart: React.FC = () => {
             <stop offset="100%" stopColor="#14919B" stopOpacity="0.02" />
           </linearGradient>
         </defs>
-
-        {/* Grid lines */}
         {gridLines.map((v, i) => (
           <g key={i}>
-            <line
-              x1={pad.left} x2={W - pad.right}
-              y1={py(v)} y2={py(v)}
-              stroke="#E8E8ED" strokeWidth="1"
-            />
-            <text x={pad.left - 6} y={py(v) + 4} textAnchor="end" fontSize="10" fill="#5A5A72">
-              {(v / 1000).toFixed(0)}k
-            </text>
+            <line x1={pad.left} x2={W - pad.right} y1={py(v)} y2={py(v)} stroke="#E8E8ED" strokeWidth="1" />
+            <text x={pad.left - 6} y={py(v) + 4} textAnchor="end" fontSize="10" fill="#5A5A72">{v}</text>
           </g>
         ))}
-
-        {/* Area fill */}
         <path d={areaPath} fill="url(#chartGradient)" />
-
-        {/* Line */}
         <path d={linePath} fill="none" stroke="#14919B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
-        {/* Data points + labels */}
-        {weekChartData.map((d, i) => (
+        {chartData.map((d, i) => (
           <g key={i} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'pointer' }}>
             <circle cx={px(i)} cy={py(d.value)} r={hovered === i ? 6 : 5} fill="#FF6B6B" stroke="white" strokeWidth="2" />
-            <text x={px(i)} y={H - pad.bottom + 18} textAnchor="middle" fontSize="11" fill="#5A5A72" fontWeight="500">
-              {d.day}
-            </text>
+            <text x={px(i)} y={H - pad.bottom + 18} textAnchor="middle" fontSize="11" fill="#5A5A72" fontWeight="500">{d.day}</text>
             {hovered === i && (
               <g>
                 <rect x={px(i) - 30} y={py(d.value) - 28} width="60" height="22" rx="4" fill="#1A1A2E" />
                 <text x={px(i)} y={py(d.value) - 13} textAnchor="middle" fontSize="11" fill="white" fontWeight="600">
-                  {(d.value / 1000).toFixed(0)}k ₽
+                  {d.value} visits
                 </text>
               </g>
             )}
@@ -172,11 +178,10 @@ const Dashboard: React.FC = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [totalPatients, setTotalPatients] = useState(0);
   const [stats, setStats] = useState({
-    revenue: "0₽",
-    patients: "0",
-    completion: "0/0",
-    avgTime: "0 min"
+    completion: '0/0',
+    avgTime: '—',
   });
 
   const fetchData = async () => {
@@ -187,17 +192,19 @@ const Dashboard: React.FC = () => {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const data = await api.get('/appointments', {
-        start: today.toISOString(),
-        end: tomorrow.toISOString()
-      });
+      const [aptsRes, patientsRes] = await Promise.all([
+        api.get('/appointments', { start: today.toISOString(), end: tomorrow.toISOString() }),
+        api.get('/patients', { limit: '1' }),
+      ]);
 
-      setAppointments(data);
+      const apts: any[] = Array.isArray(aptsRes) ? aptsRes : (aptsRes?.data ?? []);
+      const pTotal = (patientsRes as any)?.data?.total ?? (patientsRes as any)?.total ?? 0;
+
+      setAppointments(apts);
+      setTotalPatients(pTotal);
       setStats({
-        revenue: `${(data.length * 5200).toLocaleString()}₽`,
-        patients: data.length.toString(),
-        completion: `${data.filter((a: any) => a.status === 'COMPLETED').length}/${data.length}`,
-        avgTime: "45 min"
+        completion: `${apts.filter(a => a.status === 'COMPLETED').length}/${apts.length}`,
+        avgTime: '45 min',
       });
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -206,15 +213,13 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const kpis = [
-    { label: t('dashboard.revenue'), value: stats.revenue, trend: "+8.2% ↑", icon: IconTrendingUp, color: 'seafoam' },
-    { label: t('dashboard.total_patients'), value: stats.patients, trend: "+2 vs yesterday", icon: IconUsers, color: 'coral' },
-    { label: t('dashboard.appointments'), value: stats.completion, progress: 66, icon: IconCalendar, color: 'teal' },
-    { label: t('dashboard.avg_time'), value: stats.avgTime, trend: "-5 min", icon: IconClock, color: 'saffron' },
+    { label: t('dashboard.total_patients'), value: totalPatients.toLocaleString(), trend: '+2 vs yesterday', icon: IconUsers, color: 'coral' },
+    { label: t('dashboard.appointments'), value: stats.completion, progress: appointments.length > 0 ? Math.round(appointments.filter(a => a.status === 'COMPLETED').length / appointments.length * 100) : 0, icon: IconCalendar, color: 'teal' },
+    { label: 'Today\'s Schedule', value: `${appointments.length} appts`, trend: appointments.length > 5 ? 'Busy day' : 'Light day', icon: IconTrendingUp, color: 'seafoam' },
+    { label: t('dashboard.avg_time'), value: stats.avgTime, trend: '', icon: IconClock, color: 'saffron' },
   ];
 
   return (
@@ -265,7 +270,6 @@ const Dashboard: React.FC = () => {
                 </div>
               );
             })}
-            {/* NOW marker */}
             <div className="now-marker" style={{ left: `${Math.min(((new Date().getHours() + new Date().getMinutes() / 60) - 8) / 12 * 100, 100)}%` }}>
               <div className="now-line-bar"></div>
               <div className="now-chip">NOW</div>
@@ -284,9 +288,7 @@ const Dashboard: React.FC = () => {
             <div className="kpi-value">{kpi.value}</div>
             <div className="kpi-label">{kpi.label}</div>
             {kpi.trend && (
-              <div className={`kpi-trend ${kpi.trend.includes('↑') || kpi.trend.includes('-5') ? 'positive' : ''}`}>
-                {kpi.trend}
-              </div>
+              <div className="kpi-trend positive">{kpi.trend}</div>
             )}
             {kpi.progress !== undefined && (
               <div className="kpi-progress">
@@ -387,7 +389,7 @@ const Dashboard: React.FC = () => {
         </section>
       </div>
 
-      {/* Weekly Revenue Chart */}
+      {/* Weekly Visits Chart */}
       <WeeklyChart />
 
       <Modal

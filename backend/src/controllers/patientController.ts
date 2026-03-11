@@ -151,6 +151,46 @@ export const updatePatient = async (req: Request, res: Response) => {
   }
 };
 
+export const getUpcomingBirthdays = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const days = parseInt(req.query.days as string) || 7;
+
+    const patients = await prisma.patient.findMany({
+      where: { clinicId, isDeleted: false, birthDate: { not: null } },
+      include: { contacts: { where: { type: 'PHONE', isPrimary: true } } },
+      take: 2000,
+    });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const withDays = patients
+      .map((p) => {
+        const bd = new Date(p.birthDate!);
+        let next = new Date(today.getFullYear(), bd.getMonth(), bd.getDate());
+        if (next < today) next = new Date(today.getFullYear() + 1, bd.getMonth(), bd.getDate());
+        const daysUntil = Math.round((next.getTime() - today.getTime()) / 86400000);
+        const age = today.getFullYear() - bd.getFullYear();
+        return {
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          phone: p.contacts[0]?.value ?? null,
+          birthDate: p.birthDate,
+          daysUntil,
+          age,
+        };
+      })
+      .filter((p) => p.daysUntil >= 0 && p.daysUntil <= days)
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+
+    return R.ok(res, withDays);
+  } catch (err) {
+    return R.serverError(res, err);
+  }
+};
+
 export const deletePatient = async (req: Request, res: Response) => {
   try {
     const { id }   = req.params;

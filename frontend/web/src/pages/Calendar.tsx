@@ -31,6 +31,24 @@ const getWeekDays = (date: Date): Date[] => {
   });
 };
 
+const getMonthDays = (date: Date): Date[] => {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  // Start from Monday of the first week
+  const startDow = firstDay.getDay();
+  const startOffset = startDow === 0 ? -6 : 1 - startDow;
+  const start = new Date(firstDay);
+  start.setDate(firstDay.getDate() + startOffset);
+  // Fill 6 weeks (42 cells)
+  return Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+};
+
 const statusColor: Record<string, string> = {
   CONFIRMED: 'confirmed',
   SCHEDULED: 'scheduled',
@@ -107,58 +125,20 @@ const DetailsPanel: React.FC<{
   );
 };
 
-// ─── Calendar ─────────────────────────────────────────────────────────────────
+// ─── Time Grid (shared by Day and Week views) ──────────────────────────────
 
-const Calendar: React.FC = () => {
-  const { t, i18n } = useTranslation();
-  const [view, setView] = useState('week');
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedApt, setSelectedApt] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingApt, setEditingApt] = useState<any>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-
-  const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
-  const weekDays = getWeekDays(currentDate);
-  const today = new Date();
-
-  // Scroll to current time on mount
-  useEffect(() => {
-    if (gridRef.current) {
-      const hour = today.getHours();
-      const offset = (hour - 8) * SLOT_H - 60;
-      gridRef.current.scrollTop = Math.max(0, offset);
-    }
-  }, [isLoading]);
-
-  const fetchAppointments = async () => {
-    setIsLoading(true);
-    try {
-      const start = new Date(weekDays[0]);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(weekDays[6]);
-      end.setHours(23, 59, 59, 999);
-      const data = await api.get('/appointments', {
-        start: start.toISOString(),
-        end: end.toISOString(),
-      });
-      setAppointments(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchAppointments(); }, [currentDate]);
-
-  const navigate = (dir: number) => {
-    const d = new Date(currentDate);
-    d.setDate(d.getDate() + dir * 7);
-    setCurrentDate(d);
-  };
+const TimeGrid: React.FC<{
+  days: Date[];
+  appointments: any[];
+  today: Date;
+  locale: string;
+  selectedApt: any;
+  onSelect: (apt: any) => void;
+  onDoubleClick: (apt: any) => void;
+  gridRef: React.RefObject<HTMLDivElement>;
+}> = ({ days, appointments, today, locale, selectedApt, onSelect, onDoubleClick, gridRef }) => {
+  const isToday = (d: Date) => d.toDateString() === today.toDateString();
+  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
 
   const aptStyle = (apt: any) => {
     const start = new Date(apt.startTime);
@@ -173,10 +153,221 @@ const Calendar: React.FC = () => {
     return `${(h - 8) * SLOT_H}px`;
   };
 
+  const colCount = days.length;
+
+  return (
+    <>
+      <div className="grid-header" style={{ gridTemplateColumns: `72px repeat(${colCount}, 1fr)` }}>
+        <div className="time-col-header" />
+        {days.map((d, i) => (
+          <div key={i} className={`day-col-header ${isToday(d) ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''}`}>
+            <span className="day-name">{d.toLocaleDateString(locale, { weekday: 'short' }).toUpperCase()}</span>
+            <span className="day-date">{d.getDate()}</span>
+            {isToday(d) && <div className="today-dot" />}
+            <span className="day-apt-count">
+              {appointments.filter(a => new Date(a.startTime).toDateString() === d.toDateString()).length} appts
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid-content" ref={gridRef}>
+        <div className="time-labels-col">
+          {HOURS.map(h => (
+            <div key={h} className="time-label">{h}:00</div>
+          ))}
+        </div>
+
+        <div className="calendar-body" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
+          {days.map((d, di) => (
+            <div key={di} className={`day-column ${isWeekend(d) ? 'weekend' : ''}`}>
+              {HOURS.map(h => <div key={h} className="hour-slot" />)}
+
+              {isToday(d) && (
+                <div className="now-line" style={{ top: nowTop() }}>
+                  <div className="now-handle">NOW</div>
+                </div>
+              )}
+
+              {appointments
+                .filter(a => new Date(a.startTime).toDateString() === d.toDateString())
+                .map(apt => (
+                  <div
+                    key={apt.id}
+                    className={`calendar-apt-block ${statusColor[apt.status] || 'scheduled'} ${selectedApt?.id === apt.id ? 'selected' : ''}`}
+                    style={aptStyle(apt)}
+                    onClick={() => onSelect(apt)}
+                    onDoubleClick={() => onDoubleClick(apt)}
+                  >
+                    <div className="apt-block-time">
+                      {new Date(apt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div className="apt-name">{apt.patient?.lastName ?? '—'}</div>
+                    <div className="apt-proc">{apt.notes || 'Checkup'}</div>
+                  </div>
+                ))
+              }
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─── Month View ────────────────────────────────────────────────────────────────
+
+const MonthView: React.FC<{
+  currentDate: Date;
+  appointments: any[];
+  today: Date;
+  locale: string;
+  selectedApt: any;
+  onSelect: (apt: any) => void;
+  onDoubleClick: (apt: any) => void;
+}> = ({ currentDate, appointments, today, locale, selectedApt, onSelect, onDoubleClick }) => {
+  const days = getMonthDays(currentDate);
+  const currentMonth = currentDate.getMonth();
   const isToday = (d: Date) => d.toDateString() === today.toDateString();
   const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
+  const isCurrentMonth = (d: Date) => d.getMonth() === currentMonth;
 
-  const weekRange = `${weekDays[0].toLocaleDateString(locale, { day: 'numeric', month: 'short' })} — ${weekDays[6].toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+  const weekDayNames = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(days[i]);
+    return d.toLocaleDateString(locale, { weekday: 'short' }).toUpperCase();
+  });
+
+  return (
+    <div className="month-view">
+      <div className="month-header-row">
+        {weekDayNames.map((name, i) => (
+          <div key={i} className={`month-header-cell ${i >= 5 ? 'weekend' : ''}`}>{name}</div>
+        ))}
+      </div>
+      <div className="month-grid">
+        {days.map((d, i) => {
+          const dayApts = appointments.filter(a => new Date(a.startTime).toDateString() === d.toDateString());
+          return (
+            <div
+              key={i}
+              className={`month-cell ${isToday(d) ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''} ${!isCurrentMonth(d) ? 'other-month' : ''}`}
+            >
+              <span className="month-cell-date">{d.getDate()}</span>
+              <div className="month-cell-apts">
+                {dayApts.slice(0, 3).map(apt => (
+                  <div
+                    key={apt.id}
+                    className={`month-apt-chip ${statusColor[apt.status] || 'scheduled'} ${selectedApt?.id === apt.id ? 'selected' : ''}`}
+                    onClick={() => onSelect(apt)}
+                    onDoubleClick={() => onDoubleClick(apt)}
+                  >
+                    <span className="month-apt-time">
+                      {new Date(apt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="month-apt-name">{apt.patient?.lastName ?? '—'}</span>
+                  </div>
+                ))}
+                {dayApts.length > 3 && (
+                  <div className="month-apt-more">+{dayApts.length - 3} more</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+
+const Calendar: React.FC = () => {
+  const { t, i18n } = useTranslation();
+  const [view, setView] = useState('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedApt, setSelectedApt] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingApt, setEditingApt] = useState<any>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
+  const today = new Date();
+  const weekDays = getWeekDays(currentDate);
+
+  // Scroll to current time on mount (time-grid views only)
+  useEffect(() => {
+    if (gridRef.current && (view === 'week' || view === 'day')) {
+      const hour = today.getHours();
+      const offset = (hour - 8) * SLOT_H - 60;
+      gridRef.current.scrollTop = Math.max(0, offset);
+    }
+  }, [isLoading, view]);
+
+  const getDateRange = () => {
+    if (view === 'day') {
+      const start = new Date(currentDate); start.setHours(0, 0, 0, 0);
+      const end = new Date(currentDate); end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (view === 'month') {
+      const days = getMonthDays(currentDate);
+      const start = new Date(days[0]); start.setHours(0, 0, 0, 0);
+      const end = new Date(days[41]); end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    // week
+    const days = getWeekDays(currentDate);
+    const start = new Date(days[0]); start.setHours(0, 0, 0, 0);
+    const end = new Date(days[6]); end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
+
+  const fetchAppointments = async () => {
+    setIsLoading(true);
+    try {
+      const { start, end } = getDateRange();
+      const data = await api.get('/appointments', {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      });
+      const items = Array.isArray(data) ? data : (data?.data?.items ?? data?.data ?? []);
+      setAppointments(items);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchAppointments(); }, [currentDate, view]);
+
+  const navigate = (dir: number) => {
+    const d = new Date(currentDate);
+    if (view === 'day') {
+      d.setDate(d.getDate() + dir);
+    } else if (view === 'month') {
+      d.setMonth(d.getMonth() + dir);
+    } else {
+      d.setDate(d.getDate() + dir * 7);
+    }
+    setCurrentDate(d);
+  };
+
+  const rangeLabel = () => {
+    if (view === 'day') {
+      return currentDate.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    if (view === 'month') {
+      return currentDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+    }
+    const days = getWeekDays(currentDate);
+    return `${days[0].toLocaleDateString(locale, { day: 'numeric', month: 'short' })} — ${days[6].toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+  };
+
+  const handleSelect = (apt: any) => setSelectedApt(apt);
+  const handleDoubleClick = (apt: any) => { setEditingApt(apt); setIsModalOpen(true); };
 
   return (
     <div className="calendar-page-wrapper">
@@ -184,7 +375,7 @@ const Calendar: React.FC = () => {
       {/* Toolbar */}
       <header className="calendar-toolbar card">
         <div className="toolbar-left flex items-center gap-m">
-          <h2 className="week-range-label">{weekRange}</h2>
+          <h2 className="week-range-label">{rangeLabel()}</h2>
           <div className="nav-group flex items-center">
             <button className="nav-arrow" onClick={() => navigate(-1)}><IconChevLeft /></button>
             <button className="today-btn" onClick={() => setCurrentDate(new Date())}>{t('calendar.today')}</button>
@@ -193,7 +384,7 @@ const Calendar: React.FC = () => {
         </div>
         <div className="toolbar-right flex items-center gap-m">
           <div className="view-toggle flex">
-            {['day', 'week', 'month'].map(v => (
+            {(['day', 'week', 'month'] as const).map(v => (
               <button key={v} className={`toggle-item ${view === v ? 'active' : ''}`} onClick={() => setView(v)}>
                 {t(`calendar.${v}`)}
               </button>
@@ -210,68 +401,29 @@ const Calendar: React.FC = () => {
       <div className="calendar-main-layout">
 
         {/* Grid */}
-        <div className="calendar-grid-container card">
-
-          {/* Day headers */}
-          <div className="grid-header">
-            <div className="time-col-header" />
-            {weekDays.map((d, i) => (
-              <div key={i} className={`day-col-header ${isToday(d) ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''}`}>
-                <span className="day-name">{d.toLocaleDateString(locale, { weekday: 'short' }).toUpperCase()}</span>
-                <span className="day-date">{d.getDate()}</span>
-                {isToday(d) && <div className="today-dot" />}
-                <span className="day-apt-count">
-                  {appointments.filter(a => new Date(a.startTime).toDateString() === d.toDateString()).length} appts
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Body */}
-          <div className="grid-content" ref={gridRef}>
-            {/* Time labels */}
-            <div className="time-labels-col">
-              {HOURS.map(h => (
-                <div key={h} className="time-label">{h}:00</div>
-              ))}
-            </div>
-
-            {/* Day columns */}
-            <div className="calendar-body">
-              {weekDays.map((d, di) => (
-                <div key={di} className={`day-column ${isWeekend(d) ? 'weekend' : ''}`}>
-                  {HOURS.map(h => <div key={h} className="hour-slot" />)}
-
-                  {/* NOW line */}
-                  {isToday(d) && (
-                    <div className="now-line" style={{ top: nowTop() }}>
-                      <div className="now-handle">NOW</div>
-                    </div>
-                  )}
-
-                  {/* Appointments */}
-                  {appointments
-                    .filter(a => new Date(a.startTime).toDateString() === d.toDateString())
-                    .map(apt => (
-                      <div
-                        key={apt.id}
-                        className={`calendar-apt-block ${statusColor[apt.status] || 'scheduled'} ${selectedApt?.id === apt.id ? 'selected' : ''}`}
-                        style={aptStyle(apt)}
-                        onClick={() => setSelectedApt(apt)}
-                        onDoubleClick={() => { setEditingApt(apt); setIsModalOpen(true); }}
-                      >
-                        <div className="apt-block-time">
-                          {new Date(apt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        <div className="apt-name">{apt.patient?.lastName ?? '—'}</div>
-                        <div className="apt-proc">{apt.notes || 'Checkup'}</div>
-                      </div>
-                    ))
-                  }
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className={`calendar-grid-container card ${view === 'month' ? 'month-mode' : ''}`}>
+          {view === 'month' ? (
+            <MonthView
+              currentDate={currentDate}
+              appointments={appointments}
+              today={today}
+              locale={locale}
+              selectedApt={selectedApt}
+              onSelect={handleSelect}
+              onDoubleClick={handleDoubleClick}
+            />
+          ) : (
+            <TimeGrid
+              days={view === 'day' ? [currentDate] : weekDays}
+              appointments={appointments}
+              today={today}
+              locale={locale}
+              selectedApt={selectedApt}
+              onSelect={handleSelect}
+              onDoubleClick={handleDoubleClick}
+              gridRef={gridRef}
+            />
+          )}
         </div>
 
         {/* Details panel */}

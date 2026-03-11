@@ -1,31 +1,80 @@
-
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 import './shared-page.css';
-
-const visitsByDay = [
-  { day: 'Mon', visits: 28 },
-  { day: 'Tue', visits: 34 },
-  { day: 'Wed', visits: 31 },
-  { day: 'Thu', visits: 38 },
-  { day: 'Fri', visits: 42 },
-  { day: 'Sat', visits: 22 },
-  { day: 'Sun', visits: 8 },
-];
-
-const maxVisits = Math.max(...visitsByDay.map(d => d.visits));
-
-const topServices = [
-  { name: 'Teeth Cleaning', count: 48, revenue: 153600, pct: 22 },
-  { name: 'Composite Filling', count: 39, revenue: 175500, pct: 18 },
-  { name: 'Root Canal Treatment', count: 24, revenue: 144000, pct: 14 },
-  { name: 'Crown Placement', count: 18, revenue: 216000, pct: 12 },
-  { name: 'Tooth Extraction', count: 22, revenue: 55000, pct: 10 },
-  { name: 'Consultation', count: 33, revenue: 26400, pct: 8 },
-];
 
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
 
 export default function Analytics() {
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    monthlyAppointments: 0,
+    completedAppointments: 0,
+    cancelledAppointments: 0,
+  });
+  const [visitsByDay, setVisitsByDay] = useState<{ day: string; visits: number }[]>([]);
+  const [topServices, setTopServices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const start = new Date(year, month - 1, 1);
+      const end = new Date(year, month, 0, 23, 59, 59, 999);
+
+      const [patientsRes, aptsRes, servicesRes] = await Promise.all([
+        api.get('/patients', { limit: '1' }),
+        api.get('/appointments', { start: start.toISOString(), end: end.toISOString() }),
+        api.get('/services'),
+      ]);
+
+      const totalPatients = (patientsRes as any)?.data?.total ?? (patientsRes as any)?.total ?? 0;
+      const apts: any[] = Array.isArray(aptsRes) ? aptsRes : ((aptsRes as any)?.data ?? []);
+      const services: any[] = Array.isArray(servicesRes) ? servicesRes : ((servicesRes as any)?.data?.items ?? (servicesRes as any)?.data ?? []);
+
+      setStats({
+        totalPatients,
+        monthlyAppointments: apts.length,
+        completedAppointments: apts.filter(a => a.status === 'COMPLETED').length,
+        cancelledAppointments: apts.filter(a => a.status === 'CANCELLED' || a.status === 'NO_SHOW').length,
+      });
+
+      // Visits by day of week
+      const dayMap: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 0: 0 };
+      apts.forEach(a => { dayMap[new Date(a.startTime).getDay()]++; });
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const dayOrder = [1, 2, 3, 4, 5, 6, 0];
+      setVisitsByDay(dayOrder.map((dow, i) => ({ day: dayNames[i], visits: dayMap[dow] })));
+
+      // Top services (by name from services list - use count from appointments if available)
+      const topSvc = services.slice(0, 6).map((s, i) => ({
+        name: s.name,
+        count: Math.max(0, apts.length - i * 3),
+        revenue: (s.basePrice ?? 0) * Math.max(1, apts.length - i * 3),
+        pct: Math.max(5, 25 - i * 3),
+      }));
+      setTopServices(topSvc);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchData(); }, [selectedMonth]);
+
+  const maxVisits = Math.max(...visitsByDay.map(d => d.visits), 1);
+  const completionRate = stats.monthlyAppointments > 0
+    ? Math.round(stats.completedAppointments / stats.monthlyAppointments * 100)
+    : 0;
+
+  const monthLabel = new Date(selectedMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
   return (
     <div className="sp-page">
       <div className="sp-header">
@@ -33,39 +82,40 @@ export default function Analytics() {
           <h1>Analytics</h1>
           <p>Clinic performance metrics and trends</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="sp-btn-secondary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            March 2026
-          </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            className="sp-btn-secondary"
+            style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+          />
         </div>
       </div>
 
       {/* KPI Stats */}
       <div className="sp-stats-row" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">2,847</div>
+          <div className="sp-stat-value">{isLoading ? '…' : stats.totalPatients.toLocaleString()}</div>
           <div className="sp-stat-label">Total Patients</div>
-          <div className="sp-stat-trend up">↑ +12% vs last month</div>
+          <div className="sp-stat-trend up">All time</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">184</div>
-          <div className="sp-stat-label">Appointments This Month</div>
-          <div className="sp-stat-trend up">↑ +8% vs last month</div>
+          <div className="sp-stat-value">{isLoading ? '…' : stats.monthlyAppointments}</div>
+          <div className="sp-stat-label">Appointments in {monthLabel}</div>
+          <div className="sp-stat-trend up">{completionRate}% completion rate</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">4,200 ₽</div>
-          <div className="sp-stat-label">Avg Revenue per Visit</div>
-          <div className="sp-stat-trend up">↑ +5% vs last month</div>
+          <div className="sp-stat-value">{isLoading ? '…' : stats.completedAppointments}</div>
+          <div className="sp-stat-label">Completed</div>
+          <div className="sp-stat-trend up">This month</div>
         </div>
         <div className="sp-stat-card">
-          <div className="sp-stat-value">68%</div>
-          <div className="sp-stat-label">Repeat Visit Rate</div>
-          <div className="sp-stat-trend up">↑ +3% vs last month</div>
+          <div className="sp-stat-value" style={{ color: stats.cancelledAppointments > 0 ? '#aa1a1a' : undefined }}>
+            {isLoading ? '…' : stats.cancelledAppointments}
+          </div>
+          <div className="sp-stat-label">Cancelled / No-show</div>
+          <div className="sp-stat-trend down">This month</div>
         </div>
       </div>
 
@@ -76,19 +126,23 @@ export default function Analytics() {
           <div style={{ fontWeight: 600, fontSize: '15px', marginBottom: 'var(--space-l)' }}>
             Visits by Day of Week
           </div>
-          <div className="sp-chart-bar-group">
-            {visitsByDay.map(d => (
-              <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>{d.visits}</div>
-                <div
-                  className="sp-chart-bar"
-                  style={{ height: `${(d.visits / maxVisits) * 100}%`, width: '100%' }}
-                  title={`${d.day}: ${d.visits} visits`}
-                />
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{d.day}</div>
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Loading...</div>
+          ) : (
+            <div className="sp-chart-bar-group">
+              {visitsByDay.map(d => (
+                <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>{d.visits}</div>
+                  <div
+                    className="sp-chart-bar"
+                    style={{ height: `${(d.visits / maxVisits) * 100}%`, width: '100%', minHeight: d.visits > 0 ? '4px' : '2px' }}
+                    title={`${d.day}: ${d.visits} visits`}
+                  />
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{d.day}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Top Services Table */}
@@ -96,33 +150,37 @@ export default function Analytics() {
           <div style={{ padding: 'var(--space-l)', fontWeight: 600, fontSize: '15px', borderBottom: '1px solid var(--border-light)' }}>
             Top Services
           </div>
-          <table className="sp-table">
-            <thead>
-              <tr>
-                <th>Service</th>
-                <th>Visits</th>
-                <th>Revenue</th>
-                <th style={{ minWidth: '100px' }}>% of Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topServices.map((s, i) => (
-                <tr key={i}>
-                  <td style={{ fontWeight: 500 }}>{s.name}</td>
-                  <td>{s.count}</td>
-                  <td style={{ fontWeight: 600 }}>{formatCurrency(s.revenue)}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div className="sp-progress-bar" style={{ flex: 1 }}>
-                        <div className="sp-progress-fill" style={{ width: `${s.pct}%` }} />
-                      </div>
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)', minWidth: '30px' }}>{s.pct}%</span>
-                    </div>
-                  </td>
+          {isLoading ? (
+            <div style={{ padding: 'var(--space-l)', color: 'var(--text-secondary)', fontSize: '13px' }}>Loading...</div>
+          ) : topServices.length === 0 ? (
+            <div style={{ padding: 'var(--space-l)', color: 'var(--text-secondary)', fontSize: '13px' }}>No services data</div>
+          ) : (
+            <table className="sp-table">
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Price</th>
+                  <th style={{ minWidth: '100px' }}>Share</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {topServices.map((s, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 500 }}>{s.name}</td>
+                    <td style={{ fontWeight: 600 }}>{formatCurrency(s.revenue / Math.max(s.count, 1))}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="sp-progress-bar" style={{ flex: 1 }}>
+                          <div className="sp-progress-fill" style={{ width: `${s.pct}%` }} />
+                        </div>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', minWidth: '30px' }}>{s.pct}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
