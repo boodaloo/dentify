@@ -17,6 +17,7 @@ import notificationRoutes    from './routes/notifications';
 import financeRoutes         from './routes/finance';
 import callRoutes            from './routes/calls';
 import documentRoutes        from './routes/documents';
+import fileRoutes            from './routes/files';
 
 dotenv.config();
 
@@ -42,6 +43,8 @@ app.use('/api/notifications',    notificationRoutes);
 app.use('/api/finance',          financeRoutes);
 app.use('/api/calls',            callRoutes);
 app.use('/api/documents',        documentRoutes);
+app.use('/api/patients',         fileRoutes);   // /:patientId/files
+app.use('/uploads', express.static(require('path').join(process.cwd(), 'uploads')));
 
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

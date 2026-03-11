@@ -19,6 +19,9 @@ const IconReceipt   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill
 const IconClipboard = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
 const IconTooth     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5.5c-1.5-2-4-2.5-5.5-1C4.5 6 4 8 4.5 10c.5 2 1 3.5 1 5.5 0 1.5.5 3 2 3s2-1.5 2-1.5.5 1.5 2.5 1.5 2.5-1.5 2.5-1.5 .5 1.5 2 1.5 2-1.5 2-3c0-2 .5-3.5 1-5.5.5-2 0-4-2-5.5-1.5-1-4-.5-5.5 1Z"/></svg>;
 const IconShield    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+const IconImage     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>;
+const IconUpload    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
+const IconX         = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -74,6 +77,10 @@ const Tooth: React.FC<{ number: number; status: LocalToothStatus; isSelected: bo
 
 // ─── Clinical Tab (Зубная карта + Здоровье + Диагнозы) ───────────────────────
 
+const IMAGE_TYPE_LABELS: Record<string, string> = {
+  ALL: 'All', XRAY: 'X-Ray', PHOTO: 'Photo', DOCUMENT: 'Document', OTHER: 'Other',
+};
+
 const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void }> = ({ patient, patientId, onPatientUpdate }) => {
   const [toothData, setToothData]   = useState<Record<number, LocalToothStatus>>({});
   const [selected, setSelected]     = useState<number | null>(null);
@@ -83,6 +90,19 @@ const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: 
   const [saved, setSaved]           = useState(false);
   const [records, setRecords]       = useState<any[]>([]);
   const [recLoading, setRecLoading] = useState(true);
+  // Images
+  const [images, setImages]         = useState<any[]>([]);
+  const [imgFilter, setImgFilter]   = useState<string>('ALL');
+  const [lightbox, setLightbox]     = useState<any | null>(null);
+  const [uploading, setUploading]   = useState(false);
+  const fileInputRef                = React.useRef<HTMLInputElement>(null);
+
+  const fetchImages = useCallback(() => {
+    api.get(`/patients/${patientId}/files`).then((res: any) => {
+      const items = res?.data ?? (Array.isArray(res) ? res : []);
+      setImages(items.filter((f: any) => f.fileType === 'XRAY' || f.fileType === 'PHOTO'));
+    }).catch(() => {});
+  }, [patientId]);
 
   useEffect(() => {
     api.get(`/clinical/patients/${patientId}/dental-chart`).then((res: any) => {
@@ -95,7 +115,31 @@ const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: 
     api.get('/clinical/medical-records', { patientId, limit: '20' }).then((res: any) => {
       setRecords(res?.data?.items ?? res?.data ?? []);
     }).catch(() => {}).finally(() => setRecLoading(false));
-  }, [patientId]);
+
+    fetchImages();
+  }, [patientId, fetchImages]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+      formData.append('fileType', ['dcm', 'dcm'].includes(ext) ? 'XRAY' : file.type.startsWith('image/') ? 'PHOTO' : 'OTHER');
+      await api.post(`/patients/${patientId}/files`, formData);
+      fetchImages();
+    } catch { } finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+  };
+
+  const handleDelete = async (fileId: string) => {
+    try {
+      await api.delete(`/patients/${patientId}/files/${fileId}`);
+      setImages(prev => prev.filter(f => f.id !== fileId));
+      if (lightbox?.id === fileId) setLightbox(null);
+    } catch {}
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -236,6 +280,86 @@ const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: 
 
         </div>
       </div>
+      {/* ── Row 3: Images ── */}
+      <div className="clinical-section-title" style={{ marginTop: 24 }}>Images & X-Rays</div>
+      <div className="pp-card">
+        <div className="pp-card-header">
+          <div className="pp-filter-row" style={{ marginBottom: 0 }}>
+            {Object.entries(IMAGE_TYPE_LABELS).map(([key, label]) => (
+              <button key={key} className={`pp-filter-btn ${imgFilter === key ? 'active' : ''}`} onClick={() => setImgFilter(key)}>
+                {label}{key !== 'ALL' && images.filter(f => f.fileType === key).length > 0 && ` (${images.filter(f => f.fileType === key).length})`}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="pp-btn-ghost" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+              <IconUpload /> {uploading ? 'Uploading…' : 'Upload'}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*,.dcm,.pdf" style={{ display: 'none' }} onChange={handleUpload} />
+          </div>
+        </div>
+
+        {(() => {
+          const filtered = imgFilter === 'ALL' ? images : images.filter(f => f.fileType === imgFilter);
+          if (filtered.length === 0) return (
+            <div className="img-upload-hint">
+              <div className="img-upload-icon"><IconImage /></div>
+              <p>No images yet. Upload X-rays or photos using the button above.</p>
+              <p style={{ fontSize: 12, opacity: 0.7 }}>Supported: JPEG, PNG, WebP, DICOM (.dcm)</p>
+            </div>
+          );
+          return (
+            <div className="img-gallery">
+              {filtered.map((f: any) => (
+                <div key={f.id} className="img-thumb" onClick={() => setLightbox(f)}>
+                  {f.mimeType?.startsWith('image/') ? (
+                    <img src={f.url} alt={f.originalName} />
+                  ) : (
+                    <div className="img-thumb-placeholder"><IconImage /><span>.{f.originalName.split('.').pop()}</span></div>
+                  )}
+                  <div className="img-thumb-overlay">
+                    <div className="img-thumb-name">{f.originalName}</div>
+                    <div className="img-thumb-meta">{fmtDate(f.createdAt)}{f.uploadedBy && ` · ${f.uploadedBy.name}`}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* ── Lightbox ── */}
+      {lightbox && (
+        <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
+          <div className="lightbox-box" onClick={e => e.stopPropagation()}>
+            <div className="lightbox-header">
+              <div>
+                <div className="lightbox-title">{lightbox.originalName}</div>
+                <div className="lightbox-meta">{fmtDate(lightbox.createdAt)}{lightbox.uploadedBy && ` · Dr. ${lightbox.uploadedBy.name}`}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="pp-btn-ghost" style={{ color: '#c0390a', borderColor: 'rgba(192,57,10,0.3)' }} onClick={() => handleDelete(lightbox.id)}>
+                  Delete
+                </button>
+                <button className="lightbox-close" onClick={() => setLightbox(null)}><IconX /></button>
+              </div>
+            </div>
+            <div className="lightbox-body">
+              {lightbox.mimeType?.startsWith('image/') ? (
+                <img src={lightbox.url} alt={lightbox.originalName} />
+              ) : (
+                <div className="lightbox-nopreview">
+                  <IconImage />
+                  <p>Preview not available for this file type</p>
+                  <a href={lightbox.url} target="_blank" rel="noreferrer" className="pp-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    Open File
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -348,7 +472,7 @@ const OverviewTab: React.FC<{ patient: any; onTabChange: (tab: string) => void }
 
       {/* ── Quick Actions ── */}
       <div className="quick-actions-bar">
-        <button className="qa-btn" onClick={() => onTabChange('visits')}>
+        <button className="qa-btn">
           <div className="qa-icon qa-icon-teal"><IconCalendar /></div>
           <span>New Appointment</span>
         </button>
@@ -416,7 +540,7 @@ const OverviewTab: React.FC<{ patient: any; onTabChange: (tab: string) => void }
           <div className="pp-card">
             <div className="pp-card-header">
               <div className="pp-card-title">Recent Visits</div>
-              <button className="pp-link" onClick={() => onTabChange('visits')}>{appointments.length} total →</button>
+              <button className="pp-link" onClick={() => onTabChange('info')}>{appointments.length} total →</button>
             </div>
             {recent.length === 0 ? (
               <div className="pp-empty-sm">No visits yet</div>
@@ -522,6 +646,94 @@ const OverviewTab: React.FC<{ patient: any; onTabChange: (tab: string) => void }
 
         </div>
       </div>
+    </div>
+  );
+};
+
+// ─── Visits Section (used inside InfoTab) ────────────────────────────────────
+
+const VisitsSection: React.FC<{ patient: any }> = ({ patient }) => {
+  const [filter, setFilter]       = useState<string>('ALL');
+  const [expandedId, setExpanded] = useState<string | null>(null);
+  const [records, setRecords]     = useState<Record<string, any>>({});
+
+  const appointments: any[] = patient?.appointments ?? [];
+  const filtered = filter === 'ALL' ? appointments : appointments.filter((a: any) => a.status === filter);
+
+  const toggleExpand = async (id: string) => {
+    if (expandedId === id) { setExpanded(null); return; }
+    setExpanded(id);
+    if (!records[id]) {
+      try {
+        const res: any = await api.get('/clinical/medical-records', { appointmentId: id });
+        const items = res?.data?.items ?? res?.data ?? [];
+        setRecords(prev => ({ ...prev, [id]: items[0] ?? null }));
+      } catch { setRecords(prev => ({ ...prev, [id]: null })); }
+    }
+  };
+
+  const filters = ['ALL', 'COMPLETED', 'SCHEDULED', 'CONFIRMED', 'CANCELLED', 'NO_SHOW'];
+
+  return (
+    <div>
+      <div className="pp-filter-row" style={{ marginBottom: 12 }}>
+        {filters.map(f => (
+          <button key={f} className={`pp-filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
+            {f === 'ALL' ? `All (${appointments.length})` : (STATUS_LABELS[f]?.label ?? f)}
+          </button>
+        ))}
+      </div>
+      {filtered.length === 0 ? (
+        <div className="pp-empty-sm">No visits found</div>
+      ) : (
+        <div className="visits-list">
+          {filtered.map((a: any) => (
+            <div key={a.id} className={`visit-card ${expandedId === a.id ? 'expanded' : ''}`}>
+              <div className="visit-card-main" onClick={() => toggleExpand(a.id)}>
+                <div className="visit-card-left">
+                  <div className="visit-card-date">{fmtDate(a.startTime)}</div>
+                  <div className="visit-card-time">{fmtTime(a.startTime)} – {fmtTime(a.endTime)}</div>
+                </div>
+                <div className="visit-card-center">
+                  {a.services?.length > 0
+                    ? <div className="visit-card-services">{a.services.map((s: any) => s.service?.name).filter(Boolean).join(' · ')}</div>
+                    : <div className="visit-card-services" style={{ opacity: 0.5 }}>No services recorded</div>
+                  }
+                  {a.doctor && <div className="visit-card-meta">👨‍⚕️ Dr. {a.doctor.name}</div>}
+                  {a.branch && <div className="visit-card-meta">📍 {a.branch.name}</div>}
+                  {a.notes  && <div className="visit-card-meta" style={{ fontStyle: 'italic' }}>"{a.notes}"</div>}
+                </div>
+                <div className="visit-card-right">
+                  <StatusChip status={a.status} map={STATUS_LABELS} />
+                  <div className={`visit-chevron ${expandedId === a.id ? 'open' : ''}`}><IconChevron /></div>
+                </div>
+              </div>
+              {expandedId === a.id && (
+                <div className="visit-record-expand">
+                  {records[a.id] === undefined ? (
+                    <div className="pp-loading-sm">Loading…</div>
+                  ) : records[a.id] === null ? (
+                    <div className="pp-empty-sm">No medical record for this visit</div>
+                  ) : (
+                    <div className="medical-record-view">
+                      {records[a.id].complaints  && <div className="mr-field"><span className="mr-label">Complaints</span><span>{records[a.id].complaints}</span></div>}
+                      {records[a.id].anamnesis   && <div className="mr-field"><span className="mr-label">Anamnesis</span><span>{records[a.id].anamnesis}</span></div>}
+                      {records[a.id].diagnoses?.length > 0 && (
+                        <div className="mr-field"><span className="mr-label">Diagnoses</span>
+                          <div className="mr-diagnoses">{records[a.id].diagnoses.map((d: any, i: number) => <span key={i} className="pp-chip chip-teal">{d.diagnosis?.code} — {d.diagnosis?.name}</span>)}</div>
+                        </div>
+                      )}
+                      {records[a.id].treatmentPlan && <div className="mr-field"><span className="mr-label">Treatment done</span><span>{records[a.id].treatmentPlan}</span></div>}
+                      {records[a.id].notes       && <div className="mr-field"><span className="mr-label">Doctor's notes</span><span>{records[a.id].notes}</span></div>}
+                      {records[a.id].createdBy   && <div className="mr-field"><span className="mr-label">Recorded by</span><span>{records[a.id].createdBy.name}</span></div>}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -757,11 +969,18 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
         </div>
 
       </div>
+
+      {/* ── Visit History ── */}
+      <div className="pp-card info-visits-section">
+        <div className="pp-card-title">Visit History</div>
+        <VisitsSection patient={patient} />
+      </div>
+
     </div>
   );
 };
 
-// ─── Visits Tab ───────────────────────────────────────────────────────────────
+// ─── (VisitsTab kept as alias for backward compat) ────────────────────────────
 
 const VisitsTab: React.FC<{ patient: any }> = ({ patient }) => {
   const [filter, setFilter]       = useState<string>('ALL');
@@ -1064,7 +1283,6 @@ const TABS = [
   { id: 'info',       label: 'Patient Info' },
   { id: 'clinical',   label: 'Clinical' },
   { id: 'diary',      label: 'Diary' },
-  { id: 'visits',     label: 'Visits' },
   { id: 'treatment',  label: 'Treatment Plan' },
   { id: 'finances',   label: 'Finances' },
   { id: 'documents',  label: 'Documents' },
@@ -1104,7 +1322,6 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
       case 'info':      return <InfoTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
       case 'clinical':  return <ClinicalTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
       case 'diary':     return <DiaryTab patientId={patientId} />;
-      case 'visits':    return <VisitsTab patient={patient} />;
       case 'treatment': return <TreatmentTab patientId={patientId} />;
       case 'finances':  return <FinancesTab patient={patient} />;
       default:          return <PlaceholderTab name={TABS.find(t => t.id === activeTab)?.label ?? ''} />;
