@@ -127,6 +127,9 @@ importers:
 
   frontend/web:
     dependencies:
+      boring-avatars:
+        specifier: ^2.0.4
+        version: 2.0.4(react-dom@19.2.3)(react@19.2.3)
       i18next:
         specifier: ^23.7.6
         version: 23.16.8
@@ -1453,6 +1456,16 @@ packages:
       unpipe: 1.0.0
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /boring-avatars@2.0.4(react-dom@19.2.3)(react@19.2.3):
+    resolution: {integrity: sha512-xhZO/w/6aFmRfkaWohcl2NfyIy87gK5SBbys8kctZeTGF1Apjpv/10pfUuv+YEfVPkESU/h2Y6tt/Dwp+bIZPw==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+    dependencies:
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
     dev: false
 
   /brace-expansion@1.1.12:

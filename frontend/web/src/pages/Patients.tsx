@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Avatar from 'boring-avatars';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Modal from '../components/Modal';
@@ -113,11 +114,9 @@ const Patients: React.FC<PatientsProps> = ({ onSelectPatient }) => {
                 <tr key={patient.id} className="patient-row" onClick={() => onSelectPatient?.(patient)} onDoubleClick={() => handleEditPatient(patient)}>
                   <td>
                     <div className="patient-identity flex items-center gap-m">
-                      <img
-                        className="avatar"
-                        src={`https://source.boringavatars.com/beam/40/${encodeURIComponent(`${patient.firstName} ${patient.lastName}`)}?colors=0D7377,14919B,45B7A0,F2CC8F,FF6B6B`}
-                        alt={`${patient.firstName} ${patient.lastName}`}
-                      />
+                      <span className="avatar">
+                        <Avatar size={40} name={`${patient.firstName} ${patient.lastName}`} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
+                      </span>
                       <div className="name-box">
                         <div className="full-name">{patient.firstName} {patient.lastName}</div>
                         <div className="dob">{patient.birthDate ? new Date(patient.birthDate).toLocaleDateString(locale) : ''}</div>

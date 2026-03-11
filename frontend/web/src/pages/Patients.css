@@ -88,10 +88,11 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-s);
-  object-fit: cover;
+  overflow: hidden;
   display: block;
   flex-shrink: 0;
 }
+.patient-identity .avatar svg { display: block; }
 
 .full-name {
   font-weight: 600;

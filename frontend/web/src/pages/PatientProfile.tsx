@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Avatar from 'boring-avatars';
 import { api } from '../services/api';
 import './PatientProfile.css';
 
@@ -1338,10 +1339,7 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
         <div className="profile-hero">
           <div className="profile-avatar-wrap">
             <div className="profile-avatar">
-              <img
-                src={`https://source.boringavatars.com/beam/80/${encodeURIComponent(fullName || 'Patient')}?colors=0D7377,14919B,45B7A0,F2CC8F,FF6B6B`}
-                alt={fullName}
-              />
+              <Avatar size={80} name={fullName || 'Patient'} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
             </div>
             {patient?.allergies && <div className="avatar-alert" title="Has allergies">!</div>}
           </div>
