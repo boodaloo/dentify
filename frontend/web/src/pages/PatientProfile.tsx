@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Avatar from 'boring-avatars';
 import { api } from '../services/api';
+import DateInput from '../components/DateInput';
 import './PatientProfile.css';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -23,6 +24,7 @@ const IconShield    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill
 const IconImage     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>;
 const IconUpload    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
 const IconX         = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
+const IconTrash     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -82,15 +84,50 @@ const IMAGE_TYPE_LABELS: Record<string, string> = {
   ALL: 'All', XRAY: 'X-Ray', PHOTO: 'Photo', DOCUMENT: 'Document', OTHER: 'Other',
 };
 
+// ─── Anamnesis data helpers ────────────────────────────────────────────────
+interface AllergyItem { name: string; severity: 'MILD' | 'MODERATE' | 'SEVERE'; reaction: string }
+interface DiseaseItem { name: string; code: string }
+interface MedicationItem { name: string; dose: string; freq: string }
+interface AnamnesisData { items: AllergyItem[]; diseases: DiseaseItem[]; medications: MedicationItem[] }
+
+const BLOOD_GROUPS = ['I+', 'I-', 'II+', 'II-', 'III+', 'III-', 'IV+', 'IV-'];
+const SEVERITY_LABELS: Record<string, string> = { MILD: 'Mild', MODERATE: 'Moderate', SEVERE: 'Severe' };
+const SEVERITY_CHIPS: Record<string, string> = { MILD: 'chip-yellow', MODERATE: 'chip-coral', SEVERE: 'chip-red' };
+
+const parseAnamnesis = (raw: string | null | undefined): AnamnesisData => {
+  if (!raw) return { items: [], diseases: [], medications: [] };
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+      diseases: Array.isArray(parsed.diseases) ? parsed.diseases : [],
+      medications: Array.isArray(parsed.medications) ? parsed.medications : [],
+    };
+  } catch {
+    // Legacy plain text: put it as a single allergy item
+    if (raw.trim()) return { items: [{ name: raw.trim(), severity: 'MODERATE', reaction: '' }], diseases: [], medications: [] };
+    return { items: [], diseases: [], medications: [] };
+  }
+};
+
 const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void }> = ({ patient, patientId, onPatientUpdate }) => {
   const [toothData, setToothData]   = useState<Record<number, LocalToothStatus>>({});
   const [selected, setSelected]     = useState<number | null>(null);
-  const [allergies, setAllergies]   = useState(patient?.allergies ?? '');
-  const [notes, setNotes]           = useState(patient?.notes ?? '');
+  // Structured anamnesis
+  const initialAnamnesis = parseAnamnesis(patient?.allergies);
+  const [allergyItems, setAllergyItems]       = useState<AllergyItem[]>(initialAnamnesis.items);
+  const [diseases, setDiseases]               = useState<DiseaseItem[]>(initialAnamnesis.diseases);
+  const [medications, setMedications]         = useState<MedicationItem[]>(initialAnamnesis.medications);
+  const [bloodGroup, setBloodGroup]           = useState(patient?.bloodGroup ?? '');
+  const [lastDentalVisit, setLastDentalVisit] = useState('');
+  const [generalNotes, setGeneralNotes]       = useState(patient?.notes ?? '');
   const [saving, setSaving]         = useState(false);
   const [saved, setSaved]           = useState(false);
   const [records, setRecords]       = useState<any[]>([]);
   const [recLoading, setRecLoading] = useState(true);
+  // Collapsible sections
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ allergies: true, diseases: true, medications: true, extra: false });
+  const toggleSection = (key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
   // Images
   const [images, setImages]         = useState<any[]>([]);
   const [imgFilter, setImgFilter]   = useState<string>('ALL');
@@ -145,8 +182,10 @@ const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put(`/patients/${patientId}`, { allergies, notes });
-      onPatientUpdate({ ...patient, allergies, notes });
+      const allergiesJson = JSON.stringify({ items: allergyItems, diseases, medications });
+      const notesVal = generalNotes;
+      await api.put(`/patients/${patientId}`, { allergies: allergiesJson, notes: notesVal });
+      onPatientUpdate({ ...patient, allergies: allergiesJson, notes: notesVal });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch { } finally { setSaving(false); }
@@ -216,29 +255,110 @@ const ClinicalTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: 
       <div className="clinical-section-title" style={{ marginTop: 24 }}>Anamnesis & Health Profile</div>
       <div className="clinical-bottom-grid">
 
-        {/* Allergies & Notes */}
-        <div className="pp-card">
-          <div className="pp-card-title">Allergies & Contraindications</div>
-          <textarea
-            className="pp-textarea"
-            rows={3}
-            value={allergies}
-            onChange={e => setAllergies(e.target.value)}
-            placeholder="Penicillin allergy, latex allergy, local anesthetics…"
-          />
-          <div className="pp-card-title" style={{ marginTop: 14 }}>Clinical Notes</div>
-          <textarea
-            className="pp-textarea"
-            rows={3}
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder="Chronic conditions, medications, relevant history…"
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+        {/* Structured Anamnesis */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Allergies */}
+          <div className="pp-card">
+            <div className="pp-card-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection('allergies')}>
+              <div className="pp-card-title" style={{ marginBottom: 0 }}>Allergies & Contraindications {allergyItems.length > 0 && <span className="pp-chip chip-coral" style={{ fontSize: 10 }}>{allergyItems.length}</span>}</div>
+              <div className={`visit-chevron ${openSections.allergies ? 'open' : ''}`}><IconChevron /></div>
+            </div>
+            {openSections.allergies && (
+              <div style={{ marginTop: 8 }}>
+                {allergyItems.map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                    <input className="pp-input" style={{ flex: 2 }} placeholder="Substance" value={item.name} onChange={e => { const arr = [...allergyItems]; arr[idx] = { ...arr[idx], name: e.target.value }; setAllergyItems(arr); }} />
+                    <select className="pp-input" style={{ flex: 1 }} value={item.severity} onChange={e => { const arr = [...allergyItems]; arr[idx] = { ...arr[idx], severity: e.target.value as any }; setAllergyItems(arr); }}>
+                      <option value="MILD">Mild</option>
+                      <option value="MODERATE">Moderate</option>
+                      <option value="SEVERE">Severe</option>
+                    </select>
+                    <input className="pp-input" style={{ flex: 2 }} placeholder="Reaction" value={item.reaction} onChange={e => { const arr = [...allergyItems]; arr[idx] = { ...arr[idx], reaction: e.target.value }; setAllergyItems(arr); }} />
+                    <button className="pp-btn-ghost" style={{ padding: '4px 6px', color: '#c0390a', borderColor: 'rgba(192,57,10,0.3)' }} onClick={() => setAllergyItems(prev => prev.filter((_, i) => i !== idx))}><IconX /></button>
+                  </div>
+                ))}
+                <button className="pp-btn-ghost" style={{ marginTop: 4 }} onClick={() => setAllergyItems(prev => [...prev, { name: '', severity: 'MODERATE', reaction: '' }])}><IconPlus /> Add allergy</button>
+              </div>
+            )}
+          </div>
+
+          {/* Chronic diseases */}
+          <div className="pp-card">
+            <div className="pp-card-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection('diseases')}>
+              <div className="pp-card-title" style={{ marginBottom: 0 }}>Chronic Diseases {diseases.length > 0 && <span className="pp-chip chip-yellow" style={{ fontSize: 10 }}>{diseases.length}</span>}</div>
+              <div className={`visit-chevron ${openSections.diseases ? 'open' : ''}`}><IconChevron /></div>
+            </div>
+            {openSections.diseases && (
+              <div style={{ marginTop: 8 }}>
+                {diseases.map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                    <input className="pp-input" style={{ flex: 3 }} placeholder="Disease name" value={item.name} onChange={e => { const arr = [...diseases]; arr[idx] = { ...arr[idx], name: e.target.value }; setDiseases(arr); }} />
+                    <input className="pp-input" style={{ flex: 1 }} placeholder="ICD code" value={item.code} onChange={e => { const arr = [...diseases]; arr[idx] = { ...arr[idx], code: e.target.value }; setDiseases(arr); }} />
+                    <button className="pp-btn-ghost" style={{ padding: '4px 6px', color: '#c0390a', borderColor: 'rgba(192,57,10,0.3)' }} onClick={() => setDiseases(prev => prev.filter((_, i) => i !== idx))}><IconX /></button>
+                  </div>
+                ))}
+                <button className="pp-btn-ghost" style={{ marginTop: 4 }} onClick={() => setDiseases(prev => [...prev, { name: '', code: '' }])}><IconPlus /> Add disease</button>
+              </div>
+            )}
+          </div>
+
+          {/* Current medications */}
+          <div className="pp-card">
+            <div className="pp-card-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection('medications')}>
+              <div className="pp-card-title" style={{ marginBottom: 0 }}>Current Medications {medications.length > 0 && <span className="pp-chip chip-teal" style={{ fontSize: 10 }}>{medications.length}</span>}</div>
+              <div className={`visit-chevron ${openSections.medications ? 'open' : ''}`}><IconChevron /></div>
+            </div>
+            {openSections.medications && (
+              <div style={{ marginTop: 8 }}>
+                {medications.map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                    <input className="pp-input" style={{ flex: 2 }} placeholder="Medication" value={item.name} onChange={e => { const arr = [...medications]; arr[idx] = { ...arr[idx], name: e.target.value }; setMedications(arr); }} />
+                    <input className="pp-input" style={{ flex: 1 }} placeholder="Dose" value={item.dose} onChange={e => { const arr = [...medications]; arr[idx] = { ...arr[idx], dose: e.target.value }; setMedications(arr); }} />
+                    <input className="pp-input" style={{ flex: 1 }} placeholder="Frequency" value={item.freq} onChange={e => { const arr = [...medications]; arr[idx] = { ...arr[idx], freq: e.target.value }; setMedications(arr); }} />
+                    <button className="pp-btn-ghost" style={{ padding: '4px 6px', color: '#c0390a', borderColor: 'rgba(192,57,10,0.3)' }} onClick={() => setMedications(prev => prev.filter((_, i) => i !== idx))}><IconX /></button>
+                  </div>
+                ))}
+                <button className="pp-btn-ghost" style={{ marginTop: 4 }} onClick={() => setMedications(prev => [...prev, { name: '', dose: '', freq: '' }])}><IconPlus /> Add medication</button>
+              </div>
+            )}
+          </div>
+
+          {/* Extra: blood group, last visit, notes */}
+          <div className="pp-card">
+            <div className="pp-card-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection('extra')}>
+              <div className="pp-card-title" style={{ marginBottom: 0 }}>Additional Info</div>
+              <div className={`visit-chevron ${openSections.extra ? 'open' : ''}`}><IconChevron /></div>
+            </div>
+            {openSections.extra && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                  <div className="pp-field" style={{ flex: 1 }}>
+                    <label className="pp-label">Blood Group</label>
+                    <select className="pp-input" value={bloodGroup} onChange={e => setBloodGroup(e.target.value)}>
+                      <option value="">Not specified</option>
+                      {BLOOD_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                  <div className="pp-field" style={{ flex: 1 }}>
+                    <label className="pp-label">Last Dental Visit</label>
+                    <DateInput className="pp-input" value={lastDentalVisit} onChange={setLastDentalVisit} />
+                  </div>
+                </div>
+                <div className="pp-field">
+                  <label className="pp-label">General Notes</label>
+                  <textarea className="pp-textarea" rows={3} value={generalNotes} onChange={e => setGeneralNotes(e.target.value)} placeholder="Any other relevant information..." />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Save button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className="pp-btn-primary" onClick={handleSave} disabled={saving}>
-              <IconSave /> {saving ? 'Saving…' : 'Save'}
+              <IconSave /> {saving ? 'Saving...' : 'Save Anamnesis'}
             </button>
-            {saved && <span style={{ fontSize: 13, color: 'var(--secondary-seafoam)' }}>✓ Saved</span>}
+            {saved && <span style={{ fontSize: 13, color: 'var(--secondary-seafoam)' }}>Saved</span>}
           </div>
         </div>
 
@@ -974,10 +1094,13 @@ const VisitsSection: React.FC<{ patient: any; onOpenVisit?: (aptId: string) => v
 
 // ─── Patient Info Tab ──────────────────────────────────────────────────────────
 
+const INSURANCE_TYPE_LABELS: Record<string, string> = { OMS: 'OMS', DMS: 'DMS', PRIVATE: 'Private', PUBLIC: 'Public' };
+const RELATIVE_TYPE_LABELS: Record<string, string> = { MOTHER: 'Mother', FATHER: 'Father', SPOUSE: 'Spouse', CHILD: 'Child', SIBLING: 'Sibling', GUARDIAN: 'Guardian', OTHER: 'Other' };
+
 const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void; onOpenVisit?: (aptId: string) => void }> = ({ patient, patientId, onPatientUpdate, onOpenVisit }) => {
   const contacts  = patient?.contacts ?? [];
-  const relatives = patient?.relatives ?? [];
-  const insurances = patient?.insurances ?? [];
+  const [relatives, setRelatives]   = useState<any[]>(patient?.relatives ?? []);
+  const [insurances, setInsurances] = useState<any[]>(patient?.insurances ?? []);
   const groups    = patient?.groupMemberships ?? [];
   const promotions = patient?.promotionUsages ?? [];
 
@@ -996,6 +1119,26 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
   });
   const [saving, setSaving] = useState(false);
 
+  // Insurance modal
+  const [showInsModal, setShowInsModal]     = useState(false);
+  const [editingIns, setEditingIns]         = useState<any>(null);
+  const [insForm, setInsForm]               = useState({ type: 'OMS', policyNumber: '', validFrom: '', validTo: '', isActive: true });
+  const [insSaving, setInsSaving]           = useState(false);
+  const [insError, setInsError]             = useState('');
+
+  // Relative modal
+  const [showRelModal, setShowRelModal]     = useState(false);
+  const [editingRel, setEditingRel]         = useState<any>(null);
+  const [relForm, setRelForm]               = useState({ relativeType: 'OTHER', name: '', phone: '', email: '', isGuardian: false, notes: '' });
+  const [relSaving, setRelSaving]           = useState(false);
+  const [relError, setRelError]             = useState('');
+
+  // Sync with patient prop changes
+  useEffect(() => {
+    setRelatives(patient?.relatives ?? []);
+    setInsurances(patient?.insurances ?? []);
+  }, [patient]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -1003,6 +1146,94 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
       onPatientUpdate({ ...patient, ...form });
       setEditing(false);
     } catch { } finally { setSaving(false); }
+  };
+
+  // ── Insurance CRUD ──
+  const openInsModal = (ins?: any) => {
+    if (ins) {
+      setEditingIns(ins);
+      setInsForm({
+        type: ins.type ?? 'OMS',
+        policyNumber: ins.policyNumber ?? '',
+        validFrom: ins.validFrom ? ins.validFrom.slice(0, 10) : '',
+        validTo: ins.validTo ? ins.validTo.slice(0, 10) : '',
+        isActive: ins.isActive ?? true,
+      });
+    } else {
+      setEditingIns(null);
+      setInsForm({ type: 'OMS', policyNumber: '', validFrom: '', validTo: '', isActive: true });
+    }
+    setInsError('');
+    setShowInsModal(true);
+  };
+
+  const handleInsSave = async () => {
+    setInsSaving(true);
+    setInsError('');
+    try {
+      if (editingIns) {
+        const res: any = await api.put(`/patients/${patientId}/insurance/${editingIns.id}`, insForm);
+        const updated = res?.data ?? res;
+        setInsurances(prev => prev.map(i => i.id === editingIns.id ? updated : i));
+      } else {
+        const res: any = await api.post(`/patients/${patientId}/insurance`, insForm);
+        const created = res?.data ?? res;
+        setInsurances(prev => [...prev, created]);
+      }
+      setShowInsModal(false);
+    } catch (err: any) { setInsError(err?.message ?? 'Failed to save'); } finally { setInsSaving(false); }
+  };
+
+  const handleInsDelete = async (insId: string) => {
+    try {
+      await api.delete(`/patients/${patientId}/insurance/${insId}`);
+      setInsurances(prev => prev.filter(i => i.id !== insId));
+    } catch {}
+  };
+
+  // ── Relative CRUD ──
+  const openRelModal = (rel?: any) => {
+    if (rel) {
+      setEditingRel(rel);
+      setRelForm({
+        relativeType: rel.relativeType ?? 'OTHER',
+        name: rel.name ?? '',
+        phone: rel.phone ?? '',
+        email: rel.email ?? '',
+        isGuardian: rel.isGuardian ?? false,
+        notes: rel.notes ?? '',
+      });
+    } else {
+      setEditingRel(null);
+      setRelForm({ relativeType: 'OTHER', name: '', phone: '', email: '', isGuardian: false, notes: '' });
+    }
+    setRelError('');
+    setShowRelModal(true);
+  };
+
+  const handleRelSave = async () => {
+    if (!relForm.name.trim()) { setRelError('Name is required'); return; }
+    setRelSaving(true);
+    setRelError('');
+    try {
+      if (editingRel) {
+        const res: any = await api.put(`/patients/${patientId}/relatives/${editingRel.id}`, relForm);
+        const updated = res?.data ?? res;
+        setRelatives(prev => prev.map(r => r.id === editingRel.id ? updated : r));
+      } else {
+        const res: any = await api.post(`/patients/${patientId}/relatives`, relForm);
+        const created = res?.data ?? res;
+        setRelatives(prev => [...prev, created]);
+      }
+      setShowRelModal(false);
+    } catch (err: any) { setRelError(err?.message ?? 'Failed to save'); } finally { setRelSaving(false); }
+  };
+
+  const handleRelDelete = async (relId: string) => {
+    try {
+      await api.delete(`/patients/${patientId}/relatives/${relId}`);
+      setRelatives(prev => prev.filter(r => r.id !== relId));
+    } catch {}
   };
 
   return (
@@ -1025,7 +1256,7 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
                     </span>
                   </div>
                 ))
-              : <div className="info-row"><span className="info-row-label"><IconPhone /> Phone</span><span className="info-row-empty">—</span></div>
+              : <div className="info-row"><span className="info-row-label"><IconPhone /> Phone</span><span className="info-row-empty">---</span></div>
             }
             {emails.length > 0
               ? emails.map((c: any, i: number) => (
@@ -1034,11 +1265,11 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
                     <span className="info-row-val"><a href={`mailto:${c.value}`} className="pp-link-plain">{c.value}</a></span>
                   </div>
                 ))
-              : <div className="info-row"><span className="info-row-label"><IconMail /> Email</span><span className="info-row-empty">—</span></div>
+              : <div className="info-row"><span className="info-row-label"><IconMail /> Email</span><span className="info-row-empty">---</span></div>
             }
             {address && (
               <div className="info-row">
-                <span className="info-row-label">📍 Address</span>
+                <span className="info-row-label">Address</span>
                 <span className="info-row-val">{address}</span>
               </div>
             )}
@@ -1076,7 +1307,7 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
               <div className="pp-field">
                 <label className="pp-label">Referral Source</label>
                 <select className="pp-input" value={form.referralSource} onChange={e => setForm(f => ({ ...f, referralSource: e.target.value }))}>
-                  <option value="">— Not specified —</option>
+                  <option value="">--- Not specified ---</option>
                   <option value="SOCIAL_MEDIA">Social Media</option>
                   <option value="RECOMMENDATION">Recommendation</option>
                   <option value="SEARCH_ENGINE">Search Engine</option>
@@ -1085,16 +1316,16 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
                 </select>
               </div>
               <div className="edit-actions">
-                <button className="pp-btn-primary" onClick={handleSave} disabled={saving}><IconSave /> {saving ? 'Saving…' : 'Save'}</button>
+                <button className="pp-btn-primary" onClick={handleSave} disabled={saving}><IconSave /> {saving ? 'Saving...' : 'Save'}</button>
                 <button className="pp-btn-ghost" onClick={() => setEditing(false)}>Cancel</button>
               </div>
             </div>
           ) : (
             <div className="info-rows">
-              <div className="info-row"><span className="info-row-label">Passport</span><span className="info-row-val">{patient?.passportSeries || patient?.passportNumber ? `${patient.passportSeries ?? ''} ${patient.passportNumber ?? ''}`.trim() : <span className="info-row-empty">—</span>}</span></div>
-              <div className="info-row"><span className="info-row-label">SNILS</span><span className="info-row-val">{patient?.snils || <span className="info-row-empty">—</span>}</span></div>
-              <div className="info-row"><span className="info-row-label">INN</span><span className="info-row-val">{patient?.inn || <span className="info-row-empty">—</span>}</span></div>
-              <div className="info-row"><span className="info-row-label">Referral</span><span className="info-row-val">{patient?.referralSource ? patient.referralSource.replace(/_/g, ' ') : <span className="info-row-empty">—</span>}</span></div>
+              <div className="info-row"><span className="info-row-label">Passport</span><span className="info-row-val">{patient?.passportSeries || patient?.passportNumber ? `${patient.passportSeries ?? ''} ${patient.passportNumber ?? ''}`.trim() : <span className="info-row-empty">---</span>}</span></div>
+              <div className="info-row"><span className="info-row-label">SNILS</span><span className="info-row-val">{patient?.snils || <span className="info-row-empty">---</span>}</span></div>
+              <div className="info-row"><span className="info-row-label">INN</span><span className="info-row-val">{patient?.inn || <span className="info-row-empty">---</span>}</span></div>
+              <div className="info-row"><span className="info-row-label">Referral</span><span className="info-row-val">{patient?.referralSource ? patient.referralSource.replace(/_/g, ' ') : <span className="info-row-empty">---</span>}</span></div>
             </div>
           )}
         </div>
@@ -1103,24 +1334,28 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
         <div className="pp-card">
           <div className="pp-card-header">
             <div className="pp-card-title">Insurance & Policies</div>
-            <button className="pp-btn-ghost"><IconPlus /> Add</button>
+            <button className="pp-btn-ghost" onClick={() => openInsModal()}><IconPlus /> Add</button>
           </div>
           {insurances.length === 0 ? (
             <div className="pp-empty-sm">No insurance policies on file</div>
           ) : (
             <div className="insurance-list">
               {insurances.map((ins: any, i: number) => (
-                <div key={i} className={`insurance-row ${ins.isActive ? '' : 'inactive'}`}>
+                <div key={ins.id ?? i} className={`insurance-row ${ins.isActive ? '' : 'inactive'}`}>
                   <div className="insurance-row-left">
-                    <div className="insurance-company">{ins.company?.name ?? '—'}</div>
+                    <div className="insurance-company">{INSURANCE_TYPE_LABELS[ins.type] ?? ins.type}{ins.company?.name ? ` - ${ins.company.name}` : ''}</div>
                     {ins.policyNumber && <div className="insurance-policy">Policy: {ins.policyNumber}</div>}
                     {ins.validFrom && ins.validTo && (
-                      <div className="insurance-dates">{fmtDate(ins.validFrom)} — {fmtDate(ins.validTo)}</div>
+                      <div className="insurance-dates">{fmtDate(ins.validFrom)} - {fmtDate(ins.validTo)}</div>
                     )}
                   </div>
                   <div className="insurance-row-right">
                     <span className={`pp-chip ${ins.type === 'OMS' || ins.type === 'PUBLIC' ? 'chip-teal' : 'chip-yellow'}`}>{ins.type}</span>
                     {!ins.isActive && <span className="pp-chip chip-gray" style={{ fontSize: 10 }}>Expired</span>}
+                    <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                      <button className="pp-btn-ghost" style={{ padding: '2px 6px' }} onClick={() => openInsModal(ins)}><IconEdit /></button>
+                      <button className="pp-btn-ghost" style={{ padding: '2px 6px', color: '#c0390a', borderColor: 'rgba(192,57,10,0.3)' }} onClick={() => handleInsDelete(ins.id)}><IconTrash /></button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1132,20 +1367,26 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
         <div className="pp-card">
           <div className="pp-card-header">
             <div className="pp-card-title">Relatives & Emergency Contacts</div>
-            <button className="pp-btn-ghost"><IconPlus /> Add</button>
+            <button className="pp-btn-ghost" onClick={() => openRelModal()}><IconPlus /> Add</button>
           </div>
           {relatives.length === 0 ? (
             <div className="pp-empty-sm">No contacts added</div>
           ) : (
             <div className="relatives-list">
               {relatives.map((r: any, i: number) => (
-                <div key={i} className="relative-row">
-                  <div className="relative-info">
-                    <div className="relative-name">
-                      {r.name}
-                      {r.isGuardian && <span className="pp-chip chip-coral" style={{ fontSize: 10, marginLeft: 6 }}>Guardian</span>}
+                <div key={r.id ?? i} className="relative-row">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div className="relative-info">
+                      <div className="relative-name">
+                        {r.name}
+                        {r.isGuardian && <span className="pp-chip chip-coral" style={{ fontSize: 10, marginLeft: 6 }}>Guardian</span>}
+                      </div>
+                      <div className="relative-type">{RELATIVE_TYPE_LABELS[r.relativeType] ?? r.relativeType?.replace(/_/g, ' ')}</div>
                     </div>
-                    <div className="relative-type">{r.relativeType?.replace(/_/g, ' ')}</div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button className="pp-btn-ghost" style={{ padding: '2px 6px' }} onClick={() => openRelModal(r)}><IconEdit /></button>
+                      <button className="pp-btn-ghost" style={{ padding: '2px 6px', color: '#c0390a', borderColor: 'rgba(192,57,10,0.3)' }} onClick={() => handleRelDelete(r.id)}><IconTrash /></button>
+                    </div>
                   </div>
                   <div className="relative-contacts">
                     {r.phone && <a href={`tel:${r.phone}`} className="pp-link-plain relative-contact"><IconPhone /> {r.phone}</a>}
@@ -1193,7 +1434,7 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
               <div className="promo-list">
                 {promotions.map((p: any, i: number) => (
                   <div key={i} className="promo-row">
-                    <span>{p.promotion?.name ?? '—'}</span>
+                    <span>{p.promotion?.name ?? '---'}</span>
                     {p.usedAt && <span className="info-row-empty" style={{ fontSize: 12 }}>Used {fmtDate(p.usedAt)}</span>}
                   </div>
                 ))}
@@ -1210,6 +1451,112 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
         <VisitsSection patient={patient} onOpenVisit={onOpenVisit} />
       </div>
 
+      {/* ── Insurance Modal ── */}
+      {showInsModal && (
+        <div className="lightbox-overlay" onClick={() => setShowInsModal(false)}>
+          <div className="lightbox-box" style={{ maxWidth: 500 }} onClick={e => e.stopPropagation()}>
+            <div className="lightbox-header">
+              <div className="lightbox-title">{editingIns ? 'Edit Insurance' : 'Add Insurance'}</div>
+              <button className="lightbox-close" onClick={() => setShowInsModal(false)}><IconX /></button>
+            </div>
+            <div style={{ padding: 20 }}>
+              {insError && <div style={{ color: '#c0390a', fontSize: 13, marginBottom: 10, padding: '8px 12px', background: 'rgba(192,57,10,0.08)', borderRadius: 6 }}>{insError}</div>}
+              <div className="pp-field">
+                <label className="pp-label">Type</label>
+                <select className="pp-input" value={insForm.type} onChange={e => setInsForm(f => ({ ...f, type: e.target.value }))}>
+                  <option value="OMS">OMS</option>
+                  <option value="DMS">DMS</option>
+                  <option value="PRIVATE">Private</option>
+                  <option value="PUBLIC">Public</option>
+                </select>
+              </div>
+              <div className="pp-field">
+                <label className="pp-label">Policy Number</label>
+                <input className="pp-input" value={insForm.policyNumber} onChange={e => setInsForm(f => ({ ...f, policyNumber: e.target.value }))} placeholder="Policy number" />
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 0 }}>
+                <div className="pp-field" style={{ flex: 1 }}>
+                  <label className="pp-label">Valid From</label>
+                  <DateInput className="pp-input" value={insForm.validFrom} onChange={v => setInsForm(f => ({ ...f, validFrom: v }))} />
+                </div>
+                <div className="pp-field" style={{ flex: 1 }}>
+                  <label className="pp-label">Valid To</label>
+                  <DateInput className="pp-input" value={insForm.validTo} onChange={v => setInsForm(f => ({ ...f, validTo: v }))} />
+                </div>
+              </div>
+              <div className="pp-field">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={insForm.isActive} onChange={e => setInsForm(f => ({ ...f, isActive: e.target.checked }))} />
+                  Active
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+                <button className="pp-btn-ghost" onClick={() => setShowInsModal(false)}>Cancel</button>
+                <button className="pp-btn-primary" onClick={handleInsSave} disabled={insSaving}>
+                  <IconSave /> {insSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Relative Modal ── */}
+      {showRelModal && (
+        <div className="lightbox-overlay" onClick={() => setShowRelModal(false)}>
+          <div className="lightbox-box" style={{ maxWidth: 500 }} onClick={e => e.stopPropagation()}>
+            <div className="lightbox-header">
+              <div className="lightbox-title">{editingRel ? 'Edit Relative' : 'Add Relative'}</div>
+              <button className="lightbox-close" onClick={() => setShowRelModal(false)}><IconX /></button>
+            </div>
+            <div style={{ padding: 20 }}>
+              {relError && <div style={{ color: '#c0390a', fontSize: 13, marginBottom: 10, padding: '8px 12px', background: 'rgba(192,57,10,0.08)', borderRadius: 6 }}>{relError}</div>}
+              <div className="pp-field">
+                <label className="pp-label">Relationship</label>
+                <select className="pp-input" value={relForm.relativeType} onChange={e => setRelForm(f => ({ ...f, relativeType: e.target.value }))}>
+                  <option value="MOTHER">Mother</option>
+                  <option value="FATHER">Father</option>
+                  <option value="SPOUSE">Spouse</option>
+                  <option value="CHILD">Child</option>
+                  <option value="SIBLING">Sibling</option>
+                  <option value="GUARDIAN">Guardian</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div className="pp-field">
+                <label className="pp-label">Full Name *</label>
+                <input className="pp-input" value={relForm.name} onChange={e => setRelForm(f => ({ ...f, name: e.target.value }))} placeholder="Full name" />
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div className="pp-field" style={{ flex: 1 }}>
+                  <label className="pp-label">Phone</label>
+                  <input className="pp-input" value={relForm.phone} onChange={e => setRelForm(f => ({ ...f, phone: e.target.value }))} placeholder="+7..." />
+                </div>
+                <div className="pp-field" style={{ flex: 1 }}>
+                  <label className="pp-label">Email</label>
+                  <input className="pp-input" value={relForm.email} onChange={e => setRelForm(f => ({ ...f, email: e.target.value }))} placeholder="email@..." />
+                </div>
+              </div>
+              <div className="pp-field">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={relForm.isGuardian} onChange={e => setRelForm(f => ({ ...f, isGuardian: e.target.checked }))} />
+                  Legal guardian
+                </label>
+              </div>
+              <div className="pp-field">
+                <label className="pp-label">Notes</label>
+                <textarea className="pp-textarea" rows={2} value={relForm.notes} onChange={e => setRelForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notes..." />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+                <button className="pp-btn-ghost" onClick={() => setShowRelModal(false)}>Cancel</button>
+                <button className="pp-btn-primary" onClick={handleRelSave} disabled={relSaving}>
+                  <IconSave /> {relSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1218,10 +1565,20 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
 
 // ─── Treatment Plans Tab ──────────────────────────────────────────────────────
 
+interface PlanFormItem { toothNumber: string; serviceName: string; quantity: number; price: number; discount: number; isDone: boolean }
+const emptyPlanItem = (): PlanFormItem => ({ toothNumber: '', serviceName: '', quantity: 1, price: 0, discount: 0, isDone: false });
+
 const TreatmentTab: React.FC<{ patientId: string }> = ({ patientId }) => {
   const [plans, setPlans]         = useState<any[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading]     = useState(true);
+  // Plan modal
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlan, setEditingPlan]     = useState<any>(null);
+  const [planForm, setPlanForm]           = useState({ name: '', status: 'DRAFT', startDate: '', endDate: '', notes: '' });
+  const [planItems, setPlanItems]         = useState<PlanFormItem[]>([emptyPlanItem()]);
+  const [planSaving, setPlanSaving]       = useState(false);
+  const [planError, setPlanError]         = useState('');
 
   const fetchPlans = useCallback(() => {
     setLoading(true);
@@ -1239,8 +1596,78 @@ const TreatmentTab: React.FC<{ patientId: string }> = ({ patientId }) => {
     } catch {}
   };
 
-  if (loading) return <div className="pp-loading">Loading treatment plans…</div>;
-  if (plans.length === 0) return <div className="pp-empty">No treatment plans yet</div>;
+  const openNewPlan = () => {
+    setEditingPlan(null);
+    setPlanForm({ name: '', status: 'DRAFT', startDate: '', endDate: '', notes: '' });
+    setPlanItems([emptyPlanItem()]);
+    setPlanError('');
+    setShowPlanModal(true);
+  };
+
+  const openEditPlan = async (plan: any) => {
+    try {
+      const res: any = await api.get(`/clinical/treatment-plans/${plan.id}`);
+      const full = res?.data ?? plan;
+      setEditingPlan(full);
+      setPlanForm({
+        name: full.name ?? '',
+        status: full.status ?? 'DRAFT',
+        startDate: full.startDate ? full.startDate.slice(0, 10) : '',
+        endDate: full.endDate ? full.endDate.slice(0, 10) : '',
+        notes: full.notes ?? '',
+      });
+      const existingItems = (full.items ?? []).map((it: any) => ({
+        toothNumber: it.toothNumber ? String(it.toothNumber) : '',
+        serviceName: it.service?.name ?? '',
+        quantity: it.quantity ?? 1,
+        price: Number(it.price ?? 0),
+        discount: Number(it.discount ?? 0),
+        isDone: it.isDone ?? false,
+      }));
+      setPlanItems(existingItems.length > 0 ? existingItems : [emptyPlanItem()]);
+      setPlanError('');
+      setShowPlanModal(true);
+    } catch { setPlanError('Failed to load plan details'); }
+  };
+
+  const handlePlanSave = async () => {
+    if (!planForm.name.trim()) { setPlanError('Plan name is required'); return; }
+    setPlanSaving(true);
+    setPlanError('');
+    try {
+      const payload: any = {
+        patientId,
+        name: planForm.name,
+        status: planForm.status,
+        startDate: planForm.startDate || null,
+        endDate: planForm.endDate || null,
+        notes: planForm.notes || null,
+        items: planItems.filter(it => it.serviceName.trim()).map((it, idx) => ({
+          serviceId: null,
+          toothNumber: it.toothNumber ? Number(it.toothNumber) : null,
+          serviceName: it.serviceName,
+          quantity: it.quantity || 1,
+          price: it.price || 0,
+          discount: it.discount || 0,
+          isDone: it.isDone,
+          sortOrder: idx,
+        })),
+      };
+      if (editingPlan) {
+        await api.put(`/clinical/treatment-plans/${editingPlan.id}`, payload);
+      } else {
+        // doctorId is required by backend - use a placeholder that backend can resolve
+        payload.doctorId = 'self';
+        await api.post('/clinical/treatment-plans', payload);
+      }
+      setShowPlanModal(false);
+      fetchPlans();
+    } catch (err: any) {
+      setPlanError(err?.message ?? 'Failed to save plan');
+    } finally { setPlanSaving(false); }
+  };
+
+  const planItemTotal = planItems.reduce((s, it) => s + (it.price * it.quantity - it.price * it.quantity * it.discount / 100), 0);
 
   const plan     = plans[activeIdx];
   const items    = plan?.items ?? [];
@@ -1250,68 +1677,170 @@ const TreatmentTab: React.FC<{ patientId: string }> = ({ patientId }) => {
 
   return (
     <div className="pp-section">
-      {plans.length > 1 && (
-        <div className="plan-tabs">
-          {plans.map((p: any, i: number) => (
-            <button key={p.id} className={`plan-tab-btn ${activeIdx === i ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>
-              {p.name}
-              <span className="pp-chip chip-gray" style={{ marginLeft: 6, fontSize: 10 }}>{p.status}</span>
-            </button>
-          ))}
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div />
+        <button className="pp-btn-primary" onClick={openNewPlan}><IconPlus /> New Plan</button>
+      </div>
+
+      {loading ? (
+        <div className="pp-loading">Loading treatment plans...</div>
+      ) : plans.length === 0 ? (
+        <div className="pp-empty">No treatment plans yet. Click "New Plan" to create one.</div>
+      ) : (
+        <>
+          {plans.length > 1 && (
+            <div className="plan-tabs">
+              {plans.map((p: any, i: number) => (
+                <button key={p.id} className={`plan-tab-btn ${activeIdx === i ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>
+                  {p.name}
+                  <span className="pp-chip chip-gray" style={{ marginLeft: 6, fontSize: 10 }}>{p.status}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {plan && (
+            <div className="pp-card">
+              <div className="pp-card-header">
+                <div>
+                  <div className="pp-card-title">{plan.name}</div>
+                  {plan.doctor && <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>Dr. {plan.doctor?.name}</div>}
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button className="pp-btn-ghost" onClick={() => openEditPlan(plan)}><IconEdit /> Edit</button>
+                  <StatusChip status={plan.status} map={{ DRAFT: { label: 'Draft', cls: 'chip-gray' }, ACTIVE: { label: 'Active', cls: 'chip-teal' }, COMPLETED: { label: 'Completed', cls: 'chip-green' }, CANCELLED: { label: 'Cancelled', cls: 'chip-gray' } }} />
+                </div>
+              </div>
+
+              {items.length > 0 && (
+                <div className="plan-progress">
+                  <div className="plan-progress-bar">
+                    <div className="plan-progress-fill" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="plan-progress-label">{doneCount}/{items.length} completed ({pct}%)</span>
+                </div>
+              )}
+
+              {items.length === 0 ? (
+                <div className="pp-empty-sm">No items in this plan</div>
+              ) : (
+                <table className="pp-table">
+                  <thead>
+                    <tr><th>Tooth</th><th>Service</th><th>Qty</th><th>Price</th><th>Status</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item: any) => (
+                      <tr key={item.id} className={item.isDone ? 'row-done' : ''}>
+                        <td>{item.toothNumber ? `#${item.toothNumber}` : '---'}</td>
+                        <td style={{ fontWeight: 500 }}>{item.service?.name ?? '---'}</td>
+                        <td>{item.quantity ?? 1}</td>
+                        <td>{item.price ? fmtCur(item.price * (item.quantity ?? 1) - (item.discount ?? 0)) : '---'}</td>
+                        <td>{item.isDone ? <span className="pp-chip chip-green">Done</span> : <span className="pp-chip chip-yellow">Planned</span>}</td>
+                        <td>{!item.isDone && <button className="pp-action-btn" onClick={() => markDone(plan.id, item.id)}><IconCheck /> Mark done</button>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {totalCost > 0 && <div className="plan-total">Total cost: <strong>{fmtCur(totalCost)}</strong></div>}
+            </div>
+          )}
+        </>
       )}
 
-      <div className="pp-card">
-        <div className="pp-card-header">
-          <div>
-            <div className="pp-card-title">{plan.name}</div>
-            {plan.doctor && <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>Dr. {plan.doctor?.name}</div>}
-          </div>
-          <StatusChip status={plan.status} map={{ DRAFT: { label: 'Draft', cls: 'chip-gray' }, ACTIVE: { label: 'Active', cls: 'chip-teal' }, COMPLETED: { label: 'Completed', cls: 'chip-green' }, CANCELLED: { label: 'Cancelled', cls: 'chip-gray' } }} />
-        </div>
-
-        {items.length > 0 && (
-          <div className="plan-progress">
-            <div className="plan-progress-bar">
-              <div className="plan-progress-fill" style={{ width: `${pct}%` }} />
+      {/* ── Plan Create/Edit Modal ── */}
+      {showPlanModal && (
+        <div className="lightbox-overlay" onClick={() => setShowPlanModal(false)}>
+          <div className="lightbox-box" style={{ maxWidth: 800 }} onClick={e => e.stopPropagation()}>
+            <div className="lightbox-header">
+              <div className="lightbox-title">{editingPlan ? 'Edit Treatment Plan' : 'New Treatment Plan'}</div>
+              <button className="lightbox-close" onClick={() => setShowPlanModal(false)}><IconX /></button>
             </div>
-            <span className="plan-progress-label">{doneCount}/{items.length} completed ({pct}%)</span>
+            <div style={{ padding: 20, overflowY: 'auto', maxHeight: '70vh' }}>
+              {planError && <div style={{ color: '#c0390a', fontSize: 13, marginBottom: 10, padding: '8px 12px', background: 'rgba(192,57,10,0.08)', borderRadius: 6 }}>{planError}</div>}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                <div className="pp-field" style={{ flex: 2 }}>
+                  <label className="pp-label">Plan Name *</label>
+                  <input className="pp-input" value={planForm.name} onChange={e => setPlanForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Full restoration" />
+                </div>
+                <div className="pp-field" style={{ flex: 1 }}>
+                  <label className="pp-label">Status</label>
+                  <select className="pp-input" value={planForm.status} onChange={e => setPlanForm(f => ({ ...f, status: e.target.value }))}>
+                    <option value="DRAFT">Draft</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                <div className="pp-field" style={{ flex: 1 }}>
+                  <label className="pp-label">Start Date</label>
+                  <DateInput className="pp-input" value={planForm.startDate} onChange={v => setPlanForm(f => ({ ...f, startDate: v }))} />
+                </div>
+                <div className="pp-field" style={{ flex: 1 }}>
+                  <label className="pp-label">End Date</label>
+                  <DateInput className="pp-input" value={planForm.endDate} onChange={v => setPlanForm(f => ({ ...f, endDate: v }))} />
+                </div>
+              </div>
+              <div className="pp-field" style={{ marginBottom: 12 }}>
+                <label className="pp-label">Notes</label>
+                <textarea className="pp-textarea" rows={2} value={planForm.notes} onChange={e => setPlanForm(f => ({ ...f, notes: e.target.value }))} placeholder="Plan notes..." />
+              </div>
+
+              <div className="pp-label" style={{ marginBottom: 8 }}>Plan Items</div>
+              <table className="pp-table" style={{ marginTop: 0 }}>
+                <thead>
+                  <tr><th>Tooth #</th><th>Service</th><th>Qty</th><th>Price</th><th>Discount %</th><th>Done</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {planItems.map((it, idx) => (
+                    <tr key={idx}>
+                      <td><input className="pp-input" style={{ width: 60 }} value={it.toothNumber} onChange={e => { const arr = [...planItems]; arr[idx] = { ...arr[idx], toothNumber: e.target.value }; setPlanItems(arr); }} placeholder="11" /></td>
+                      <td><input className="pp-input" value={it.serviceName} onChange={e => { const arr = [...planItems]; arr[idx] = { ...arr[idx], serviceName: e.target.value }; setPlanItems(arr); }} placeholder="Service name" /></td>
+                      <td><input className="pp-input" type="number" style={{ width: 60 }} min={1} value={it.quantity} onChange={e => { const arr = [...planItems]; arr[idx] = { ...arr[idx], quantity: Number(e.target.value) || 1 }; setPlanItems(arr); }} /></td>
+                      <td><input className="pp-input" type="number" style={{ width: 90 }} min={0} value={it.price} onChange={e => { const arr = [...planItems]; arr[idx] = { ...arr[idx], price: Number(e.target.value) || 0 }; setPlanItems(arr); }} /></td>
+                      <td><input className="pp-input" type="number" style={{ width: 70 }} min={0} max={100} value={it.discount} onChange={e => { const arr = [...planItems]; arr[idx] = { ...arr[idx], discount: Number(e.target.value) || 0 }; setPlanItems(arr); }} /></td>
+                      <td><input type="checkbox" checked={it.isDone} onChange={e => { const arr = [...planItems]; arr[idx] = { ...arr[idx], isDone: e.target.checked }; setPlanItems(arr); }} /></td>
+                      <td><button className="pp-btn-ghost" style={{ padding: '4px 6px', color: '#c0390a', borderColor: 'rgba(192,57,10,0.3)' }} onClick={() => setPlanItems(prev => prev.filter((_, i) => i !== idx))}><IconX /></button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button className="pp-btn-ghost" style={{ marginTop: 8 }} onClick={() => setPlanItems(prev => [...prev, emptyPlanItem()])}><IconPlus /> Add item</button>
+
+              {planItemTotal > 0 && <div className="plan-total" style={{ marginTop: 12 }}>Total: <strong>{fmtCur(planItemTotal)}</strong></div>}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+                <button className="pp-btn-ghost" onClick={() => setShowPlanModal(false)}>Cancel</button>
+                <button className="pp-btn-primary" onClick={handlePlanSave} disabled={planSaving}>
+                  <IconSave /> {planSaving ? 'Saving...' : 'Save Plan'}
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-
-        {items.length === 0 ? (
-          <div className="pp-empty-sm">No items in this plan</div>
-        ) : (
-          <table className="pp-table">
-            <thead>
-              <tr><th>Tooth</th><th>Service</th><th>Qty</th><th>Price</th><th>Status</th><th></th></tr>
-            </thead>
-            <tbody>
-              {items.map((item: any) => (
-                <tr key={item.id} className={item.isDone ? 'row-done' : ''}>
-                  <td>{item.toothNumber ? `#${item.toothNumber}` : '—'}</td>
-                  <td style={{ fontWeight: 500 }}>{item.service?.name ?? '—'}</td>
-                  <td>{item.quantity ?? 1}</td>
-                  <td>{item.price ? fmtCur(item.price * (item.quantity ?? 1) - (item.discount ?? 0)) : '—'}</td>
-                  <td>{item.isDone ? <span className="pp-chip chip-green">Done</span> : <span className="pp-chip chip-yellow">Planned</span>}</td>
-                  <td>{!item.isDone && <button className="pp-action-btn" onClick={() => markDone(plan.id, item.id)}><IconCheck /> Mark done</button>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        {totalCost > 0 && <div className="plan-total">Total cost: <strong>{fmtCur(totalCost)}</strong></div>}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
 // ─── Finances Tab ─────────────────────────────────────────────────────────────
 
-const FinancesTab: React.FC<{ patient: any }> = ({ patient }) => {
+interface InvoiceFormItem { name: string; quantity: number; price: number; discount: number }
+const emptyInvoiceItem = (): InvoiceFormItem => ({ name: '', quantity: 1, price: 0, discount: 0 });
+
+const FinancesTab: React.FC<{ patient: any; patientId: string; onReload: () => void }> = ({ patient, patientId, onReload }) => {
   const [expandedId, setExpanded] = useState<string | null>(null);
   const [details, setDetails]     = useState<Record<string, any>>({});
+  // Invoice modal
+  const [showInvModal, setShowInvModal] = useState(false);
+  const [invItems, setInvItems]         = useState<InvoiceFormItem[]>([emptyInvoiceItem()]);
+  const [invMethod, setInvMethod]       = useState('CASH');
+  const [invNotes, setInvNotes]         = useState('');
+  const [invSaving, setInvSaving]       = useState(false);
+  const [invError, setInvError]         = useState('');
 
   const invoices: any[] = patient?.invoices ?? [];
   const totalPaid   = invoices.filter(i => i.status === 'PAID').reduce((s, i) => s + Number(i.totalAmount), 0);
@@ -1330,8 +1859,50 @@ const FinancesTab: React.FC<{ patient: any }> = ({ patient }) => {
     }
   };
 
+  const invTotal = invItems.reduce((s, it) => {
+    const lineTotal = it.price * it.quantity;
+    const lineDiscount = lineTotal * it.discount / 100;
+    return s + lineTotal - lineDiscount;
+  }, 0);
+
+  const openNewInvoice = () => {
+    setInvItems([emptyInvoiceItem()]);
+    setInvMethod('CASH');
+    setInvNotes('');
+    setInvError('');
+    setShowInvModal(true);
+  };
+
+  const handleInvSave = async () => {
+    const validItems = invItems.filter(it => it.name.trim());
+    if (validItems.length === 0) { setInvError('At least one item is required'); return; }
+    setInvSaving(true);
+    setInvError('');
+    try {
+      const payload = {
+        patientId,
+        items: validItems.map(it => ({
+          name: it.name,
+          quantity: it.quantity || 1,
+          price: it.price || 0,
+          discount: Math.round(it.price * it.quantity * it.discount / 100),
+        })),
+      };
+      await api.post('/invoices', payload);
+      setShowInvModal(false);
+      onReload();
+    } catch (err: any) {
+      setInvError(err?.message ?? 'Failed to create invoice');
+    } finally { setInvSaving(false); }
+  };
+
   return (
     <div className="pp-section">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div />
+        <button className="pp-btn-primary" onClick={openNewInvoice}><IconPlus /> New Invoice</button>
+      </div>
+
       <div className="finance-summary">
         <div className="finance-stat"><div className="finance-stat-val">{fmtCur(totalPaid)}</div><div className="finance-stat-lbl">Total Paid</div></div>
         <div className="finance-stat-divider" />
@@ -1360,7 +1931,7 @@ const FinancesTab: React.FC<{ patient: any }> = ({ patient }) => {
               {expandedId === inv.id && (
                 <div className="invoice-expand">
                   {details[inv.id] === undefined ? (
-                    <div className="pp-loading-sm">Loading…</div>
+                    <div className="pp-loading-sm">Loading...</div>
                   ) : details[inv.id] === null ? (
                     <div className="pp-empty-sm">Failed to load invoice details</div>
                   ) : (
@@ -1371,10 +1942,10 @@ const FinancesTab: React.FC<{ patient: any }> = ({ patient }) => {
                           <tbody>
                             {details[inv.id].items.map((item: any, i: number) => (
                               <tr key={i}>
-                                <td style={{ fontWeight: 500 }}>{item.service?.name ?? item.description ?? '—'}</td>
+                                <td style={{ fontWeight: 500 }}>{item.service?.name ?? item.name ?? item.description ?? '---'}</td>
                                 <td>{item.quantity}</td>
                                 <td>{fmtCur(Number(item.price))}</td>
-                                <td>{item.discount ? fmtCur(Number(item.discount)) : '—'}</td>
+                                <td>{item.discount ? fmtCur(Number(item.discount)) : '---'}</td>
                                 <td style={{ fontWeight: 600 }}>{fmtCur(Number(item.price) * item.quantity - Number(item.discount ?? 0))}</td>
                               </tr>
                             ))}
@@ -1399,6 +1970,65 @@ const FinancesTab: React.FC<{ patient: any }> = ({ patient }) => {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Invoice Creation Modal ── */}
+      {showInvModal && (
+        <div className="lightbox-overlay" onClick={() => setShowInvModal(false)}>
+          <div className="lightbox-box" style={{ maxWidth: 700 }} onClick={e => e.stopPropagation()}>
+            <div className="lightbox-header">
+              <div className="lightbox-title">New Invoice</div>
+              <button className="lightbox-close" onClick={() => setShowInvModal(false)}><IconX /></button>
+            </div>
+            <div style={{ padding: 20, overflowY: 'auto', maxHeight: '70vh' }}>
+              {invError && <div style={{ color: '#c0390a', fontSize: 13, marginBottom: 10, padding: '8px 12px', background: 'rgba(192,57,10,0.08)', borderRadius: 6 }}>{invError}</div>}
+
+              <div className="pp-label" style={{ marginBottom: 8 }}>Items</div>
+              <table className="pp-table" style={{ marginTop: 0 }}>
+                <thead>
+                  <tr><th>Service</th><th>Qty</th><th>Price</th><th>Discount %</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {invItems.map((it, idx) => (
+                    <tr key={idx}>
+                      <td><input className="pp-input" value={it.name} onChange={e => { const arr = [...invItems]; arr[idx] = { ...arr[idx], name: e.target.value }; setInvItems(arr); }} placeholder="Service name" /></td>
+                      <td><input className="pp-input" type="number" style={{ width: 60 }} min={1} value={it.quantity} onChange={e => { const arr = [...invItems]; arr[idx] = { ...arr[idx], quantity: Number(e.target.value) || 1 }; setInvItems(arr); }} /></td>
+                      <td><input className="pp-input" type="number" style={{ width: 100 }} min={0} value={it.price} onChange={e => { const arr = [...invItems]; arr[idx] = { ...arr[idx], price: Number(e.target.value) || 0 }; setInvItems(arr); }} /></td>
+                      <td><input className="pp-input" type="number" style={{ width: 70 }} min={0} max={100} value={it.discount} onChange={e => { const arr = [...invItems]; arr[idx] = { ...arr[idx], discount: Number(e.target.value) || 0 }; setInvItems(arr); }} /></td>
+                      <td><button className="pp-btn-ghost" style={{ padding: '4px 6px', color: '#c0390a', borderColor: 'rgba(192,57,10,0.3)' }} onClick={() => setInvItems(prev => prev.filter((_, i) => i !== idx))}><IconX /></button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button className="pp-btn-ghost" style={{ marginTop: 8 }} onClick={() => setInvItems(prev => [...prev, emptyInvoiceItem()])}><IconPlus /> Add item</button>
+
+              {invTotal > 0 && <div className="plan-total" style={{ marginTop: 12 }}>Total: <strong>{fmtCur(invTotal)}</strong></div>}
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                <div className="pp-field" style={{ flex: 1 }}>
+                  <label className="pp-label">Payment Method</label>
+                  <select className="pp-input" value={invMethod} onChange={e => setInvMethod(e.target.value)}>
+                    <option value="CASH">Cash</option>
+                    <option value="CARD">Card</option>
+                    <option value="ONLINE">Online</option>
+                    <option value="INSURANCE">Insurance</option>
+                  </select>
+                </div>
+              </div>
+              <div className="pp-field" style={{ marginTop: 8 }}>
+                <label className="pp-label">Notes</label>
+                <textarea className="pp-textarea" rows={2} value={invNotes} onChange={e => setInvNotes(e.target.value)} placeholder="Invoice notes..." />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+                <button className="pp-btn-ghost" onClick={() => setShowInvModal(false)}>Cancel</button>
+                <button className="pp-btn-primary" onClick={handleInvSave} disabled={invSaving}>
+                  <IconSave /> {invSaving ? 'Creating...' : 'Create Invoice'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -1455,6 +2085,13 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
   const appointments = patient?.appointments ?? [];
   const totalSpent   = (patient?.invoices ?? []).filter((i: any) => i.status === 'PAID').reduce((s: number, i: any) => s + Number(i.totalAmount), 0);
 
+  const reloadPatient = useCallback(() => {
+    if (!patientId) return;
+    api.get(`/patients/${patientId}`)
+      .then((res: any) => setFullPatient(res?.data ?? res))
+      .catch(() => {});
+  }, [patientId]);
+
   const renderTab = () => {
     if (loading) return <div className="pp-loading"><div className="loading-spinner" /></div>;
     switch (activeTab) {
@@ -1463,7 +2100,7 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
       case 'clinical':  return <ClinicalTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
       case 'diary':     return <DiaryTab patientId={patientId} />;
       case 'treatment': return <TreatmentTab patientId={patientId} />;
-      case 'finances':  return <FinancesTab patient={patient} />;
+      case 'finances':  return <FinancesTab patient={patient} patientId={patientId} onReload={reloadPatient} />;
       default:          return <PlaceholderTab name={TABS.find(t => t.id === activeTab)?.label ?? ''} />;
     }
   };

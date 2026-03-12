@@ -206,3 +206,87 @@ export const deletePatient = async (req: Request, res: Response) => {
     return R.serverError(res, err);
   }
 };
+
+// ── Insurance ──────────────────────────────────────────────────────────────
+export const addInsurance = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const { id: patientId } = req.params;
+    const { companyId, type, policyNumber, validFrom, validTo, isActive } = req.body;
+    const patient = await prisma.patient.findFirst({ where: { id: patientId, clinicId, isDeleted: false } });
+    if (!patient) return R.notFound(res, 'Patient not found');
+    const ins = await prisma.patientInsurance.create({
+      data: { clinicId, patientId, companyId: companyId || undefined, type: type || 'OMS', policyNumber: policyNumber || '', validFrom: validFrom ? new Date(validFrom) : undefined, validTo: validTo ? new Date(validTo) : undefined, isActive: isActive ?? true },
+      include: { company: { select: { id: true, name: true } } },
+    });
+    return R.created(res, ins);
+  } catch (err) { return R.serverError(res, err); }
+};
+
+export const updateInsurance = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const { insuranceId } = req.params;
+    const existing = await prisma.patientInsurance.findFirst({ where: { id: insuranceId, clinicId } });
+    if (!existing) return R.notFound(res, 'Insurance not found');
+    const { companyId, type, policyNumber, validFrom, validTo, isActive } = req.body;
+    const ins = await prisma.patientInsurance.update({
+      where: { id: insuranceId },
+      data: { companyId: companyId || undefined, type, policyNumber, validFrom: validFrom ? new Date(validFrom) : null, validTo: validTo ? new Date(validTo) : null, isActive },
+      include: { company: { select: { id: true, name: true } } },
+    });
+    return R.ok(res, ins);
+  } catch (err) { return R.serverError(res, err); }
+};
+
+export const deleteInsurance = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const { insuranceId } = req.params;
+    const existing = await prisma.patientInsurance.findFirst({ where: { id: insuranceId, clinicId } });
+    if (!existing) return R.notFound(res, 'Insurance not found');
+    await prisma.patientInsurance.delete({ where: { id: insuranceId } });
+    return R.ok(res, { message: 'Deleted' });
+  } catch (err) { return R.serverError(res, err); }
+};
+
+// ── Relatives ──────────────────────────────────────────────────────────────
+export const addRelative = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const { id: patientId } = req.params;
+    const patient = await prisma.patient.findFirst({ where: { id: patientId, clinicId, isDeleted: false } });
+    if (!patient) return R.notFound(res, 'Patient not found');
+    const { relativeType, name, phone, email, isGuardian, notes } = req.body;
+    const rel = await prisma.patientRelative.create({
+      data: { clinicId, patientId, relativeType: relativeType || 'OTHER', name: name || '', phone: phone || undefined, email: email || undefined, isGuardian: isGuardian ?? false, notes: notes || undefined },
+    });
+    return R.created(res, rel);
+  } catch (err) { return R.serverError(res, err); }
+};
+
+export const updateRelative = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const { relativeId } = req.params;
+    const existing = await prisma.patientRelative.findFirst({ where: { id: relativeId, clinicId } });
+    if (!existing) return R.notFound(res, 'Relative not found');
+    const { relativeType, name, phone, email, isGuardian, notes } = req.body;
+    const rel = await prisma.patientRelative.update({
+      where: { id: relativeId },
+      data: { relativeType, name, phone: phone || null, email: email || null, isGuardian, notes: notes || null },
+    });
+    return R.ok(res, rel);
+  } catch (err) { return R.serverError(res, err); }
+};
+
+export const deleteRelative = async (req: Request, res: Response) => {
+  try {
+    const clinicId = req.user!.clinicId;
+    const { relativeId } = req.params;
+    const existing = await prisma.patientRelative.findFirst({ where: { id: relativeId, clinicId } });
+    if (!existing) return R.notFound(res, 'Relative not found');
+    await prisma.patientRelative.delete({ where: { id: relativeId } });
+    return R.ok(res, { message: 'Deleted' });
+  } catch (err) { return R.serverError(res, err); }
+};
