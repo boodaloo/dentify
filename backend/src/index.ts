@@ -19,6 +19,8 @@ import callRoutes            from './routes/calls';
 import documentRoutes        from './routes/documents';
 import fileRoutes            from './routes/files';
 import labelRoutes, { clinicLabelRouter } from './routes/labels';
+import visitTemplatesRouter from './routes/visitTemplates';
+import visitRouter from './routes/visit';
 
 dotenv.config();
 
@@ -47,6 +49,8 @@ app.use('/api/documents',        documentRoutes);
 app.use('/api/patients',         fileRoutes);   // /:patientId/files
 app.use('/api/labels',           clinicLabelRouter); // GET/POST/PUT/DELETE /api/labels
 app.use('/api/patients',        labelRoutes);       // /:patientId/labels, /:patientId/comments
+app.use('/api/visit-templates', visitTemplatesRouter);
+app.use('/api/appointments',    visitRouter);       // /:id/visit, /:id/services, /:id/medical-record, /:id/complete
 app.use('/uploads', express.static(require('path').join(process.cwd(), 'uploads')));
 
 app.get('/health', (_req: Request, res: Response) => {

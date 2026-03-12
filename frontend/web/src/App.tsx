@@ -19,6 +19,7 @@ import CallJournal from './pages/CallJournal'
 import Loyalty from './pages/Loyalty'
 import Analytics from './pages/Analytics'
 import Integrations from './pages/Integrations'
+import VisitPage from './pages/VisitPage'
 import './App.css'
 
 function App() {
@@ -26,6 +27,8 @@ function App() {
   const [user, setUser] = useState<any>(null)
   const [isInitializing, setIsInitializing] = useState(true)
   const [selectedPatient, setSelectedPatient] = useState<any>(null)
+  const [visitAppointmentId, setVisitAppointmentId] = useState<string | null>(null)
+  const [preVisitTab, setPreVisitTab] = useState<string>('schedule')
 
   useEffect(() => {
     const storedUser = localStorage.getItem('orisios_user')
@@ -57,6 +60,17 @@ function App() {
     setActiveTab('patients')
   }
 
+  const handleOpenVisit = (appointmentId: string) => {
+    setVisitAppointmentId(appointmentId)
+    setPreVisitTab(activeTab)
+    setActiveTab('visit')
+  }
+
+  const handleBackFromVisit = () => {
+    setVisitAppointmentId(null)
+    setActiveTab(preVisitTab)
+  }
+
   if (isInitializing) {
     return (
       <div className="flex items-center justify-center h-screen bg-teal-900">
@@ -73,12 +87,16 @@ function App() {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />
+      case 'visit':
+        return visitAppointmentId
+          ? <VisitPage appointmentId={visitAppointmentId} onBack={handleBackFromVisit} />
+          : null
       case 'schedule':
-        return <Calendar onOpenPatient={(id) => { setSelectedPatient({ id }); setActiveTab('patient-profile'); }} />
+        return <Calendar onOpenPatient={(id) => { setSelectedPatient({ id }); setActiveTab('patient-profile'); }} onOpenVisit={handleOpenVisit} />
       case 'patients':
         return <Patients onSelectPatient={handleSelectPatient} />
       case 'patient-profile':
-        return <PatientProfile patient={selectedPatient} onBack={handleBackFromProfile} />
+        return <PatientProfile patient={selectedPatient} onBack={handleBackFromProfile} onOpenVisit={handleOpenVisit} />
       case 'online_booking':
         return <OnlineBooking />
       case 'templates':

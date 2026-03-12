@@ -1,5 +1,31 @@
 /* ── Appointment Form (light theme) ──────────────────────────────────────── */
 
+.apt-exc-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #FEF9C3;
+  border: 1px solid #FCD34D;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #92400E;
+  margin-bottom: 8px;
+}
+.apt-exc-warning-icon { font-size: 15px; flex-shrink: 0; }
+.apt-exc-dismiss {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #F59E0B;
+  color: #92400E;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.apt-exc-dismiss:hover { background: #FCD34D33; }
+
 .apt-form {
   display: flex;
   flex-direction: column;

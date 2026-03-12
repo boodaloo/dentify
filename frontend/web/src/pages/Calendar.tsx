@@ -67,7 +67,8 @@ const ContextMenu: React.FC<{
   onCopy: (apt: any) => void;
   onNewApt: (date: Date, hour: number, minute: number) => void;
   onOpenPatient?: (patientId: string) => void;
-}> = ({ menu, onClose, onStatusChange, onEdit, onDelete, onCopy, onNewApt, onOpenPatient }) => {
+  onOpenVisit?: (aptId: string) => void;
+}> = ({ menu, onClose, onStatusChange, onEdit, onDelete, onCopy, onNewApt, onOpenPatient, onOpenVisit }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -118,6 +119,11 @@ const ContextMenu: React.FC<{
       </div>
 
       {/* Patient actions */}
+      {onOpenVisit && (
+        <button className="ctx-item" onClick={() => { onOpenVisit(apt.id); onClose(); }}>
+          <span className="ctx-icon">🦷</span> Open Visit Form
+        </button>
+      )}
       {onOpenPatient && apt.patient?.id && (
         <button className="ctx-item" onClick={() => { onOpenPatient(apt.patient.id); onClose(); }}>
           <span className="ctx-icon">👤</span> Open patient card
@@ -179,6 +185,7 @@ const IconMapPin      = () => <svg width="14" height="14" viewBox="0 0 24 24" fi
 const IconChevDown    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
 const IconPalette     = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>;
 const IconUsers       = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+const IconCalWeek     = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><line x1="8" x2="8" y1="14" y2="14"/><line x1="8" x2="8" y1="18" y2="18"/><line x1="12" x2="12" y1="14" y2="14"/><line x1="12" x2="12" y1="18" y2="18"/><line x1="16" x2="16" y1="14" y2="14"/><line x1="16" x2="16" y1="18" y2="18"/></svg>;
 
 // ─── Status Legend ────────────────────────────────────────────────────────────
 
@@ -1055,6 +1062,190 @@ const MiniCalendar: React.FC<{
   );
 };
 
+// ─── Doctor Week Grid (Rota: врач × 7 дней) ──────────────────────────────────
+const DoctorWeekGrid: React.FC<{
+  doctors: any[];
+  weekDays: Date[];
+  appointments: any[];
+  today: Date;
+  locale: string;
+  workingHours?: any[];
+  doctorSchedules: Record<string, any[]>;
+  doctorWeekExceptions: Record<string, any[]>;
+  colorMode: 'status' | 'doctor';
+  selectedApt: any;
+  isLoading: boolean;
+  onSelect: (apt: any) => void;
+  onDoubleClick: (apt: any) => void;
+  onContextMenu: (e: React.MouseEvent, apt: any) => void;
+  onNavigateToDay: (date: Date) => void;
+}> = ({
+  doctors, weekDays, appointments, today, locale, workingHours,
+  doctorSchedules, doctorWeekExceptions, colorMode, selectedApt,
+  isLoading, onSelect, onDoubleClick, onContextMenu, onNavigateToDay,
+}) => {
+  const EXC_CFG: Record<string, { icon: string; color: string }> = {
+    DAY_OFF:    { icon: '🏖', color: '#94A3B8' },
+    NO_SHOW:    { icon: '🚫', color: '#F97316' },
+    SICK_LEAVE: { icon: '🤒', color: '#EAB308' },
+    VACATION:   { icon: '✈️', color: '#3B82F6' },
+    CUSTOM_HOURS: { icon: '🕐', color: '#10B981' },
+  };
+
+  const isToday = (d: Date) => d.toDateString() === today.toDateString();
+  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
+
+  const isDayOff = (d: Date) => {
+    if (!workingHours?.length) return false;
+    const jsDay = d.getDay();
+    const wDay = jsDay === 0 ? 6 : jsDay - 1;
+    const wh = workingHours.find((h: any) => h.dayOfWeek === wDay);
+    return wh ? !wh.isOpen : false;
+  };
+
+  const getDoctorDayApts = (doctorId: string, d: Date) =>
+    appointments
+      .filter(a => (a.doctorId === doctorId) && new Date(a.startTime).toDateString() === d.toDateString())
+      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+  const getTotalDayApts = (d: Date) =>
+    appointments.filter(a => new Date(a.startTime).toDateString() === d.toDateString()).length;
+
+  const getDoctorDayException = (doctorId: string, d: Date): any | null => {
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const excList = doctorWeekExceptions[doctorId] ?? [];
+    return excList.find((e: any) => {
+      const eDate = new Date(e.date);
+      return eDate.getFullYear() === d.getFullYear() &&
+             eDate.getMonth() === d.getMonth() &&
+             eDate.getDate() === d.getDate();
+    }) ?? null;
+  };
+
+  const isDoctorWorkingDay = (doctorId: string, d: Date): boolean => {
+    const sched = doctorSchedules[doctorId] ?? [];
+    const jsDay = d.getDay();
+    const schedDay = jsDay === 0 ? 6 : jsDay - 1;
+    const entry = sched.find((s: any) => s.dayOfWeek === schedDay);
+    if (!entry) return !isDayOff(d); // fallback to clinic hours
+    return !!entry.isWorking;
+  };
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const fmtTime = (iso: string) => {
+    const d = new Date(iso);
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const colCount = weekDays.length; // 7
+
+  if (isLoading) {
+    return (
+      <div className="dwg-container">
+        <div className="dwg-loading">Loading…</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dwg-container">
+      {/* Corner + Day headers */}
+      <div className="dwg-header" style={{ gridTemplateColumns: `160px repeat(${colCount}, 1fr)` }}>
+        <div className="dwg-corner">
+          <span>Doctors</span>
+          <span className="dwg-corner-sub">{weekDays[0].toLocaleDateString(locale, { month: 'short' })} {weekDays[0].getFullYear()}</span>
+        </div>
+        {weekDays.map((d, i) => (
+          <div
+            key={i}
+            className={`dwg-day-header ${isToday(d) ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''} ${isDayOff(d) ? 'day-off' : ''}`}
+            onClick={() => onNavigateToDay(d)}
+            title={`Go to ${d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}`}
+          >
+            <span className="dwg-day-name">{d.toLocaleDateString(locale, { weekday: 'short' }).toUpperCase()}</span>
+            <span className="dwg-day-date">{d.getDate()}</span>
+            {isToday(d) && <div className="dwg-today-dot" />}
+            {!isDayOff(d) && getTotalDayApts(d) > 0 && (
+              <span className="dwg-day-total">{getTotalDayApts(d)}</span>
+            )}
+            {isDayOff(d) && <span className="dwg-dayoff-label">Off</span>}
+          </div>
+        ))}
+      </div>
+
+      {/* Doctor rows */}
+      <div className="dwg-body">
+        {doctors.map((doc: any, di: number) => {
+          const doctorId = doc.userId || doc.id;
+          const doctorName = doc.user?.name || doc.name || 'Doctor';
+          const doctorColor = getDoctorColor(doctorId, doctors);
+          return (
+            <div key={doctorId} className={`dwg-row ${di % 2 === 1 ? 'dwg-row-alt' : ''}`}
+              style={{ gridTemplateColumns: `160px repeat(${colCount}, 1fr)` }}>
+              {/* Doctor name cell */}
+              <div className="dwg-doctor-cell">
+                <div className="dwg-doctor-color" style={{ background: doctorColor }} />
+                <Avatar size={28} name={doctorName} variant="beam"
+                  colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
+                <span className="dwg-doctor-name">{doctorName}</span>
+              </div>
+              {/* Day cells */}
+              {weekDays.map((d, ci) => {
+                const dayApts = getDoctorDayApts(doctorId, d);
+                const exc = getDoctorDayException(doctorId, d);
+                const isWorking = isDoctorWorkingDay(doctorId, d);
+                const isOff = isDayOff(d) || (!isWorking && !exc?.isAvailable && exc?.type !== 'CUSTOM_HOURS');
+                const excCfg = exc ? (EXC_CFG[exc.type] ?? EXC_CFG.DAY_OFF) : null;
+
+                return (
+                  <div
+                    key={ci}
+                    className={`dwg-cell ${isToday(d) ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''} ${isOff && !dayApts.length ? 'off' : ''}`}
+                  >
+                    {/* Exception banner */}
+                    {exc && exc.type !== 'CUSTOM_HOURS' && (
+                      <div className="dwg-exc-chip" style={{ background: (excCfg?.color ?? '#888') + '22', color: excCfg?.color ?? '#888' }}>
+                        {excCfg?.icon} {exc.type === 'DAY_OFF' ? 'Off' : exc.type === 'NO_SHOW' ? 'No show' : exc.type === 'SICK_LEAVE' ? 'Sick' : 'Vacation'}
+                      </div>
+                    )}
+                    {/* Appointment chips */}
+                    {dayApts.length === 0 && !exc && isOff && (
+                      <div className="dwg-cell-empty">—</div>
+                    )}
+                    {dayApts.map(apt => {
+                      const aptColor = colorMode === 'doctor'
+                        ? getDoctorColor(apt.doctorId, doctors)
+                        : (apt.color || null);
+                      const isSelected = selectedApt?.id === apt.id;
+                      return (
+                        <div
+                          key={apt.id}
+                          className={`dwg-apt-chip ${isSelected ? 'selected' : ''}`}
+                          style={aptColor ? { borderLeftColor: aptColor, background: aptColor + '15' } : {}}
+                          onClick={e => { e.stopPropagation(); onSelect(apt); }}
+                          onDoubleClick={e => { e.stopPropagation(); onDoubleClick(apt); }}
+                          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, apt); }}
+                          title={`${apt.patient?.lastName ?? ''} ${apt.patient?.firstName ?? ''} · ${fmtTime(apt.startTime)}`}
+                        >
+                          <span className="dwg-apt-time">{fmtTime(apt.startTime)}</span>
+                          <span className="dwg-apt-name">{apt.patient?.lastName ?? '—'}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+        {doctors.length === 0 && (
+          <div className="dwg-no-doctors">No doctors found. Add doctors in Settings → Staff.</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ─── Doctor Columns View ───────────────────────────────────────────────────────
 
 const DoctorColumnsView: React.FC<{
@@ -1075,8 +1266,11 @@ const DoctorColumnsView: React.FC<{
   onDoubleClick: (apt: any) => void;
   onContextMenu: (e: React.MouseEvent, apt: any) => void;
   onSlotContextMenu: (e: React.MouseEvent, date: Date, hour: number, minute: number) => void;
+  onDragReschedule: (aptId: string, newStart: string, newEnd: string, newDoctorId?: string) => void;
+  doctorExceptions: Record<string, any>;
+  branchId?: string;
   gridRef: React.RefObject<HTMLDivElement | null>;
-}> = ({ doctors, currentDate, appointments, today, locale, selectedApt, hours, gridMin, isLoading, workingHours, colorMode, doctorSchedules, onSelect, onDoubleClick, onContextMenu, onSlotContextMenu, gridRef }) => {
+}> = ({ doctors, currentDate, appointments, today, locale, selectedApt, hours, gridMin, isLoading, workingHours, colorMode, doctorSchedules, onSelect, onDoubleClick, onContextMenu, onSlotContextMenu, onDragReschedule, doctorExceptions, branchId, gridRef }) => {
   const startHour = hours[0] ?? 8;
   const isToday = currentDate.toDateString() === today.toDateString();
   const [tooltip, setTooltip] = useState<{ apt: any; x: number; y: number } | null>(null);
@@ -1127,6 +1321,149 @@ const DoctorColumnsView: React.FC<{
   const nowTop = `${(today.getHours() + today.getMinutes() / 60 - startHour) * SLOT_H}px`;
   const colCount = columns.length;
 
+  const calBodyRef = useRef<HTMLDivElement>(null);
+
+  // ── Exception quick-add popup ──
+  const [excPopup, setExcPopup] = useState<{ doctorId: string; doctorName: string; x: number; y: number } | null>(null);
+  const [excPopupType, setExcPopupType] = useState('DAY_OFF');
+  const [excPopupSaving, setExcPopupSaving] = useState(false);
+  const excPopupRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!excPopup) return;
+    const close = (e: MouseEvent) => {
+      if (excPopupRef.current && !excPopupRef.current.contains(e.target as Node)) setExcPopup(null);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [excPopup]);
+
+  const handleExcPopupSave = async () => {
+    if (!excPopup) return;
+    setExcPopupSaving(true);
+    try {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      await api.post(`/staff/${excPopup.doctorId}/schedule/exceptions`, {
+        date: dateStr,
+        type: excPopupType,
+        isAvailable: false,
+      });
+      const ev = new CustomEvent('refetch-doctor-exceptions', { bubbles: true });
+      document.dispatchEvent(ev);
+      setExcPopup(null);
+    } catch {} finally { setExcPopupSaving(false); }
+  };
+
+  const EXC_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
+    DAY_OFF:      { label: 'Day Off',     icon: '🏖',  color: '#94A3B8' },
+    NO_SHOW:      { label: 'No Show',     icon: '🚫',  color: '#F97316' },
+    SICK_LEAVE:   { label: 'Sick Leave',  icon: '🤒',  color: '#EAB308' },
+    VACATION:     { label: 'Vacation',    icon: '✈️',  color: '#3B82F6' },
+    CUSTOM_HOURS: { label: 'Custom hrs',  icon: '🕐',  color: '#10B981' },
+  };
+
+  type DragAptState = { apt: any; colId: string; durationMin: number; clickOffsetMin: number; startX: number; startY: number; isDragging: boolean };
+  const dragAptRef = useRef<DragAptState | null>(null);
+  const dragWasActive = useRef(false);
+  const [dragGhost, setDragGhost] = useState<{ apt: any; colIdx: number; topMin: number; durationMin: number } | null>(null);
+  const dragGhostRef = useRef(dragGhost);
+  useEffect(() => { dragGhostRef.current = dragGhost; }, [dragGhost]);
+
+  const dragCtx = useRef({ columns, startHour, gridMin, onDragReschedule, currentDate });
+  useEffect(() => { dragCtx.current = { columns, startHour, gridMin, onDragReschedule, currentDate }; });
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const drag = dragAptRef.current;
+      if (!drag) return;
+      if (!drag.isDragging) {
+        if (Math.abs(e.clientX - drag.startX) < 5 && Math.abs(e.clientY - drag.startY) < 5) return;
+        drag.isDragging = true;
+      }
+      const { columns: _cols, startHour: _sh, gridMin: _gm } = dragCtx.current;
+      const bodyEl = calBodyRef.current;
+      const gridEl = gridRef.current;
+      if (!bodyEl || !gridEl) return;
+      const bodyRect = bodyEl.getBoundingClientRect();
+      const relX = e.clientX - bodyRect.left;
+      const colIdx = Math.max(0, Math.min(_cols.length - 1, Math.floor(relX / (bodyRect.width / _cols.length))));
+      const gridRect = gridEl.getBoundingClientRect();
+      const relY = e.clientY - gridRect.top + gridEl.scrollTop;
+      const rawMin = (relY / SLOT_H) * 60 - drag.clickOffsetMin;
+      const topMin = Math.max(0, Math.round(rawMin / _gm) * _gm);
+      setDragGhost({ apt: drag.apt, colIdx, topMin, durationMin: drag.durationMin });
+    };
+    const onUp = () => {
+      const drag = dragAptRef.current;
+      if (!drag) return;
+      dragAptRef.current = null;
+      if (!drag.isDragging) { setDragGhost(null); return; }
+      dragWasActive.current = true;
+      setTimeout(() => { dragWasActive.current = false; }, 0);
+      const ghost = dragGhostRef.current;
+      setDragGhost(null);
+      if (!ghost) return;
+      const { columns: _cols, startHour: _sh, onDragReschedule: _reschedule, currentDate: _date } = dragCtx.current;
+      const absStartMin = _sh * 60 + ghost.topMin;
+      const absEndMin = absStartMin + ghost.durationMin;
+      const newStart = new Date(_date); newStart.setHours(Math.floor(absStartMin / 60), absStartMin % 60, 0, 0);
+      const newEnd = new Date(_date); newEnd.setHours(Math.floor(absEndMin / 60), absEndMin % 60, 0, 0);
+      const targetCol = _cols[ghost.colIdx];
+      const newDoctorId = targetCol?.id !== '__unassigned__' ? targetCol?.id : undefined;
+      const oldDoctorId = drag.colId !== '__unassigned__' ? drag.colId : undefined;
+      _reschedule(ghost.apt.id, newStart.toISOString(), newEnd.toISOString(), newDoctorId !== oldDoctorId ? newDoctorId : undefined);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+  }, []);
+
+  type DragSel = { colIdx: number; startMin: number; endMin: number } | null;
+  const [dragSel, setDragSel] = useState<DragSel>(null);
+  const dragStartMin = useRef<number | null>(null);
+  const dragColIdx = useRef<number | null>(null);
+
+  const minFromMouseY = useCallback((e: React.MouseEvent, container: HTMLElement) => {
+    const rect = container.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top + container.scrollTop;
+    const absMin = Math.round(((offsetY / SLOT_H) * 60) / gridMin) * gridMin;
+    return Math.max(0, absMin);
+  }, [gridMin]);
+
+  const handleSlotMouseDown = useCallback((e: React.MouseEvent, ci: number) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const grid = e.currentTarget.closest('.grid-content') as HTMLElement;
+    if (!grid) return;
+    const sm = minFromMouseY(e, grid);
+    dragStartMin.current = sm;
+    dragColIdx.current = ci;
+    setDragSel({ colIdx: ci, startMin: sm, endMin: sm + gridMin });
+  }, [minFromMouseY, gridMin]);
+
+  const handleSlotMouseMove = useCallback((e: React.MouseEvent, ci: number) => {
+    if (dragStartMin.current === null || dragColIdx.current !== ci) return;
+    const grid = e.currentTarget.closest('.grid-content') as HTMLElement;
+    if (!grid) return;
+    const cur = minFromMouseY(e, grid);
+    setDragSel({ colIdx: ci, startMin: Math.min(dragStartMin.current, cur), endMin: Math.max(dragStartMin.current, cur) + gridMin });
+  }, [minFromMouseY, gridMin]);
+
+  const handleSlotMouseUp = useCallback((e: React.MouseEvent, ci: number) => {
+    if (dragWasActive.current) { setDragSel(null); dragStartMin.current = null; dragColIdx.current = null; return; }
+    const sel = dragSel;
+    setDragSel(null); dragStartMin.current = null; dragColIdx.current = null;
+    if (!sel || sel.endMin - sel.startMin < gridMin) return;
+    const absStart = startHour * 60 + sel.startMin;
+    const absEnd = startHour * 60 + sel.endMin;
+    const ns = new Date(currentDate); ns.setHours(Math.floor(absStart / 60), absStart % 60, 0, 0);
+    const ne = new Date(currentDate); ne.setHours(Math.floor(absEnd / 60), absEnd % 60, 0, 0);
+    const col = columns[ci];
+    const doctorId = col?.id !== '__unassigned__' ? col.id : undefined;
+    const ev = new CustomEvent('drag-new-apt', { detail: { startISO: ns.toISOString(), endISO: ne.toISOString(), doctorId }, bubbles: true });
+    (e.currentTarget as HTMLElement).dispatchEvent(ev);
+  }, [dragSel, startHour, currentDate, gridMin, columns]);
+
   return (
     <>
       {/* Header row: one cell per doctor */}
@@ -1135,8 +1472,28 @@ const DoctorColumnsView: React.FC<{
         {columns.map(col => {
           const doctorColor = col.doctor ? getDoctorColor(col.id, doctors) : '#94A3B8';
           const colApts = getColApts(col.id);
+          const docWH = col.doctor ? getDocDayWH(col.id) : null;
+          const effectiveWH = docWH ?? dayWH;
+          const totalWorkMin = effectiveWH ? (effectiveWH.end - effectiveWH.start) * 60 : 0;
+          const bookedMin = colApts.reduce((sum, a) => {
+            const dur = Math.round((new Date(a.endTime).getTime() - new Date(a.startTime).getTime()) / 60000);
+            return sum + dur;
+          }, 0);
+          const utilPct = totalWorkMin > 0 ? Math.min(100, Math.round((bookedMin / totalWorkMin) * 100)) : 0;
+          const utilColor = utilPct >= 85 ? '#EF4444' : utilPct >= 60 ? '#F59E0B' : '#10B981';
           return (
-            <div key={col.id} className="day-col-header doctor-col-header">
+            <div
+              key={col.id}
+              className="day-col-header doctor-col-header"
+              onContextMenu={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (col.doctor) {
+                  setExcPopup({ doctorId: col.id, doctorName: col.name, x: e.clientX, y: e.clientY });
+                  setExcPopupType('DAY_OFF');
+                }
+              }}
+            >
               <div className="doctor-col-avatar">
                 {col.doctor ? (
                   <Avatar size={30} name={col.name} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
@@ -1146,7 +1503,26 @@ const DoctorColumnsView: React.FC<{
               </div>
               <span className="doctor-col-name" style={{ color: doctorColor }}>{col.name}</span>
               <span className="day-apt-count">{colApts.length} appts</span>
+              {totalWorkMin > 0 && (
+                <div className="day-util-bar-wrap">
+                  <div className="day-util-bar" style={{ width: `${utilPct}%`, background: utilColor }} />
+                </div>
+              )}
               <div className="doctor-col-color-bar" style={{ background: doctorColor }} />
+              {(() => {
+                const exc = doctorExceptions[col.id];
+                if (!exc) return null;
+                const cfg = EXC_CONFIG[exc.type ?? 'CUSTOM_HOURS'] ?? EXC_CONFIG.CUSTOM_HOURS;
+                return (
+                  <div className="doctor-exc-banner" style={{ background: cfg.color + '22', borderColor: cfg.color, color: cfg.color }}>
+                    <span>{cfg.icon}</span>
+                    <span>{cfg.label}</span>
+                    {exc.type === 'CUSTOM_HOURS' && exc.startTime && exc.endTime && (
+                      <span className="doctor-exc-hours">{exc.startTime}–{exc.endTime}</span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
@@ -1173,7 +1549,7 @@ const DoctorColumnsView: React.FC<{
           })}
         </div>
 
-        <div className="calendar-body" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
+        <div className="calendar-body" ref={calBodyRef} style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
           {columns.map(col => {
             const doctorColor = col.doctor ? getDoctorColor(col.id, doctors) : '#94A3B8';
             const colApts = layoutDayAppointments(getColApts(col.id));
@@ -1181,7 +1557,11 @@ const DoctorColumnsView: React.FC<{
             const docWH = col.doctor ? getDocDayWH(col.id) : null;
             const effectiveWH = docWH ?? dayWH;
             return (
-              <div key={col.id} className="day-column doctor-column">
+              <div key={col.id} className="day-column doctor-column"
+                onMouseDown={e => handleSlotMouseDown(e, columns.indexOf(col))}
+                onMouseMove={e => handleSlotMouseMove(e, columns.indexOf(col))}
+                onMouseUp={e => handleSlotMouseUp(e, columns.indexOf(col))}
+              >
                 {/* slot cells */}
                 {hours.flatMap(h => {
                   const offHours = effectiveWH ? (h < effectiveWH.start || h >= effectiveWH.end) : false;
@@ -1217,28 +1597,45 @@ const DoctorColumnsView: React.FC<{
                   : colApts.map(({ apt, colIndex, totalCols }) => {
                       const aptDoctorColor = apt.doctorId ? getDoctorColor(apt.doctorId, doctors) : doctorColor;
                       const isDocMode = colorMode === 'doctor';
-                      const blockClass = `calendar-apt-block ${isDocMode ? 'custom-color' : (apt.color ? 'custom-color' : statusColor[apt.status] || 'scheduled')} ${selectedApt?.id === apt.id ? 'selected' : ''}`;
+                      const blockClass = `calendar-apt-block ${isDocMode ? 'custom-color' : (apt.color ? 'custom-color' : statusColor[apt.status] || 'scheduled')} ${selectedApt?.id === apt.id ? 'selected' : ''} ${dragGhost?.apt.id === apt.id ? 'dragging' : ''}`;
                       const blockStyle: React.CSSProperties = {
                         ...aptPositionStyle(apt, colIndex, totalCols),
                         ...(apt.color && !isDocMode ? { background: apt.color + '22', borderLeftColor: apt.color } :
                             isDocMode ? { background: aptDoctorColor + '22', borderLeftColor: aptDoctorColor } : {}),
-                        cursor: 'pointer',
+                        cursor: dragGhost?.apt.id === apt.id ? 'grabbing' : 'grab',
                       };
                       return (
                         <div
                           key={apt.id}
                           className={blockClass}
                           style={blockStyle}
-                          onClick={() => onSelect(apt)}
-                          onDoubleClick={() => onDoubleClick(apt)}
+                          onClick={() => { if (dragWasActive.current) return; onSelect(apt); }}
+                          onDoubleClick={() => { if (dragWasActive.current) return; onDoubleClick(apt); }}
                           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, apt); }}
+                          onMouseDown={e => {
+                            if (e.button !== 0) return;
+                            e.stopPropagation();
+                            const start = new Date(apt.startTime);
+                            const end = new Date(apt.endTime);
+                            const durationMin = Math.round((end.getTime() - start.getTime()) / 60000);
+                            const blockTop = (start.getHours() + start.getMinutes() / 60 - startHour) * SLOT_H;
+                            const gridEl = gridRef.current;
+                            const clickOffsetMin = gridEl
+                              ? Math.round(((e.clientY - gridEl.getBoundingClientRect().top + gridEl.scrollTop - blockTop) / SLOT_H) * 60)
+                              : 0;
+                            dragAptRef.current = { apt, colId: col.id, durationMin, clickOffsetMin, startX: e.clientX, startY: e.clientY, isDragging: false };
+                          }}
                           onMouseEnter={e => {
+                            if (dragAptRef.current) return;
                             const r = e.currentTarget.getBoundingClientRect();
                             setTooltip({ apt, x: r.right + 10, y: r.top });
                           }}
                           onMouseLeave={() => setTooltip(null)}
                         >
                           <div className="apt-doctor-strip" style={{ background: aptDoctorColor }} />
+                          {totalCols > 1 && (
+                            <div className="apt-conflict-badge" title="Overlapping appointment">⚡</div>
+                          )}
                           <div className="apt-block-time">
                             {new Date(apt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                           </div>
@@ -1248,19 +1645,91 @@ const DoctorColumnsView: React.FC<{
                       );
                     })
                 }
+                {dragSel && dragSel.colIdx === columns.indexOf(col) && (
+                  <div className="drag-selection" style={{
+                    top:    `${(dragSel.startMin / 60) * SLOT_H}px`,
+                    height: `${((dragSel.endMin - dragSel.startMin) / 60) * SLOT_H}px`,
+                  }} />
+                )}
+                {dragGhost && dragGhost.colIdx === columns.indexOf(col) && (
+                  <div className="calendar-apt-block scheduled drag-ghost" style={{
+                    top:    `${(dragGhost.topMin / 60) * SLOT_H}px`,
+                    height: `${(dragGhost.durationMin / 60) * SLOT_H - 4}px`,
+                    opacity: 0.6,
+                    pointerEvents: 'none',
+                  }}>
+                    <div className="apt-name">{dragGhost.apt.patient?.lastName ?? '—'}</div>
+                  </div>
+                )}
+                {/* Break blocks */}
+                {(() => {
+                  const sched = doctorSchedules[col.id] ?? [];
+                  const jsDay = currentDate.getDay();
+                  const schedDay = jsDay === 0 ? 6 : jsDay - 1;
+                  const entry = sched.find((s: any) => s.dayOfWeek === schedDay);
+                  if (!entry?.breaks?.length) return null;
+                  return entry.breaks.map((br: any, i: number) => {
+                    const brStartH = parseInt(br.startTime);
+                    const brEndH   = parseInt(br.endTime);
+                    const top    = (brStartH - startHour) * SLOT_H;
+                    const height = (brEndH - brStartH) * SLOT_H;
+                    if (height <= 0 || top < 0) return null;
+                    return (
+                      <div
+                        key={i}
+                        className="doctor-break-block"
+                        style={{ top: `${top}px`, height: `${height}px` }}
+                      >
+                        <span className="doctor-break-label">Break</span>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             );
           })}
         </div>
       </div>
       {tooltip && <AptTooltip apt={tooltip.apt} x={tooltip.x} y={tooltip.y} locale={locale} />}
+      {excPopup && ReactDOM.createPortal(
+        <div
+          ref={excPopupRef}
+          className="exc-quick-popup"
+          style={{ position: 'fixed', top: Math.min(excPopup.y, window.innerHeight - 220), left: Math.min(excPopup.x, window.innerWidth - 220), zIndex: 2000 }}
+        >
+          <div className="exc-quick-title">
+            {excPopup.doctorName} — {currentDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+          </div>
+          <div className="exc-quick-label">Exception type:</div>
+          {(['DAY_OFF', 'NO_SHOW', 'SICK_LEAVE', 'VACATION'] as const).map(t => {
+            const cfg = { DAY_OFF: { label: 'Day Off', icon: '🏖', color: '#94A3B8' }, NO_SHOW: { label: 'No Show', icon: '🚫', color: '#F97316' }, SICK_LEAVE: { label: 'Sick Leave', icon: '🤒', color: '#EAB308' }, VACATION: { label: 'Vacation', icon: '✈️', color: '#3B82F6' } }[t];
+            return (
+              <button
+                key={t}
+                className={`exc-quick-btn ${excPopupType === t ? 'active' : ''}`}
+                style={excPopupType === t ? { borderColor: cfg.color, color: cfg.color } : {}}
+                onClick={() => setExcPopupType(t)}
+              >
+                {cfg.icon} {cfg.label}
+              </button>
+            );
+          })}
+          <div className="exc-quick-actions">
+            <button className="exc-quick-cancel" onClick={() => setExcPopup(null)}>Cancel</button>
+            <button className="exc-quick-save" onClick={handleExcPopupSave} disabled={excPopupSaving}>
+              {excPopupSaving ? '…' : 'Save'}
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 };
 
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
-const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ onOpenPatient }) => {
+const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void; onOpenVisit?: (aptId: string) => void }> = ({ onOpenPatient, onOpenVisit }) => {
   const { t, i18n } = useTranslation();
   const [view, setView] = useState('week');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -1274,6 +1743,9 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [doctorSchedules, setDoctorSchedules] = useState<Record<string, any[]>>({});
+  const [doctorExceptions, setDoctorExceptions] = useState<Record<string, any>>({});
+  const [doctorWeekExceptions, setDoctorWeekExceptions] = useState<Record<string, any[]>>({});
+  const [excRefetchTick, setExcRefetchTick] = useState(0);
   const [colorMode] = useState<'status' | 'doctor'>(() =>
     (localStorage.getItem(COLOR_MODE_KEY) as 'status' | 'doctor') || 'status'
   );
@@ -1306,12 +1778,19 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
   // Listen for drag-to-create events from TimeGrid
   React.useEffect(() => {
     const handler = (e: Event) => {
-      const { startISO, endISO } = (e as CustomEvent).detail;
-      setEditingApt({ startTime: startISO, endTime: endISO });
+      const { startISO, endISO, doctorId } = (e as CustomEvent).detail;
+      setEditingApt({ startTime: startISO, endTime: endISO, ...(doctorId ? { doctorId } : {}) });
       setIsModalOpen(true);
     };
     document.addEventListener('drag-new-apt', handler);
     return () => document.removeEventListener('drag-new-apt', handler);
+  }, []);
+
+  // Listen for exception refetch requests from DoctorColumnsView
+  useEffect(() => {
+    const handler = () => setExcRefetchTick(t => t + 1);
+    document.addEventListener('refetch-doctor-exceptions', handler);
+    return () => document.removeEventListener('refetch-doctor-exceptions', handler);
   }, []);
 
   // Inject dynamic CSS for customizable status colors
@@ -1341,14 +1820,15 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
     localStorage.removeItem(STATUS_COLORS_KEY);
   };
 
-  const handleDragReschedule = async (aptId: string, newStart: string, newEnd: string) => {
-    // Optimistic update
-    setAppointments(prev => prev.map(a => a.id === aptId ? { ...a, startTime: newStart, endTime: newEnd } : a));
-    setSelectedApt((prev: any) => prev?.id === aptId ? { ...prev, startTime: newStart, endTime: newEnd } : prev);
+  const handleDragReschedule = async (aptId: string, newStart: string, newEnd: string, newDoctorId?: string) => {
+    const update: any = { startTime: newStart, endTime: newEnd };
+    if (newDoctorId !== undefined) update.doctorId = newDoctorId;
+    setAppointments(prev => prev.map(a => a.id === aptId ? { ...a, startTime: newStart, endTime: newEnd, ...(newDoctorId !== undefined ? { doctorId: newDoctorId } : {}) } : a));
+    setSelectedApt((prev: any) => prev?.id === aptId ? { ...prev, startTime: newStart, endTime: newEnd, ...(newDoctorId !== undefined ? { doctorId: newDoctorId } : {}) } : prev);
     try {
-      await api.put(`/appointments/${aptId}`, { startTime: newStart, endTime: newEnd });
+      await api.put(`/appointments/${aptId}`, update);
     } catch {
-      fetchAppointments(); // revert on error
+      fetchAppointments();
     }
   };
 
@@ -1384,7 +1864,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
       const end = new Date(days[41]); end.setHours(23, 59, 59, 999);
       return { start, end };
     }
-    // week
+    // week, doctors-week
     const days = getWeekDays(currentDate);
     const start = new Date(days[0]); start.setHours(0, 0, 0, 0);
     const end = new Date(days[6]); end.setHours(23, 59, 59, 999);
@@ -1411,7 +1891,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
 
   // Fetch schedules for all doctors when entering doctors view
   useEffect(() => {
-    if (view !== 'doctors' || !doctors.length || !selectedBranchId) return;
+    if ((view !== 'doctors' && view !== 'doctors-week') || !doctors.length || !selectedBranchId) return;
     const missingIds = doctors
       .map((d: any) => d.userId || d.id)
       .filter(id => !doctorSchedules[id]);
@@ -1431,6 +1911,43 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
       });
     });
   }, [view, doctors, selectedBranchId]);
+
+  useEffect(() => {
+    if (view !== 'doctors' || !doctors.length || !selectedBranchId) return;
+    const dateStr = currentDate.toISOString().split('T')[0];
+    Promise.all(
+      doctors.map((d: any) => {
+        const id = d.userId || d.id;
+        return api.get(`/staff/${id}/schedule/exceptions`, { from: dateStr, to: dateStr, branchId: selectedBranchId })
+          .then((data: any) => ({ id, exc: (Array.isArray(data) ? data : (data?.data ?? []))[0] ?? null }))
+          .catch(() => ({ id, exc: null }));
+      })
+    ).then(results => {
+      const next: Record<string, any> = {};
+      results.forEach(({ id, exc }) => { next[id] = exc; });
+      setDoctorExceptions(next);
+    });
+  }, [view, doctors, selectedBranchId, currentDate, excRefetchTick]);
+
+  // Fetch week exceptions for all doctors when in doctors-week view
+  useEffect(() => {
+    if (view !== 'doctors-week' || !doctors.length || !selectedBranchId) return;
+    const days = getWeekDays(currentDate);
+    const from = days[0].toISOString().split('T')[0];
+    const to   = days[6].toISOString().split('T')[0];
+    Promise.all(
+      doctors.map((d: any) => {
+        const id = d.userId || d.id;
+        return api.get(`/staff/${id}/schedule/exceptions`, { from, to, branchId: selectedBranchId })
+          .then((data: any) => ({ id, items: Array.isArray(data) ? data : (data?.data ?? []) }))
+          .catch(() => ({ id, items: [] }));
+      })
+    ).then(results => {
+      const next: Record<string, any[]> = {};
+      results.forEach(({ id, items }) => { next[id] = items; });
+      setDoctorWeekExceptions(next);
+    });
+  }, [view, doctors, selectedBranchId, currentDate]);
 
   // Close branch dropdown on outside click
   useEffect(() => {
@@ -1471,6 +1988,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
     } else if (view === 'month') {
       d.setMonth(d.getMonth() + dir);
     } else {
+      // week, doctors-week
       d.setDate(d.getDate() + dir * 7);
     }
     setCurrentDate(d);
@@ -1483,6 +2001,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
     if (view === 'month') {
       return currentDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
     }
+    // week, doctors-week
     const days = getWeekDays(currentDate);
     return `${days[0].toLocaleDateString(locale, { day: 'numeric', month: 'short' })} — ${days[6].toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}`;
   };
@@ -1555,6 +2074,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
           onCopy={handleCopyApt}
           onNewApt={handleNewAptAt}
           onOpenPatient={onOpenPatient}
+          onOpenVisit={onOpenVisit}
         />
       )}
 
@@ -1699,6 +2219,13 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
             >
               <IconUsers />
             </button>
+            <button
+              className={`toggle-item toggle-item-doctors ${view === 'doctors-week' ? 'active' : ''}`}
+              onClick={() => setView('doctors-week')}
+              title="Doctors week — rota view"
+            >
+              <IconCalWeek />
+            </button>
           </div>
           <button className="icon-btn"><IconFilter /></button>
           <button className="new-apt-btn flex items-center gap-s" onClick={() => { setEditingApt(null); setIsModalOpen(true); }}>
@@ -1708,7 +2235,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
       </header>
 
       {/* Stats strip */}
-      {!isLoading && filteredAppointments.length > 0 && (view === 'week' || view === 'day' || view === 'doctors') && (
+      {!isLoading && filteredAppointments.length > 0 && (view === 'week' || view === 'day' || view === 'doctors' || view === 'doctors-week') && (
         <div className="stats-strip">
           {(() => {
             const total = filteredAppointments.length;
@@ -1735,7 +2262,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
       <div className="calendar-main-layout">
 
         {/* Grid */}
-        <div className={`calendar-grid-container card ${view === 'month' ? 'month-mode' : ''}`}>
+        <div className={`calendar-grid-container card ${view === 'month' ? 'month-mode' : ''} ${view === 'doctors-week' ? 'week-rota-mode' : ''}`}>
           {view === 'month' ? (
             <MonthView
               currentDate={currentDate}
@@ -1767,7 +2294,28 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
               onDoubleClick={handleDoubleClick}
               onContextMenu={handleCtxApt}
               onSlotContextMenu={handleCtxSlot}
+              onDragReschedule={handleDragReschedule}
+              doctorExceptions={doctorExceptions}
+              branchId={selectedBranchId ?? undefined}
               gridRef={gridRef}
+            />
+          ) : view === 'doctors-week' ? (
+            <DoctorWeekGrid
+              doctors={doctors}
+              weekDays={getWeekDays(currentDate)}
+              appointments={filteredAppointments}
+              today={today}
+              locale={locale}
+              workingHours={branches.find(b => b.id === selectedBranchId)?.workingHours}
+              doctorSchedules={doctorSchedules}
+              doctorWeekExceptions={doctorWeekExceptions}
+              colorMode={colorMode}
+              selectedApt={selectedApt}
+              isLoading={isLoading}
+              onSelect={handleSelect}
+              onDoubleClick={handleDoubleClick}
+              onContextMenu={handleCtxApt}
+              onNavigateToDay={d => { setCurrentDate(d); setView('doctors'); }}
             />
           ) : (
             <TimeGrid

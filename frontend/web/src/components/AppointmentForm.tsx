@@ -163,6 +163,20 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const [branchId, setBranchId]       = useState<string>(initialData?.branchId || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError]             = useState('');
+  const [doctorException, setDoctorException] = useState<any>(null);
+  const [excWarningDismissed, setExcWarningDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!formData.doctorId || !date) { setDoctorException(null); return; }
+    api.get(`/staff/${formData.doctorId}/schedule/exceptions`, { from: date, to: date })
+      .then((data: any) => {
+        const items: any[] = Array.isArray(data) ? data : (data?.data ?? []);
+        const exc = items.find(e => e.type !== 'CUSTOM_HOURS') ?? null;
+        setDoctorException(exc);
+        if (!exc) setExcWarningDismissed(false);
+      })
+      .catch(() => setDoctorException(null));
+  }, [formData.doctorId, date]);
 
   useEffect(() => {
     // Load doctors — default to current logged-in user if they appear in the list
@@ -587,6 +601,22 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ── Doctor Exception Warning ── */}
+      {doctorException && !excWarningDismissed && (
+        <div className="apt-exc-warning">
+          <span className="apt-exc-warning-icon">⚠️</span>
+          <span>
+            {(() => {
+              const labels: Record<string, string> = { DAY_OFF: 'Day Off', NO_SHOW: 'No Show', SICK_LEAVE: 'Sick Leave', VACATION: 'Vacation' };
+              return `Doctor has ${labels[doctorException.type] ?? doctorException.type} on this date.`;
+            })()}
+          </span>
+          <button type="button" className="apt-exc-dismiss" onClick={() => setExcWarningDismissed(true)}>
+            Create anyway
+          </button>
+        </div>
+      )}
 
       {/* ── Actions ── */}
       <div className="apt-actions">

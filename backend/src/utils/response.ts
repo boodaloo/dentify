@@ -19,6 +19,10 @@ export const paginated = (
   });
 };
 
+export const notFound = (res: Response, message = 'Not found') => {
+  return res.status(404).json({ success: false, error: message });
+};
+
 export const error = (res: Response, message: string, status = 400) => {
   return res.status(status).json({ success: false, error: message });
 };

@@ -879,7 +879,7 @@ const OverviewTab: React.FC<{ patient: any; patientId: string; onTabChange: (tab
 
 // ─── Visits Section (used inside InfoTab) ────────────────────────────────────
 
-const VisitsSection: React.FC<{ patient: any }> = ({ patient }) => {
+const VisitsSection: React.FC<{ patient: any; onOpenVisit?: (aptId: string) => void }> = ({ patient, onOpenVisit }) => {
   const [filter, setFilter]       = useState<string>('ALL');
   const [expandedId, setExpanded] = useState<string | null>(null);
   const [records, setRecords]     = useState<Record<string, any>>({});
@@ -932,6 +932,13 @@ const VisitsSection: React.FC<{ patient: any }> = ({ patient }) => {
                 </div>
                 <div className="visit-card-right">
                   <StatusChip status={a.status} map={STATUS_LABELS} />
+                  {onOpenVisit && (
+                    <button
+                      className="pp-btn-visit-form"
+                      title="Open Visit Form"
+                      onClick={(e) => { e.stopPropagation(); onOpenVisit(a.id); }}
+                    >🦷</button>
+                  )}
                   <div className={`visit-chevron ${expandedId === a.id ? 'open' : ''}`}><IconChevron /></div>
                 </div>
               </div>
@@ -967,7 +974,7 @@ const VisitsSection: React.FC<{ patient: any }> = ({ patient }) => {
 
 // ─── Patient Info Tab ──────────────────────────────────────────────────────────
 
-const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void }> = ({ patient, patientId, onPatientUpdate }) => {
+const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: any) => void; onOpenVisit?: (aptId: string) => void }> = ({ patient, patientId, onPatientUpdate, onOpenVisit }) => {
   const contacts  = patient?.contacts ?? [];
   const relatives = patient?.relatives ?? [];
   const insurances = patient?.insurances ?? [];
@@ -1200,7 +1207,7 @@ const InfoTab: React.FC<{ patient: any; patientId: string; onPatientUpdate: (p: 
       {/* ── Visit History ── */}
       <div className="pp-card info-visits-section">
         <div className="pp-card-title">Visit History</div>
-        <VisitsSection patient={patient} />
+        <VisitsSection patient={patient} onOpenVisit={onOpenVisit} />
       </div>
 
     </div>
@@ -1409,6 +1416,7 @@ const PlaceholderTab: React.FC<{ name: string }> = ({ name }) => (
 interface PatientProfileProps {
   patient: any;
   onBack: () => void;
+  onOpenVisit?: (aptId: string) => void;
 }
 
 const TABS = [
@@ -1421,7 +1429,7 @@ const TABS = [
   { id: 'documents',  label: 'Documents' },
 ];
 
-const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, onBack }) => {
+const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, onBack, onOpenVisit }) => {
   const [activeTab,   setActiveTab]   = useState('overview');
   const [fullPatient, setFullPatient] = useState<any>(null);
   const [loading,     setLoading]     = useState(true);
@@ -1451,7 +1459,7 @@ const PatientProfile: React.FC<PatientProfileProps> = ({ patient: listPatient, o
     if (loading) return <div className="pp-loading"><div className="loading-spinner" /></div>;
     switch (activeTab) {
       case 'overview':  return <OverviewTab patient={patient} patientId={patientId} onTabChange={setActiveTab} />;
-      case 'info':      return <InfoTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
+      case 'info':      return <InfoTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} onOpenVisit={onOpenVisit} />;
       case 'clinical':  return <ClinicalTab patient={patient} patientId={patientId} onPatientUpdate={setFullPatient} />;
       case 'diary':     return <DiaryTab patientId={patientId} />;
       case 'treatment': return <TreatmentTab patientId={patientId} />;

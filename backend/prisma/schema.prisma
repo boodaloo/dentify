@@ -792,19 +792,28 @@ model DoctorScheduleBreak {
   @@map("clin_doctor_schedule_breaks")
 }
 
+enum ScheduleExceptionType {
+  DAY_OFF
+  NO_SHOW
+  SICK_LEAVE
+  VACATION
+  CUSTOM_HOURS
+}
+
 model ScheduleException {
-  id          String   @id @default(uuid())
+  id          String                @id @default(uuid())
   clinicId    String
   doctorId    String
-  doctor      User     @relation(fields: [doctorId], references: [id])
+  doctor      User                  @relation(fields: [doctorId], references: [id])
   branchId    String?
-  branch      Branch?  @relation(fields: [branchId], references: [id])
-  date        DateTime @db.Date
-  isAvailable Boolean  @default(false)
+  branch      Branch?               @relation(fields: [branchId], references: [id])
+  date        DateTime              @db.Date
+  isAvailable Boolean               @default(false)
+  type        ScheduleExceptionType @default(CUSTOM_HOURS)
   startTime   String?
   endTime     String?
   reason      String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime              @default(now())
 
   @@map("clin_schedule_exceptions")
 }
@@ -1939,4 +1948,21 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([clinicId, createdAt])
   @@map("sys_audit_logs")
+}
+
+// ============================================================
+// CLINICAL — Visit Form Templates
+// ============================================================
+
+model VisitFormTemplate {
+  id        String   @id @default(uuid())
+  clinicId  String
+  name      String
+  role      String   // "DOCTOR" | "ADMIN" | "ALL"
+  isDefault Boolean  @default(false)
+  blocks    Json     // [{type, order, visible, required, label}]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("clin_visit_form_templates")
 }

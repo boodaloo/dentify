@@ -305,7 +305,7 @@ export const createException = async (req: Request, res: Response) => {
   try {
     const { id }   = req.params;
     const clinicId = req.user!.clinicId;
-    const { branchId, date, isAvailable, startTime, endTime, reason } = req.body;
+    const { branchId, date, isAvailable, startTime, endTime, reason, type } = req.body;
 
     if (!date) return R.error(res, 'date is required');
 
@@ -316,6 +316,7 @@ export const createException = async (req: Request, res: Response) => {
         branchId:    branchId    || null,
         date:        new Date(date),
         isAvailable: isAvailable ?? false,
+        type:        type || 'CUSTOM_HOURS',
         startTime:   startTime   || null,
         endTime:     endTime     || null,
         reason:      reason      || null,

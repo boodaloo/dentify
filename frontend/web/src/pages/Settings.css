@@ -654,3 +654,64 @@
   color: var(--text-secondary);
   margin-top: 2px;
 }
+
+.sched-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 16px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sched-loading, .sched-empty {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 8px 0;
+}
+.exc-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.exc-add-row input, .exc-add-row select {
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: 13px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+.exc-date-input { width: 140px; }
+.exc-type-select { width: 150px; }
+.exc-list { display: flex; flex-direction: column; gap: 6px; }
+.exc-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 13px;
+}
+.exc-date { color: var(--text-secondary); min-width: 100px; }
+.exc-type-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.exc-hours { color: var(--text-secondary); font-size: 12px; }
+.exc-delete-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.exc-delete-btn:hover { background: var(--danger-light, #fee2e2); color: #ef4444; }

@@ -98,6 +98,16 @@ const Settings: React.FC = () => {
   const [docSchedSaving, setDocSchedSaving]   = useState(false);
   const [docSchedStatus, setDocSchedStatus]   = useState<'idle'|'success'|'error'>('idle');
 
+  // Exception state
+  const [excDate, setExcDate] = useState('');
+  const [excType, setExcType] = useState('DAY_OFF');
+  const [excStartTime, setExcStartTime] = useState('');
+  const [excEndTime, setExcEndTime] = useState('');
+  const [excSaving, setExcSaving] = useState(false);
+  const [excError, setExcError] = useState('');
+  const [exceptions, setExceptions] = useState<any[]>([]);
+  const [excLoading, setExcLoading] = useState(false);
+
   // Rooms state
   const [rooms, setRooms]           = useState<any[]>([]);
   const [newRoomName, setNewRoomName] = useState('');
@@ -119,6 +129,10 @@ const Settings: React.FC = () => {
       setStaffList(Array.isArray(items) ? items : []);
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (selDoctorId) loadExceptions(selDoctorId);
+  }, [selDoctorId]);
 
   // Load doctor schedule when doctor selection or branchId changes
   useEffect(() => {
@@ -316,6 +330,43 @@ const Settings: React.FC = () => {
     } finally {
       setDocSchedSaving(false);
     }
+  };
+
+  const loadExceptions = async (doctorId: string) => {
+    if (!doctorId) return;
+    setExcLoading(true);
+    try {
+      const today = new Date();
+      const from = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+      const to = new Date(today.getFullYear(), today.getMonth() + 3, 0).toISOString().split('T')[0];
+      const data: any = await api.get(`/staff/${doctorId}/schedule/exceptions`, { from, to });
+      const items = Array.isArray(data) ? data : (data?.data ?? []);
+      setExceptions(items);
+    } catch { setExceptions([]); } finally { setExcLoading(false); }
+  };
+
+  const handleSaveException = async () => {
+    if (!selDoctorId || !excDate) { setExcError('Select doctor and date'); return; }
+    setExcSaving(true); setExcError('');
+    try {
+      await api.post(`/staff/${selDoctorId}/schedule/exceptions`, {
+        date: excDate,
+        type: excType,
+        isAvailable: excType === 'CUSTOM_HOURS',
+        startTime: excType === 'CUSTOM_HOURS' ? excStartTime || null : null,
+        endTime:   excType === 'CUSTOM_HOURS' ? excEndTime   || null : null,
+      });
+      setExcDate(''); setExcType('DAY_OFF'); setExcStartTime(''); setExcEndTime('');
+      await loadExceptions(selDoctorId);
+    } catch (e: any) { setExcError(e.message || 'Failed to save'); } finally { setExcSaving(false); }
+  };
+
+  const handleDeleteException = async (excId: string) => {
+    if (!selDoctorId) return;
+    try {
+      await api.delete(`/staff/${selDoctorId}/schedule/exceptions/${excId}`);
+      await loadExceptions(selDoctorId);
+    } catch {}
   };
 
   const handleLanguageChange = (lang: string) => {
@@ -988,6 +1039,53 @@ const Settings: React.FC = () => {
                     >
                       {docSchedSaving ? 'Saving…' : 'Save schedule'}
                     </button>
+                  )}
+
+                  <div className="sched-section-title">Exceptions (days off, sick leave, vacation)</div>
+                  <div className="exc-add-row">
+                    <input type="date" value={excDate} onChange={e => setExcDate(e.target.value)} className="exc-date-input" />
+                    <select value={excType} onChange={e => setExcType(e.target.value)} className="exc-type-select">
+                      <option value="DAY_OFF">Day Off</option>
+                      <option value="NO_SHOW">No Show</option>
+                      <option value="SICK_LEAVE">Sick Leave</option>
+                      <option value="VACATION">Vacation</option>
+                      <option value="CUSTOM_HOURS">Custom Hours</option>
+                    </select>
+                    {excType === 'CUSTOM_HOURS' && (
+                      <>
+                        <input type="time" value={excStartTime} onChange={e => setExcStartTime(e.target.value)} placeholder="Start" />
+                        <input type="time" value={excEndTime}   onChange={e => setExcEndTime(e.target.value)}   placeholder="End" />
+                      </>
+                    )}
+                    <button className="staff-action-btn save" onClick={handleSaveException} disabled={excSaving || !selDoctorId}>
+                      {excSaving ? 'Saving…' : 'Add'}
+                    </button>
+                  </div>
+                  {excError && <div className="staff-add-error">{excError}</div>}
+                  {excLoading ? (
+                    <div className="sched-loading">Loading exceptions…</div>
+                  ) : exceptions.length === 0 ? (
+                    <div className="sched-empty">No exceptions in the next 3 months</div>
+                  ) : (
+                    <div className="exc-list">
+                      {exceptions.map(exc => {
+                        const EXC_LABELS: Record<string, string> = { DAY_OFF: 'Day Off', NO_SHOW: 'No Show', SICK_LEAVE: 'Sick Leave', VACATION: 'Vacation', CUSTOM_HOURS: 'Custom Hours' };
+                        const EXC_COLORS: Record<string, string> = { DAY_OFF: '#94A3B8', NO_SHOW: '#F97316', SICK_LEAVE: '#EAB308', VACATION: '#3B82F6', CUSTOM_HOURS: '#10B981' };
+                        const t2 = exc.type ?? 'CUSTOM_HOURS';
+                        return (
+                          <div key={exc.id} className="exc-item">
+                            <span className="exc-date">{new Date(exc.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            <span className="exc-type-badge" style={{ background: (EXC_COLORS[t2] ?? '#888') + '22', color: EXC_COLORS[t2] ?? '#888', border: `1px solid ${EXC_COLORS[t2] ?? '#888'}` }}>
+                              {EXC_LABELS[t2] ?? t2}
+                            </span>
+                            {exc.type === 'CUSTOM_HOURS' && exc.startTime && exc.endTime && (
+                              <span className="exc-hours">{exc.startTime}–{exc.endTime}</span>
+                            )}
+                            <button className="exc-delete-btn" onClick={() => handleDeleteException(exc.id)}>✕</button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               )}
