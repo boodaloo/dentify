@@ -178,6 +178,7 @@ const IconEye         = () => <svg width="16" height="16" viewBox="0 0 24 24" fi
 const IconMapPin      = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
 const IconChevDown    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>;
 const IconPalette     = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>;
+const IconUsers       = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
 
 // ─── Status Legend ────────────────────────────────────────────────────────────
 
@@ -1054,6 +1055,209 @@ const MiniCalendar: React.FC<{
   );
 };
 
+// ─── Doctor Columns View ───────────────────────────────────────────────────────
+
+const DoctorColumnsView: React.FC<{
+  doctors: any[];
+  currentDate: Date;
+  appointments: any[];
+  today: Date;
+  locale: string;
+  selectedApt: any;
+  hours: number[];
+  gridMin: number;
+  isLoading: boolean;
+  workingHours?: any[];
+  slotMin: number;
+  colorMode: 'status' | 'doctor';
+  doctorSchedules: Record<string, any[]>;
+  onSelect: (apt: any) => void;
+  onDoubleClick: (apt: any) => void;
+  onContextMenu: (e: React.MouseEvent, apt: any) => void;
+  onSlotContextMenu: (e: React.MouseEvent, date: Date, hour: number, minute: number) => void;
+  gridRef: React.RefObject<HTMLDivElement | null>;
+}> = ({ doctors, currentDate, appointments, today, locale, selectedApt, hours, gridMin, isLoading, workingHours, colorMode, doctorSchedules, onSelect, onDoubleClick, onContextMenu, onSlotContextMenu, gridRef }) => {
+  const startHour = hours[0] ?? 8;
+  const isToday = currentDate.toDateString() === today.toDateString();
+  const [tooltip, setTooltip] = useState<{ apt: any; x: number; y: number } | null>(null);
+
+  const dayWH = workingHours ? getWorkingHoursForDay(workingHours, currentDate.getDay()) : null;
+
+  // Get a specific doctor's working hours for the current day
+  const getDocDayWH = (doctorId: string): { start: number; end: number } | null => {
+    const sched = doctorSchedules[doctorId] ?? [];
+    const jsDay = currentDate.getDay();
+    const schedDay = jsDay === 0 ? 6 : jsDay - 1; // Mon=0 convention
+    const entry = sched.find(s => s.dayOfWeek === schedDay);
+    if (!entry || !entry.isWorking) return null;
+    return { start: parseInt(entry.startTime), end: parseInt(entry.endTime) };
+  };
+
+  const unassignedApts = appointments.filter(a => !a.doctorId);
+  type ColDef = { id: string; name: string; doctor: any | null };
+  const columns: ColDef[] = [
+    ...doctors.map(d => ({ id: d.userId || d.id, name: d.user?.name || d.name || 'Doctor', doctor: d })),
+    ...(unassignedApts.length > 0 ? [{ id: '__unassigned__', name: 'Unassigned', doctor: null }] : []),
+  ];
+  if (columns.length === 0) {
+    columns.push({ id: '__unassigned__', name: 'All appointments', doctor: null });
+  }
+
+  const getColApts = (colId: string) => {
+    if (colId === '__unassigned__') return appointments.filter(a => !a.doctorId);
+    return appointments.filter(a => (a.doctorId === colId));
+  };
+
+  const aptPositionStyle = (apt: any, colIndex = 0, totalCols = 1): React.CSSProperties => {
+    const start = new Date(apt.startTime);
+    const end = new Date(apt.endTime);
+    const top    = (start.getHours() + start.getMinutes() / 60 - startHour) * SLOT_H + 2;
+    const height = Math.max(((end.getTime() - start.getTime()) / 3600000) * SLOT_H - 4, 28);
+    if (totalCols <= 1) return { top: `${top}px`, height: `${height}px` };
+    const pct = 100 / totalCols;
+    return {
+      top:    `${top}px`,
+      height: `${height}px`,
+      left:   `calc(${colIndex * pct}% + 4px)`,
+      right:  'auto',
+      width:  `calc(${pct}% - 6px)`,
+    };
+  };
+
+  const nowTop = `${(today.getHours() + today.getMinutes() / 60 - startHour) * SLOT_H}px`;
+  const colCount = columns.length;
+
+  return (
+    <>
+      {/* Header row: one cell per doctor */}
+      <div className="grid-header" style={{ gridTemplateColumns: `72px repeat(${colCount}, 1fr)` }}>
+        <div className="time-col-header" />
+        {columns.map(col => {
+          const doctorColor = col.doctor ? getDoctorColor(col.id, doctors) : '#94A3B8';
+          const colApts = getColApts(col.id);
+          return (
+            <div key={col.id} className="day-col-header doctor-col-header">
+              <div className="doctor-col-avatar">
+                {col.doctor ? (
+                  <Avatar size={30} name={col.name} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
+                ) : (
+                  <div className="doctor-col-avatar-placeholder"><IconUsers /></div>
+                )}
+              </div>
+              <span className="doctor-col-name" style={{ color: doctorColor }}>{col.name}</span>
+              <span className="day-apt-count">{colApts.length} appts</span>
+              <div className="doctor-col-color-bar" style={{ background: doctorColor }} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Grid body */}
+      <div className="grid-content" ref={gridRef}>
+        <div className="time-labels-col">
+          {hours.flatMap(h => {
+            const subCount = 60 / gridMin;
+            const subH = SLOT_H / subCount;
+            return Array.from({ length: subCount }, (_, si) => {
+              const minute = si * gridMin;
+              return (
+                <div
+                  key={`${h}-${si}`}
+                  className={`time-label ${si === 0 ? 'hour-label' : 'sub-label'}`}
+                  style={{ height: `${subH}px` }}
+                >
+                  {si === 0 ? `${h}:00` : (gridMin < 60 ? `${String(minute).padStart(2,'0')}` : '')}
+                </div>
+              );
+            });
+          })}
+        </div>
+
+        <div className="calendar-body" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
+          {columns.map(col => {
+            const doctorColor = col.doctor ? getDoctorColor(col.id, doctors) : '#94A3B8';
+            const colApts = layoutDayAppointments(getColApts(col.id));
+            // Use doctor-specific schedule if available, fall back to clinic hours
+            const docWH = col.doctor ? getDocDayWH(col.id) : null;
+            const effectiveWH = docWH ?? dayWH;
+            return (
+              <div key={col.id} className="day-column doctor-column">
+                {/* slot cells */}
+                {hours.flatMap(h => {
+                  const offHours = effectiveWH ? (h < effectiveWH.start || h >= effectiveWH.end) : false;
+                  const subCount = 60 / gridMin;
+                  const subH = SLOT_H / subCount;
+                  return Array.from({ length: subCount }, (_, si) => {
+                    const minute = si * gridMin;
+                    return (
+                      <div
+                        key={`${h}-${si}`}
+                        className={`hour-slot ${si === 0 ? 'hour-boundary' : 'sub-slot'} ${offHours ? 'off-hours' : ''}`}
+                        style={{ height: `${subH}px` }}
+                        onContextMenu={e => { e.preventDefault(); onSlotContextMenu(e, currentDate, h, minute); }}
+                      />
+                    );
+                  });
+                })}
+
+                {isToday && (
+                  <div className="now-line" style={{ top: nowTop }}>
+                    <div className="now-handle">NOW</div>
+                  </div>
+                )}
+
+                {/* Appointments */}
+                {isLoading
+                  ? SKEL[0].map((b, i) => {
+                      const top    = (b.h + b.m / 60 - startHour) * SLOT_H;
+                      const height = (b.dur / 60) * SLOT_H - 4;
+                      if (top < 0) return null;
+                      return <div key={i} className="skeleton-block" style={{ top: `${top}px`, height: `${height}px` }} />;
+                    })
+                  : colApts.map(({ apt, colIndex, totalCols }) => {
+                      const aptDoctorColor = apt.doctorId ? getDoctorColor(apt.doctorId, doctors) : doctorColor;
+                      const isDocMode = colorMode === 'doctor';
+                      const blockClass = `calendar-apt-block ${isDocMode ? 'custom-color' : (apt.color ? 'custom-color' : statusColor[apt.status] || 'scheduled')} ${selectedApt?.id === apt.id ? 'selected' : ''}`;
+                      const blockStyle: React.CSSProperties = {
+                        ...aptPositionStyle(apt, colIndex, totalCols),
+                        ...(apt.color && !isDocMode ? { background: apt.color + '22', borderLeftColor: apt.color } :
+                            isDocMode ? { background: aptDoctorColor + '22', borderLeftColor: aptDoctorColor } : {}),
+                        cursor: 'pointer',
+                      };
+                      return (
+                        <div
+                          key={apt.id}
+                          className={blockClass}
+                          style={blockStyle}
+                          onClick={() => onSelect(apt)}
+                          onDoubleClick={() => onDoubleClick(apt)}
+                          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, apt); }}
+                          onMouseEnter={e => {
+                            const r = e.currentTarget.getBoundingClientRect();
+                            setTooltip({ apt, x: r.right + 10, y: r.top });
+                          }}
+                          onMouseLeave={() => setTooltip(null)}
+                        >
+                          <div className="apt-doctor-strip" style={{ background: aptDoctorColor }} />
+                          <div className="apt-block-time">
+                            {new Date(apt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div className="apt-name">{apt.patient?.lastName ?? '—'}</div>
+                          <div className="apt-proc">{apt.notes || 'Checkup'}</div>
+                        </div>
+                      );
+                    })
+                }
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {tooltip && <AptTooltip apt={tooltip.apt} x={tooltip.x} y={tooltip.y} locale={locale} />}
+    </>
+  );
+};
+
 // ─── Calendar ─────────────────────────────────────────────────────────────────
 
 const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ onOpenPatient }) => {
@@ -1069,6 +1273,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
   const [showCancelled, setShowCancelled] = useState(false);
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [doctors, setDoctors] = useState<any[]>([]);
+  const [doctorSchedules, setDoctorSchedules] = useState<Record<string, any[]>>({});
   const [colorMode] = useState<'status' | 'doctor'>(() =>
     (localStorage.getItem(COLOR_MODE_KEY) as 'status' | 'doctor') || 'status'
   );
@@ -1159,7 +1364,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
 
   // Scroll to current time on mount (time-grid views only)
   useEffect(() => {
-    if (gridRef.current && (view === 'week' || view === 'day')) {
+    if (gridRef.current && (view === 'week' || view === 'day' || view === 'doctors')) {
       const hour = today.getHours();
       const startHour = calendarHours[0] ?? 8;
       const offset = (hour - startHour) * SLOT_H - 60;
@@ -1168,7 +1373,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
   }, [isLoading, view, calendarHours]);
 
   const getDateRange = () => {
-    if (view === 'day') {
+    if (view === 'day' || view === 'doctors') {
       const start = new Date(currentDate); start.setHours(0, 0, 0, 0);
       const end = new Date(currentDate); end.setHours(23, 59, 59, 999);
       return { start, end };
@@ -1204,6 +1409,29 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
     }).catch(() => {});
   }, []);
 
+  // Fetch schedules for all doctors when entering doctors view
+  useEffect(() => {
+    if (view !== 'doctors' || !doctors.length || !selectedBranchId) return;
+    const missingIds = doctors
+      .map((d: any) => d.userId || d.id)
+      .filter(id => !doctorSchedules[id]);
+    if (!missingIds.length) return;
+
+    Promise.all(
+      missingIds.map(id =>
+        api.get(`/staff/${id}/schedule`, { branchId: selectedBranchId })
+          .then((data: any) => ({ id, rows: Array.isArray(data) ? data : (data?.data ?? []) }))
+          .catch(() => ({ id, rows: [] }))
+      )
+    ).then(results => {
+      setDoctorSchedules(prev => {
+        const next = { ...prev };
+        results.forEach(({ id, rows }) => { next[id] = rows; });
+        return next;
+      });
+    });
+  }, [view, doctors, selectedBranchId]);
+
   // Close branch dropdown on outside click
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -1238,7 +1466,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
 
   const navigate = (dir: number) => {
     const d = new Date(currentDate);
-    if (view === 'day') {
+    if (view === 'day' || view === 'doctors') {
       d.setDate(d.getDate() + dir);
     } else if (view === 'month') {
       d.setMonth(d.getMonth() + dir);
@@ -1249,7 +1477,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
   };
 
   const rangeLabel = () => {
-    if (view === 'day') {
+    if (view === 'day' || view === 'doctors') {
       return currentDate.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     }
     if (view === 'month') {
@@ -1464,6 +1692,13 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
                 {t(`calendar.${v}`)}
               </button>
             ))}
+            <button
+              className={`toggle-item toggle-item-doctors ${view === 'doctors' ? 'active' : ''}`}
+              onClick={() => setView('doctors')}
+              title="Doctors view — columns per doctor"
+            >
+              <IconUsers />
+            </button>
           </div>
           <button className="icon-btn"><IconFilter /></button>
           <button className="new-apt-btn flex items-center gap-s" onClick={() => { setEditingApt(null); setIsModalOpen(true); }}>
@@ -1473,7 +1708,7 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
       </header>
 
       {/* Stats strip */}
-      {!isLoading && filteredAppointments.length > 0 && (view === 'week' || view === 'day') && (
+      {!isLoading && filteredAppointments.length > 0 && (view === 'week' || view === 'day' || view === 'doctors') && (
         <div className="stats-strip">
           {(() => {
             const total = filteredAppointments.length;
@@ -1512,6 +1747,27 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
               onDoubleClick={handleDoubleClick}
               onContextMenu={handleCtxApt}
               onSlotContextMenu={handleCtxSlot}
+            />
+          ) : view === 'doctors' ? (
+            <DoctorColumnsView
+              doctors={doctors}
+              currentDate={currentDate}
+              appointments={filteredAppointments}
+              today={today}
+              locale={locale}
+              selectedApt={selectedApt}
+              hours={calendarHours}
+              gridMin={gridMin}
+              isLoading={isLoading}
+              workingHours={branches.find(b => b.id === selectedBranchId)?.workingHours}
+              slotMin={slotMin}
+              colorMode={colorMode}
+              doctorSchedules={doctorSchedules}
+              onSelect={handleSelect}
+              onDoubleClick={handleDoubleClick}
+              onContextMenu={handleCtxApt}
+              onSlotContextMenu={handleCtxSlot}
+              gridRef={gridRef}
             />
           ) : (
             <TimeGrid

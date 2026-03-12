@@ -1,7 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import Avatar from 'boring-avatars';
 import { api } from '../services/api';
 import './Settings.css';
+
+const getCurrentUser = (): any => {
+  try { return JSON.parse(localStorage.getItem('orisios_user') || '{}'); }
+  catch { return {}; }
+};
+const canManageStaff = (): boolean => {
+  const u = getCurrentUser();
+  return u.isOwner === true || u.role === 'OWNER' || u.role === 'ADMIN';
+};
+
+const STAFF_ROLES = ['DOCTOR', 'ADMIN', 'RECEPTIONIST', 'ASSISTANT', 'NURSE'];
+const ROLE_COLOR: Record<string, string> = {
+  OWNER:        '#7C3AED',
+  ADMIN:        '#2563EB',
+  DOCTOR:       '#0D9488',
+  RECEPTIONIST: '#D97706',
+  ASSISTANT:    '#6B7280',
+  NURSE:        '#EC4899',
+};
 
 const SLOT_MIN_KEY  = 'calendarSlotMin';
 const GRID_MIN_KEY  = 'calendarGridMin';
@@ -16,7 +36,16 @@ for (let h = 6; h <= 23; h++) {
   if (h < 23) TIME_OPTIONS.push(`${String(h).padStart(2,'0')}:30`);
 }
 
-type WorkingHour = { dayOfWeek: number; isOpen: boolean; startTime: string; endTime: string };
+type WorkingHour    = { dayOfWeek: number; isOpen: boolean; startTime: string; endTime: string };
+type DoctorSchedRow = { dayOfWeek: number; isWorking: boolean; startTime: string; endTime: string };
+
+const defaultDoctorSchedule = (): DoctorSchedRow[] =>
+  Array.from({ length: 7 }, (_, i) => ({
+    dayOfWeek: i,
+    isWorking: i < 5,
+    startTime: '09:00',
+    endTime:   '18:00',
+  }));
 
 const defaultHours = (): WorkingHour[] =>
   Array.from({ length: 7 }, (_, i) => ({
@@ -31,6 +60,7 @@ const IconGlobe    = () => <svg width="20" height="20" viewBox="0 0 24 24" fill=
 const IconBell     = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>;
 const IconLock     = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
 const IconCalendar = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>;
+const IconStaff    = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
 
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -47,6 +77,24 @@ const Settings: React.FC = () => {
   const [isHoursSaving, setIsHoursSaving] = useState(false);
   const [hoursSaveStatus, setHoursSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  // Staff management state (OWNER/ADMIN only)
+  const [allStaff, setAllStaff]             = useState<any[]>([]);
+  const [staffMgmtLoading, setStaffMgmtLoading] = useState(false);
+  const [showAddStaff, setShowAddStaff]     = useState(false);
+  const [addForm, setAddForm]               = useState({ email: '', password: '', name: '', phone: '', title: '', role: 'DOCTOR' });
+  const [addError, setAddError]             = useState('');
+  const [addSaving, setAddSaving]           = useState(false);
+  const [editingStaff, setEditingStaff]     = useState<{ id: string; role: string; isActive: boolean } | null>(null);
+  const [editSaving, setEditSaving]         = useState(false);
+
+  // Doctor schedules state
+  const [staffList, setStaffList]         = useState<any[]>([]);
+  const [selDoctorId, setSelDoctorId]     = useState('');
+  const [doctorSched, setDoctorSched]     = useState<DoctorSchedRow[]>(defaultDoctorSchedule());
+  const [docSchedLoading, setDocSchedLoading] = useState(false);
+  const [docSchedSaving, setDocSchedSaving]   = useState(false);
+  const [docSchedStatus, setDocSchedStatus]   = useState<'idle'|'success'|'error'>('idle');
+
   // Rooms state
   const [rooms, setRooms]           = useState<any[]>([]);
   const [newRoomName, setNewRoomName] = useState('');
@@ -60,6 +108,31 @@ const Settings: React.FC = () => {
     email: '',
     website: '',
   });
+
+  // Load staff list once
+  useEffect(() => {
+    api.get('/staff', { role: 'DOCTOR', limit: '100' }).then((res: any) => {
+      const items = Array.isArray(res) ? res : (res?.data?.items ?? res?.data ?? []);
+      setStaffList(Array.isArray(items) ? items : []);
+    }).catch(() => {});
+  }, []);
+
+  // Load doctor schedule when doctor selection or branchId changes
+  useEffect(() => {
+    if (!selDoctorId || !branchId) return;
+    setDocSchedLoading(true);
+    api.get(`/staff/${selDoctorId}/schedule`, { branchId }).then((res: any) => {
+      const rows: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+      // Merge API rows with defaults to ensure all 7 days present
+      const merged = defaultDoctorSchedule().map(def => {
+        const saved = rows.find((r: any) => r.dayOfWeek === def.dayOfWeek);
+        return saved ? { dayOfWeek: saved.dayOfWeek, isWorking: saved.isWorking, startTime: saved.startTime, endTime: saved.endTime } : def;
+      });
+      setDoctorSched(merged);
+    }).catch(() => {
+      setDoctorSched(defaultDoctorSchedule());
+    }).finally(() => setDocSchedLoading(false));
+  }, [selDoctorId, branchId]);
 
   useEffect(() => {
     api.get('/branches').then((res: any) => {
@@ -159,6 +232,89 @@ const Settings: React.FC = () => {
     }
   };
 
+  // ── Staff management ──────────────────────────────────────────────────────
+
+  const loadAllStaff = () => {
+    setStaffMgmtLoading(true);
+    api.get('/staff', { limit: '200' }).then((res: any) => {
+      const items = Array.isArray(res) ? res : (res?.data?.items ?? res?.data ?? []);
+      setAllStaff(Array.isArray(items) ? items : []);
+    }).catch(() => {}).finally(() => setStaffMgmtLoading(false));
+  };
+
+  const handleAddStaff = async () => {
+    if (!addForm.email.trim() || !addForm.password.trim() || !addForm.name.trim()) {
+      setAddError('Email, password and name are required');
+      return;
+    }
+    setAddSaving(true);
+    setAddError('');
+    try {
+      await api.post('/staff', {
+        email:    addForm.email.trim(),
+        password: addForm.password.trim(),
+        name:     addForm.name.trim(),
+        phone:    addForm.phone.trim() || undefined,
+        title:    addForm.title.trim() || undefined,
+        role:     addForm.role,
+        branchIds: branchId ? [branchId] : [],
+      });
+      setShowAddStaff(false);
+      setAddForm({ email: '', password: '', name: '', phone: '', title: '', role: 'DOCTOR' });
+      loadAllStaff();
+    } catch (e: any) {
+      setAddError(e?.message || 'Failed to add staff member');
+    } finally {
+      setAddSaving(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingStaff) return;
+    setEditSaving(true);
+    try {
+      await api.put(`/staff/${editingStaff.id}`, { role: editingStaff.role, isActive: editingStaff.isActive });
+      setEditingStaff(null);
+      loadAllStaff();
+    } catch {}
+    finally { setEditSaving(false); }
+  };
+
+  const handleDeactivate = async (userId: string, name: string) => {
+    if (!window.confirm(`Deactivate ${name}? They will lose access to the system.`)) return;
+    try {
+      await api.delete(`/staff/${userId}`);
+      loadAllStaff();
+    } catch {}
+  };
+
+  const updateDocSched = (dayOfWeek: number, field: keyof DoctorSchedRow, value: any) => {
+    setDoctorSched(prev => prev.map(d => d.dayOfWeek === dayOfWeek ? { ...d, [field]: value } : d));
+  };
+
+  const handleSaveDoctorSchedule = async () => {
+    if (!selDoctorId || !branchId) return;
+    setDocSchedSaving(true);
+    setDocSchedStatus('idle');
+    try {
+      await api.put(`/staff/${selDoctorId}/schedule`, {
+        branchId,
+        days: doctorSched.map(d => ({
+          dayOfWeek: d.dayOfWeek,
+          startTime: d.startTime,
+          endTime:   d.endTime,
+          isWorking: d.isWorking,
+        })),
+      });
+      setDocSchedStatus('success');
+      setTimeout(() => setDocSchedStatus('idle'), 3000);
+    } catch {
+      setDocSchedStatus('error');
+    } finally {
+      setDocSchedSaving(false);
+    }
+  };
+
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
   };
@@ -207,6 +363,22 @@ const Settings: React.FC = () => {
             <IconCalendar />
             <span>Calendar</span>
           </button>
+          <button
+            className={`settings-nav-item ${activeTab === 'staff-schedules' ? 'active' : ''}`}
+            onClick={() => setActiveTab('staff-schedules')}
+          >
+            <IconStaff />
+            <span>Staff Schedules</span>
+          </button>
+          {canManageStaff() && (
+            <button
+              className={`settings-nav-item ${activeTab === 'staff-management' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('staff-management'); loadAllStaff(); }}
+            >
+              <IconUser />
+              <span>Staff</span>
+            </button>
+          )}
         </aside>
 
         <main className="settings-content card flex-1">
@@ -488,6 +660,306 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+          {activeTab === 'staff-management' && canManageStaff() && (
+            <div className="settings-section">
+              <div className="staff-mgmt-header">
+                <div>
+                  <h3>Staff Management</h3>
+                  <p className="settings-description">Add, edit and deactivate clinic staff. Only owners and administrators can manage staff.</p>
+                </div>
+                <button
+                  className="slot-option-btn active"
+                  style={{ whiteSpace: 'nowrap', alignSelf: 'flex-start' }}
+                  onClick={() => { setShowAddStaff(p => !p); setAddError(''); }}
+                >
+                  {showAddStaff ? '✕ Cancel' : '+ Add Staff'}
+                </button>
+              </div>
+
+              {/* Add staff form */}
+              {showAddStaff && (
+                <div className="staff-add-form mt-l">
+                  <div className="staff-add-title">New Staff Member</div>
+                  {addError && <div className="staff-add-error">{addError}</div>}
+                  <div className="staff-add-grid">
+                    <div className="staff-add-field">
+                      <label>Full name <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input
+                        type="text"
+                        placeholder="Dr. Ivan Ivanov"
+                        value={addForm.name}
+                        onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="staff-add-field">
+                      <label>Role <span style={{ color: '#ef4444' }}>*</span></label>
+                      <select
+                        value={addForm.role}
+                        onChange={e => setAddForm(p => ({ ...p, role: e.target.value }))}
+                      >
+                        {STAFF_ROLES.map(r => <option key={r} value={r}>{r.charAt(0) + r.slice(1).toLowerCase()}</option>)}
+                      </select>
+                    </div>
+                    <div className="staff-add-field">
+                      <label>Email <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input
+                        type="email"
+                        placeholder="doctor@clinic.com"
+                        value={addForm.email}
+                        onChange={e => setAddForm(p => ({ ...p, email: e.target.value }))}
+                      />
+                    </div>
+                    <div className="staff-add-field">
+                      <label>Password <span style={{ color: '#ef4444' }}>*</span></label>
+                      <input
+                        type="password"
+                        placeholder="Temporary password"
+                        value={addForm.password}
+                        onChange={e => setAddForm(p => ({ ...p, password: e.target.value }))}
+                      />
+                    </div>
+                    <div className="staff-add-field">
+                      <label>Phone</label>
+                      <input
+                        type="tel"
+                        placeholder="+7 999 000 00 00"
+                        value={addForm.phone}
+                        onChange={e => setAddForm(p => ({ ...p, phone: e.target.value }))}
+                      />
+                    </div>
+                    <div className="staff-add-field">
+                      <label>Title / Specialization</label>
+                      <input
+                        type="text"
+                        placeholder="Orthodontist, Surgeon…"
+                        value={addForm.title}
+                        onChange={e => setAddForm(p => ({ ...p, title: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    className="slot-option-btn active mt-m"
+                    onClick={handleAddStaff}
+                    disabled={addSaving}
+                  >
+                    {addSaving ? 'Adding…' : 'Add staff member'}
+                  </button>
+                </div>
+              )}
+
+              {/* Staff list */}
+              <div className="staff-list mt-l">
+                {staffMgmtLoading && (
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', padding: '8px 0' }}>Loading staff…</div>
+                )}
+                {!staffMgmtLoading && allStaff.length === 0 && (
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', padding: '8px 0' }}>No staff members found.</div>
+                )}
+                {allStaff.map((member: any) => {
+                  const userId   = member.userId || member.id;
+                  const name     = member.user?.name || member.name || 'Unknown';
+                  const email    = member.user?.email || member.email || '';
+                  const phone    = member.user?.phone || member.phone || '';
+                  const title    = member.user?.title || member.title || '';
+                  const role     = member.role || 'STAFF';
+                  const isActive = member.isActive !== false;
+                  const isEditing = editingStaff?.id === userId;
+                  const currentUserId = getCurrentUser().id;
+                  const isSelf = userId === currentUserId;
+
+                  return (
+                    <div key={userId} className={`staff-item ${!isActive ? 'inactive' : ''}`}>
+                      <div className="staff-item-avatar">
+                        <Avatar size={40} name={name} variant="beam" colors={['#0D7377','#14919B','#45B7A0','#F2CC8F','#FF6B6B']} />
+                      </div>
+
+                      <div className="staff-item-info">
+                        <div className="staff-item-name">
+                          {name}
+                          {isSelf && <span className="staff-item-self-badge">You</span>}
+                        </div>
+                        <div className="staff-item-meta">
+                          {email && <span>{email}</span>}
+                          {phone && <span>· {phone}</span>}
+                          {title && <span>· {title}</span>}
+                        </div>
+                      </div>
+
+                      <div className="staff-item-right">
+                        {isEditing ? (
+                          <div className="staff-edit-row">
+                            <select
+                              className="wh-time-select"
+                              value={editingStaff.role}
+                              onChange={e => setEditingStaff(p => p ? { ...p, role: e.target.value } : p)}
+                            >
+                              {STAFF_ROLES.map(r => <option key={r} value={r}>{r.charAt(0) + r.slice(1).toLowerCase()}</option>)}
+                            </select>
+                            <label className="wh-toggle" style={{ gap: '6px' }}>
+                              <input
+                                type="checkbox"
+                                checked={editingStaff.isActive}
+                                onChange={e => setEditingStaff(p => p ? { ...p, isActive: e.target.checked } : p)}
+                              />
+                              <span className="wh-toggle-track" />
+                              <span className="wh-toggle-label" style={{ width: 'auto', fontSize: '12px' }}>
+                                {editingStaff.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </label>
+                            <button className="staff-action-btn save" onClick={handleSaveEdit} disabled={editSaving}>
+                              {editSaving ? '…' : '✓'}
+                            </button>
+                            <button className="staff-action-btn" onClick={() => setEditingStaff(null)}>✕</button>
+                          </div>
+                        ) : (
+                          <div className="staff-item-badges">
+                            <span
+                              className="staff-role-badge"
+                              style={{ background: (ROLE_COLOR[role] ?? '#6B7280') + '18', color: ROLE_COLOR[role] ?? '#6B7280', borderColor: (ROLE_COLOR[role] ?? '#6B7280') + '40' }}
+                            >
+                              {role.charAt(0) + role.slice(1).toLowerCase()}
+                            </span>
+                            {!isActive && <span className="staff-inactive-badge">Inactive</span>}
+                          </div>
+                        )}
+
+                        {!isEditing && !isSelf && (
+                          <div className="staff-item-actions">
+                            <button
+                              className="staff-action-btn"
+                              title="Edit role"
+                              onClick={() => setEditingStaff({ id: userId, role, isActive })}
+                            >
+                              ✏️
+                            </button>
+                            {isActive && (
+                              <button
+                                className="staff-action-btn danger"
+                                title="Deactivate"
+                                onClick={() => handleDeactivate(userId, name)}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'staff-schedules' && (
+            <div className="settings-section">
+              <h3>Staff Schedules</h3>
+              <p className="settings-description">
+                Set each doctor's weekly working hours. This controls appointment availability
+                and is used by the booking widget and external integrations.
+                If a doctor has no schedule set, one will be created automatically when their first appointment is booked.
+              </p>
+
+              {/* Doctor selector */}
+              <div className="settings-field-group mt-l">
+                <div className="settings-field-label">Doctor</div>
+                <div className="settings-field-desc">Select a staff member to view and edit their schedule.</div>
+                <select
+                  className="wh-time-select mt-m"
+                  style={{ width: '100%', maxWidth: '320px', height: '38px' }}
+                  value={selDoctorId}
+                  onChange={e => { setSelDoctorId(e.target.value); setDocSchedStatus('idle'); }}
+                >
+                  <option value="">— Choose a doctor —</option>
+                  {staffList.map((d: any) => (
+                    <option key={d.userId || d.id} value={d.userId || d.id}>
+                      {d.user?.name || d.name || `Staff ${d.userId}`}
+                      {d.role ? ` (${d.role.toLowerCase()})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Weekly schedule grid */}
+              {selDoctorId && (
+                <div className="settings-field-group mt-xl">
+                  <div className="settings-field-label">Weekly Schedule</div>
+                  <div className="settings-field-desc">Toggle each day and set working hours. Days marked closed won't be available for booking.</div>
+
+                  {docSchedLoading ? (
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '12px' }}>Loading schedule…</div>
+                  ) : (
+                    <div className="wh-grid mt-m">
+                      {doctorSched.map(day => (
+                        <div key={day.dayOfWeek} className={`wh-row ${!day.isWorking ? 'closed' : ''}`}>
+                          <div className="wh-day-name">
+                            <span className="wh-day-short">{DAY_SHORT[day.dayOfWeek]}</span>
+                            <span className="wh-day-full">{DAY_NAMES[day.dayOfWeek]}</span>
+                          </div>
+
+                          <label className="wh-toggle">
+                            <input
+                              type="checkbox"
+                              checked={day.isWorking}
+                              onChange={e => updateDocSched(day.dayOfWeek, 'isWorking', e.target.checked)}
+                            />
+                            <span className="wh-toggle-track" />
+                            <span className="wh-toggle-label">{day.isWorking ? 'Works' : 'Day off'}</span>
+                          </label>
+
+                          {day.isWorking ? (
+                            <div className="wh-times">
+                              <select
+                                className="wh-time-select"
+                                value={day.startTime}
+                                onChange={e => updateDocSched(day.dayOfWeek, 'startTime', e.target.value)}
+                              >
+                                {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                              <span className="wh-dash">—</span>
+                              <select
+                                className="wh-time-select"
+                                value={day.endTime}
+                                onChange={e => updateDocSched(day.dayOfWeek, 'endTime', e.target.value)}
+                              >
+                                {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                            </div>
+                          ) : (
+                            <div className="wh-closed-label">Not working</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {docSchedStatus === 'success' && (
+                    <div className="wh-status success mt-m">✓ Schedule saved</div>
+                  )}
+                  {docSchedStatus === 'error' && (
+                    <div className="wh-status error mt-m">Failed to save. Please try again.</div>
+                  )}
+
+                  {!docSchedLoading && (
+                    <button
+                      className="slot-option-btn active mt-m"
+                      onClick={handleSaveDoctorSchedule}
+                      disabled={docSchedSaving || !branchId}
+                      style={{ alignSelf: 'flex-start' }}
+                    >
+                      {docSchedSaving ? 'Saving…' : 'Save schedule'}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {staffList.length === 0 && (
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '16px' }}>
+                  No staff members found. Add doctors in the Staff section first.
+                </div>
+              )}
             </div>
           )}
         </main>

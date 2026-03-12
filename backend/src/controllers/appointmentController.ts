@@ -91,6 +91,28 @@ export const createAppointment = async (req: Request, res: Response) => {
       include: APPOINTMENT_INCLUDE,
     });
 
+    // Auto-create DoctorSchedule for this day-of-week if none exists yet
+    // This records that the doctor works on this weekday (fire-and-forget)
+    if (doctorId) {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const apptStart = new Date(startTime);
+      const apptEnd   = new Date(endTime);
+      const jsDay  = apptStart.getDay();                       // 0=Sun..6=Sat
+      const schedDay = jsDay === 0 ? 6 : jsDay - 1;           // Mon=0 convention
+      const startHH  = `${pad(apptStart.getHours())}:${pad(apptStart.getMinutes())}`;
+      const endHH    = `${pad(apptEnd.getHours())}:${pad(apptEnd.getMinutes())}`;
+
+      prisma.doctorSchedule.findUnique({
+        where: { doctorId_branchId_dayOfWeek: { doctorId, branchId, dayOfWeek: schedDay } },
+      }).then(existing => {
+        if (!existing) {
+          return prisma.doctorSchedule.create({
+            data: { clinicId, doctorId, branchId, dayOfWeek: schedDay, startTime: startHH, endTime: endHH, isWorking: true },
+          });
+        }
+      }).catch(() => {}); // non-critical — do not block response
+    }
+
     return R.created(res, appt);
   } catch (err) {
     return R.serverError(res, err);

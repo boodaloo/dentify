@@ -1499,6 +1499,75 @@
 }
 .search-result-jump:hover { background: rgba(20,145,155,0.16); }
 
+/* ── Doctor Columns View ──────────────────────────────────────────────────── */
+
+.toggle-item-doctors {
+  width: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.doctor-col-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.doctor-col-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-off-white);
+  flex-shrink: 0;
+}
+
+.doctor-col-avatar-placeholder {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-off-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.doctor-col-name {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.doctor-col-color-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+}
+
+.doctor-column {
+  position: relative;
+  border-left: 1px solid var(--border-light);
+}
+
 /* ── Print styles ─────────────────────────────────────────────────────────── */
 
 @media print {

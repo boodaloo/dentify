@@ -403,6 +403,193 @@
 .wh-status.success { background: rgba(69,183,160,0.1); color: var(--secondary-seafoam); }
 .wh-status.error   { background: rgba(255,107,107,0.1); color: var(--accent-coral); }
 
+/* ── Staff Management ─────────────────────────────────────────────────────── */
+
+.staff-mgmt-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.staff-add-form {
+  background: var(--bg-off-white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-m);
+  padding: 16px;
+}
+
+.staff-add-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.staff-add-error {
+  font-size: 13px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-s);
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.staff-add-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.staff-add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.staff-add-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.staff-add-field input,
+.staff-add-field select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-m);
+  background: white;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.staff-add-field input:focus,
+.staff-add-field select:focus {
+  outline: none;
+  border-color: var(--primary-light-teal);
+  box-shadow: 0 0 0 3px rgba(20, 145, 155, 0.1);
+}
+
+.staff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staff-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-m);
+  transition: background 0.1s;
+}
+
+.staff-item:hover { background: var(--bg-off-white); }
+.staff-item.inactive { opacity: 0.55; }
+
+.staff-item-avatar { flex-shrink: 0; }
+
+.staff-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.staff-item-self-badge {
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(20, 145, 155, 0.12);
+  color: var(--primary-light-teal);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.staff-item-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.staff-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.staff-item-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.staff-role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+.staff-inactive-badge {
+  font-size: 11px;
+  color: #9CA3AF;
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+.staff-item-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.staff-action-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-s);
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  color: var(--text-secondary);
+}
+
+.staff-action-btn:hover { background: var(--bg-off-white); color: var(--text-primary); }
+.staff-action-btn.danger:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.staff-action-btn.save { background: rgba(20,145,155,0.08); color: var(--primary-light-teal); border-color: rgba(20,145,155,0.25); }
+.staff-action-btn.save:hover { background: rgba(20,145,155,0.16); }
+
+.staff-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Color mode selection cards */
 .color-mode-options {
   display: flex;
