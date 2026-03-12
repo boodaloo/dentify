@@ -14,6 +14,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSuccess, onCan
     firstName:  initialData?.firstName  || '',
     lastName:   initialData?.lastName   || '',
     middleName: initialData?.middleName || '',
+    snils:      initialData?.snils      || '',
     phone:      initialData?.phone      || '',
     email:      initialData?.email      || '',
     birthDate:  initialData?.birthDate ? new Date(initialData.birthDate).toISOString().split('T')[0] : '',
@@ -37,6 +38,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSuccess, onCan
         firstName:  formData.firstName,
         lastName:   formData.lastName,
         middleName: formData.middleName || undefined,
+        snils:      formData.snils      || undefined,
         phone:      formData.phone      || undefined,
         email:      formData.email      || undefined,
         birthDate:  formData.birthDate  || undefined,
@@ -88,6 +90,18 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSuccess, onCan
           <label>Middle Name</label>
           <input type="text" value={formData.middleName} onChange={handleChange('middleName')} />
         </div>
+      </div>
+
+      {/* SNILS */}
+      <div className="form-group">
+        <label>СНИЛС</label>
+        <input
+          type="text"
+          value={formData.snils}
+          onChange={handleChange('snils')}
+          placeholder="XXX-XXX-XXX XX"
+          maxLength={14}
+        />
       </div>
 
       {/* DOB + Gender */}

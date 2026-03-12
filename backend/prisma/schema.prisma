@@ -415,6 +415,8 @@ model User {
   createdLabInvoices       LabInvoice[]
   issuedDocuments          IssuedDocument[]
   patientDoctors           PatientDoctor[]
+  assignedTasks            ClinicTask[]     @relation("AssignedTasks")
+  createdTasks             ClinicTask[]     @relation("CreatedTasks")
 
   @@map("core_users")
 }
@@ -530,6 +532,8 @@ model Patient {
   calls                Call[]
   issuedDocuments      IssuedDocument[]
   labels               PatientLabelAssignment[]
+  clinicTasks          ClinicTask[]
+  egiszDocuments       EgiszDocument[]
 
   @@unique([clinicId, patientNumber])
   @@map("core_patients")
@@ -1965,4 +1969,100 @@ model VisitFormTemplate {
   updatedAt DateTime @updatedAt
 
   @@map("clin_visit_form_templates")
+}
+
+// ============================================================
+// TASK MANAGER
+// ============================================================
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+model ClinicTask {
+  id              String       @id @default(uuid())
+  clinicId        String
+  title           String
+  description     String?
+  priority        TaskPriority @default(MEDIUM)
+  status          TaskStatus   @default(OPEN)
+  dueDate         DateTime?
+  assignedToId    String?
+  assignedTo      User?        @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  createdByUserId String?
+  createdBy       User?        @relation("CreatedTasks", fields: [createdByUserId], references: [id])
+  patientId       String?
+  patient         Patient?     @relation(fields: [patientId], references: [id])
+  appointmentId   String?
+  completedAt     DateTime?
+  isDeleted       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("core_clinic_tasks")
+}
+
+// ============================================================
+// ЕГИСЗ — Russian State Medical Reporting
+// ============================================================
+
+model EgiszSettings {
+  id          String   @id @default(uuid())
+  clinicId    String   @unique
+  isEnabled   Boolean  @default(false)
+  orgOid      String?
+  orgName     String?
+  apiUrl      String?
+  apiLogin    String?
+  apiPassword String?
+  lastSyncAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("egisz_settings")
+}
+
+enum EgiszDocType {
+  SEMD_OUTPATIENT
+  SEMD_REFERRAL
+  SEMD_PROTOCOL
+}
+
+enum EgiszDocStatus {
+  DRAFT
+  READY
+  SENT
+  ACCEPTED
+  REJECTED
+  ERROR
+}
+
+model EgiszDocument {
+  id              String         @id @default(uuid())
+  clinicId        String
+  patientId       String
+  patient         Patient        @relation(fields: [patientId], references: [id])
+  appointmentId   String?
+  docType         EgiszDocType
+  status          EgiszDocStatus @default(DRAFT)
+  xmlPayload      String?        @db.Text
+  errorMessage    String?
+  sentAt          DateTime?
+  acceptedAt      DateTime?
+  externalId      String?
+  createdByUserId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("egisz_documents")
 }

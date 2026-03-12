@@ -20,6 +20,8 @@ import Loyalty from './pages/Loyalty'
 import Analytics from './pages/Analytics'
 import Integrations from './pages/Integrations'
 import VisitPage from './pages/VisitPage'
+import Tasks from './pages/Tasks'
+import Egisz from './pages/Egisz'
 import './App.css'
 
 function App() {
@@ -123,6 +125,10 @@ function App() {
         return <Analytics />
       case 'integrations':
         return <Integrations />
+      case 'tasks':
+        return <Tasks />
+      case 'egisz':
+        return <Egisz />
       case 'settings':
         return <Settings />
       default:
