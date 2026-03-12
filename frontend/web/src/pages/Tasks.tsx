@@ -109,7 +109,9 @@ const Tasks: React.FC = () => {
   const loadStaff = async () => {
     try {
       const res: any = await api.get('/staff', { limit: '100' });
-      setStaff(res?.data?.items ?? []);
+      // /staff returns UserClinic objects with nested user — flatten to { id: userId, name }
+      const items: any[] = res?.data?.items ?? [];
+      setStaff(items.map((m: any) => ({ id: m.userId ?? m.id, name: m.user?.name ?? m.name ?? '?' })));
     } catch (e) {
       console.error(e);
     }
