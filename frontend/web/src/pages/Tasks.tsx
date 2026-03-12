@@ -52,7 +52,7 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: 'Cancelled',
 };
 
-const STATUS_TABS = ['ALL', 'OPEN', 'IN_PROGRESS', 'DONE'];
+const STATUS_TABS = ['MY', 'ALL', 'OPEN', 'IN_PROGRESS', 'DONE'];
 
 const defaultForm = {
   title: '',
@@ -81,27 +81,35 @@ const Tasks: React.FC = () => {
   const [patientResults, setPatientResults] = useState<PatientSearch[]>([]);
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
 
+  const currentUserId = (() => {
+    try { return JSON.parse(localStorage.getItem('orisios_user') ?? '{}').id ?? ''; } catch { return ''; }
+  })();
+
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = { limit: '200' };
-      if (activeStatus !== 'ALL') params.status = activeStatus;
+      if (activeStatus === 'MY') {
+        params.assignedToId = currentUserId;
+      } else {
+        if (activeStatus !== 'ALL') params.status = activeStatus;
+        if (assigneeFilter) params.assignedToId = assigneeFilter;
+      }
       if (priorityFilter) params.priority = priorityFilter;
-      if (assigneeFilter) params.assignedToId = assigneeFilter;
 
-      const res = await api.get('/tasks', { params });
-      setTasks(res.data?.data?.items ?? []);
+      const res: any = await api.get('/tasks', params);
+      setTasks(res?.data?.items ?? []);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [activeStatus, priorityFilter, assigneeFilter]);
+  }, [activeStatus, priorityFilter, assigneeFilter, currentUserId]);
 
   const loadStaff = async () => {
     try {
-      const res = await api.get('/staff', { params: { limit: '100' } });
-      setStaff(res.data?.data?.items ?? res.data?.data ?? []);
+      const res: any = await api.get('/staff', { limit: '100' });
+      setStaff(res?.data?.items ?? []);
     } catch (e) {
       console.error(e);
     }
@@ -118,8 +126,8 @@ const Tasks: React.FC = () => {
   const searchPatients = async (q: string) => {
     if (!q || q.length < 2) { setPatientResults([]); return; }
     try {
-      const res = await api.get('/patients', { params: { search: q, limit: '10' } });
-      setPatientResults(res.data?.data?.items ?? []);
+      const res: any = await api.get('/patients', { search: q, limit: '10' });
+      setPatientResults(res?.data?.items ?? []);
     } catch (e) {
       setPatientResults([]);
     }
@@ -224,7 +232,7 @@ const Tasks: React.FC = () => {
   const tasksForColumn = (colStatus: string) =>
     tasks.filter((t) => t.status === colStatus);
 
-  const showKanban = activeStatus === 'ALL';
+  const showKanban = activeStatus === 'ALL' || activeStatus === 'MY';
 
   return (
     <div className="tasks-page">
@@ -241,7 +249,7 @@ const Tasks: React.FC = () => {
               className={`tasks-status-tab ${activeStatus === s ? 'active' : ''}`}
               onClick={() => setActiveStatus(s)}
             >
-              {s === 'ALL' ? 'All' : STATUS_LABELS[s]}
+              {s === 'MY' ? '⭐ My Tasks' : s === 'ALL' ? 'All' : STATUS_LABELS[s]}
             </button>
           ))}
         </div>

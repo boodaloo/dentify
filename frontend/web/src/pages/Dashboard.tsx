@@ -171,6 +171,74 @@ const WeeklyChart: React.FC = () => {
   );
 };
 
+// ─── My Tasks Widget ─────────────────────────────────────────────────────────
+
+const PRIORITY_DOT: Record<string, string> = {
+  LOW: '#94A3B8', MEDIUM: '#60A5FA', HIGH: '#F97316', URGENT: '#EF4444',
+};
+
+const MyTasksWidget: React.FC<{ onOpenTasks: () => void }> = ({ onOpenTasks }) => {
+  const [tasks, setTasks]   = useState<any[]>([]);
+  const [loading, setLoad]  = useState(true);
+
+  useEffect(() => {
+    const userId = (() => { try { return JSON.parse(localStorage.getItem('orisios_user') ?? '{}').id ?? ''; } catch { return ''; } })();
+    if (!userId) { setLoad(false); return; }
+    api.get('/tasks', { assignedToId: userId, limit: '5' })
+      .then((res: any) => setTasks(res?.data?.items ?? []))
+      .catch(() => {})
+      .finally(() => setLoad(false));
+  }, []);
+
+  const complete = async (taskId: string) => {
+    await api.put(`/tasks/${taskId}`, { status: 'DONE' }).catch(() => {});
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+  };
+
+  const openCount = tasks.filter(t => t.status !== 'DONE').length;
+  const isOverdue = (d?: string) => d && new Date(d) < new Date();
+
+  return (
+    <div className="tasks-card card">
+      <div className="column-header flex justify-between items-center">
+        <h3>My Tasks</h3>
+        {openCount > 0 && <span className="task-badge">{openCount}</span>}
+      </div>
+      <div className="task-list flex-col gap-m">
+        {loading ? (
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Loading…</div>
+        ) : tasks.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No tasks assigned to you</div>
+        ) : tasks.map(task => (
+          <div key={task.id} className="task-item flex items-center gap-s" style={{ opacity: task.status === 'DONE' ? 0.5 : 1 }}>
+            <input
+              type="checkbox"
+              checked={task.status === 'DONE'}
+              onChange={() => task.status !== 'DONE' && complete(task.id)}
+              style={{ cursor: 'pointer' }}
+            />
+            <span
+              style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: PRIORITY_DOT[task.priority] ?? '#94A3B8',
+              }}
+            />
+            <span style={{ flex: 1, fontSize: 13, textDecoration: task.status === 'DONE' ? 'line-through' : 'none' }}>
+              {task.title}
+            </span>
+            {task.dueDate && (
+              <span style={{ fontSize: 11, color: isOverdue(task.dueDate) && task.status !== 'DONE' ? '#EF4444' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                {new Date(task.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      <button className="add-task-btn" onClick={onOpenTasks}>All tasks →</button>
+    </div>
+  );
+};
+
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 
 const Dashboard: React.FC = () => {
@@ -346,27 +414,7 @@ const Dashboard: React.FC = () => {
         <section className="actions-column flex-col gap-l">
 
           {/* Tasks */}
-          <div className="tasks-card card">
-            <div className="column-header flex justify-between items-center">
-              <h3>{t('dashboard.tasks_today')}</h3>
-              <span className="task-badge">3</span>
-            </div>
-            <div className="task-list flex-col gap-m">
-              <label className="task-item flex items-center gap-s">
-                <input type="checkbox" />
-                <span>Call patient about appointment</span>
-              </label>
-              <label className="task-item flex items-center gap-s checked">
-                <input type="checkbox" defaultChecked />
-                <span>Review lab results</span>
-              </label>
-              <label className="task-item flex items-center gap-s">
-                <input type="checkbox" />
-                <span>Update patient records</span>
-              </label>
-            </div>
-            <button className="add-task-btn">+ {t('nav.tasks')}</button>
-          </div>
+          <MyTasksWidget onOpenTasks={() => {}} />
 
           {/* Quick Actions */}
           <div className="quick-actions-card card">
