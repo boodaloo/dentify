@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import './Settings.css';
 
-const SLOT_MIN_KEY = 'calendarSlotMin';
+const SLOT_MIN_KEY  = 'calendarSlotMin';
+const GRID_MIN_KEY  = 'calendarGridMin';
 
 // Mon=0 … Sun=6  (same convention as branchController seed)
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -34,7 +35,8 @@ const IconCalendar = () => <svg width="20" height="20" viewBox="0 0 24 24" fill=
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
-  const [slotMin, setSlotMin] = useState(() => parseInt(localStorage.getItem(SLOT_MIN_KEY) || '15', 10));
+  const [slotMin,  setSlotMin]  = useState(() => parseInt(localStorage.getItem(SLOT_MIN_KEY) || '15', 10));
+  const [gridMin,  setGridMin]  = useState(() => parseInt(localStorage.getItem(GRID_MIN_KEY) || '60', 10));
   const [branchId, setBranchId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -318,6 +320,31 @@ const Settings: React.FC = () => {
                     const m = totalMin % 60;
                     return ` → ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
                   }).join('')} …
+                </div>
+              </div>
+
+              {/* Grid divisions */}
+              <div className="settings-field-group mt-xl">
+                <div className="settings-field-label">Calendar grid divisions</div>
+                <div className="settings-field-desc">Sets how the time grid is divided in day and week views.</div>
+                <div className="slot-options mt-m">
+                  {[{ val: 60, label: '1 hour' }, { val: 30, label: '30 min' }, { val: 15, label: '15 min' }].map(({ val, label }) => (
+                    <button
+                      key={val}
+                      className={`slot-option-btn ${gridMin === val ? 'active' : ''}`}
+                      onClick={() => { setGridMin(val); localStorage.setItem(GRID_MIN_KEY, String(val)); }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid-preview mt-m">
+                  {Array.from({ length: 60 / gridMin }, (_, i) => (
+                    <div key={i} className={`grid-preview-row ${i === 0 ? 'hour' : 'sub'}`}>
+                      {i === 0 ? '09:00' : `09:${String(i * gridMin).padStart(2, '0')}`}
+                    </div>
+                  ))}
+                  <div className="grid-preview-row hour">10:00</div>
                 </div>
               </div>
 
