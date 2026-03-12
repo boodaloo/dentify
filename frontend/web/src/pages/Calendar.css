@@ -1257,6 +1257,248 @@
   border-top: 1px solid var(--border-light);
 }
 
+/* ── Stats strip ──────────────────────────────────────────────────────────── */
+
+.stats-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+  padding: 6px var(--space-l);
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-m);
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.stats-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.stats-item.total {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.stats-divider {
+  color: var(--border-light);
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ── Day utilization bar ──────────────────────────────────────────────────── */
+
+.day-util-bar-wrap {
+  width: 60%;
+  height: 3px;
+  background: var(--border-light);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.day-util-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* ── Doctor color strip on apt block ─────────────────────────────────────── */
+
+.apt-doctor-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--radius-m) var(--radius-m) 0 0;
+  opacity: 0.9;
+}
+
+/* ── Extended search panel ────────────────────────────────────────────────── */
+
+.search-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 500;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 60px;
+  animation: fadeInOverlay 0.15s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.search-panel {
+  background: white;
+  border-radius: var(--radius-l);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 680px;
+  max-width: 95vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: ctx-appear 0.15s ease;
+}
+
+.search-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.search-panel-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.search-panel-close {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: none;
+  font-size: 16px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-s);
+  transition: background 0.1s;
+}
+.search-panel-close:hover { background: var(--bg-off-white); }
+
+.search-panel-input-row {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.search-panel-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-m);
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-panel-input:focus {
+  border-color: var(--primary-light-teal);
+  box-shadow: 0 0 0 3px rgba(20,145,155,0.1);
+}
+
+.search-panel-btn {
+  height: 40px;
+  padding: 0 20px;
+  background: var(--primary-light-teal);
+  color: white;
+  border-radius: var(--radius-m);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.search-panel-btn:hover:not(:disabled) { background: var(--primary-deep-teal); }
+.search-panel-btn:disabled { opacity: 0.5; cursor: default; }
+
+.search-panel-meta {
+  padding: 8px 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.search-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.search-result-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-m);
+  transition: background 0.1s;
+  cursor: default;
+}
+.search-result-row:hover { background: var(--bg-off-white); }
+
+.search-result-left {
+  flex: 0 0 180px;
+  min-width: 0;
+}
+
+.search-result-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-phone {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.search-result-mid {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-result-datetime {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.search-result-doctor {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.search-result-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.search-result-jump {
+  height: 30px;
+  padding: 0 12px;
+  background: rgba(20,145,155,0.08);
+  color: var(--primary-light-teal);
+  border-radius: var(--radius-m);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.search-result-jump:hover { background: rgba(20,145,155,0.16); }
+
 /* ── Print styles ─────────────────────────────────────────────────────────── */
 
 @media print {

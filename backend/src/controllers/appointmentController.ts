@@ -15,7 +15,7 @@ const APPOINTMENT_INCLUDE = {
 export const getAppointments = async (req: Request, res: Response) => {
   try {
     const clinicId = req.user!.clinicId;
-    const { start, end, doctorId, branchId, status } = req.query;
+    const { start, end, doctorId, branchId, status, q } = req.query;
 
     const where: any = { clinicId, isDeleted: false };
     if (start)    where.startTime = { ...where.startTime, gte: new Date(start as string) };
@@ -23,11 +23,22 @@ export const getAppointments = async (req: Request, res: Response) => {
     if (doctorId) where.doctorId  = doctorId;
     if (branchId) where.branchId  = branchId;
     if (status)   where.status    = status;
+    if (q) {
+      const qStr = (q as string).trim();
+      where.patient = {
+        OR: [
+          { firstName: { contains: qStr, mode: 'insensitive' } },
+          { lastName:  { contains: qStr, mode: 'insensitive' } },
+          { contacts: { some: { value: { contains: qStr } } } },
+        ],
+      };
+    }
 
     const appointments = await prisma.appointment.findMany({
       where,
       include: APPOINTMENT_INCLUDE,
-      orderBy: { startTime: 'asc' },
+      orderBy: { startTime: q ? 'desc' : 'asc' },
+      ...(q ? { take: 150 } : {}),
     });
 
     return R.ok(res, appointments);

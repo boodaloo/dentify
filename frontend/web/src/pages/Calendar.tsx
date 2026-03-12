@@ -32,6 +32,18 @@ const DEFAULT_STATUS_COLORS: Record<string, string> = {
   CANCELLED:   '#5A5A72',
   NO_SHOW:     '#FF6B6B',
 };
+const DOCTOR_PALETTE = [
+  '#6366F1','#8B5CF6','#EC4899','#F59E0B','#10B981',
+  '#3B82F6','#EF4444','#14B8A6','#F97316','#84CC16',
+  '#06B6D4','#A855F7','#F43F5E','#22C55E','#EAB308',
+];
+const getDoctorColor = (doctorId: string | undefined, doctors: any[]): string => {
+  if (!doctorId) return '#94A3B8';
+  const idx = doctors.findIndex((d: any) => d.id === doctorId);
+  return idx >= 0 ? DOCTOR_PALETTE[idx % DOCTOR_PALETTE.length] : '#94A3B8';
+};
+const COLOR_MODE_KEY = 'calendarColorMode';
+
 const STATUS_COLORS_KEY = 'calendarStatusColors';
 const loadStatusColors = (): Record<string, string> => {
   try {
@@ -422,13 +434,16 @@ const TimeGrid: React.FC<{
   gridMin: number;
   isLoading: boolean;
   workingHours?: any[];
+  slotMin: number;
+  doctors: any[];
+  colorMode: 'status' | 'doctor';
   onSelect: (apt: any) => void;
   onDoubleClick: (apt: any) => void;
   onContextMenu: (e: React.MouseEvent, apt: any) => void;
   onSlotContextMenu: (e: React.MouseEvent, date: Date, hour: number, minute: number) => void;
   onDragReschedule: (aptId: string, newStart: string, newEnd: string) => void;
   gridRef: React.RefObject<HTMLDivElement | null>;
-}> = ({ days, appointments, today, locale, selectedApt, hours, gridMin, isLoading, workingHours, onSelect, onDoubleClick, onContextMenu, onSlotContextMenu, onDragReschedule, gridRef }) => {
+}> = ({ days, appointments, today, locale, selectedApt, hours, gridMin, isLoading, workingHours, slotMin, doctors, colorMode, onSelect, onDoubleClick, onContextMenu, onSlotContextMenu, onDragReschedule, gridRef }) => {
   // dayOfWeek in workingHours: 0=Mon … 6=Sun; JS getDay(): 0=Sun … 6=Sat
   const isDayOff = (d: Date) => {
     if (!workingHours?.length) return false;
@@ -600,9 +615,26 @@ const TimeGrid: React.FC<{
             {isDayOff(d) ? (
               <span className="day-off-label">Day off</span>
             ) : (
-              <span className="day-apt-count">
-                {appointments.filter(a => new Date(a.startTime).toDateString() === d.toDateString()).length} appts
-              </span>
+              <>
+                <span className="day-apt-count">
+                  {appointments.filter(a => new Date(a.startTime).toDateString() === d.toDateString()).length} appts
+                </span>
+                {(() => {
+                  const jsDay = d.getDay();
+                  const wDay = jsDay === 0 ? 6 : jsDay - 1;
+                  const wh = workingHours?.find((h: any) => h.dayOfWeek === wDay);
+                  const dayAptCount = appointments.filter(a => new Date(a.startTime).toDateString() === d.toDateString()).length;
+                  if (!wh?.isOpen || dayAptCount === 0) return null;
+                  const totalSlots = Math.max(1, ((parseInt(wh.endTime) - parseInt(wh.startTime)) * 60) / slotMin);
+                  const pct = Math.min(100, Math.round((dayAptCount / totalSlots) * 100));
+                  const color = pct >= 85 ? '#EF4444' : pct >= 60 ? '#F59E0B' : '#10B981';
+                  return (
+                    <div className="day-util-bar-wrap">
+                      <div className="day-util-bar" style={{ width: `${pct}%`, background: color }} />
+                    </div>
+                  );
+                })()}
+              </>
             )}
           </div>
         ))}
@@ -720,15 +752,21 @@ const TimeGrid: React.FC<{
                         )}
 
                         {dayApts.map(({ apt, colIndex, totalCols }) => {
-                          const customStyle = apt.color
-                            ? { background: apt.color + '22', borderLeftColor: apt.color }
-                            : {};
+                          const doctorColor = getDoctorColor(apt.doctorId, doctors);
+                          const isDocMode = colorMode === 'doctor';
+                          const blockClass = `calendar-apt-block ${isDocMode ? 'custom-color' : (apt.color ? 'custom-color' : statusColor[apt.status] || 'scheduled')} ${selectedApt?.id === apt.id ? 'selected' : ''} ${dragGhost?.apt.id === apt.id ? 'dragging' : ''}`;
+                          const blockStyle: React.CSSProperties = {
+                            ...aptStyle(apt, colIndex, totalCols),
+                            ...(apt.color && !isDocMode ? { background: apt.color + '22', borderLeftColor: apt.color } :
+                                isDocMode ? { background: doctorColor + '22', borderLeftColor: doctorColor } : {}),
+                            cursor: dragGhost?.apt.id === apt.id ? 'grabbing' : 'grab',
+                          };
                           const isDragged = dragGhost?.apt.id === apt.id;
                           return (
                             <div
                               key={apt.id}
-                              className={`calendar-apt-block ${apt.color ? 'custom-color' : statusColor[apt.status] || 'scheduled'} ${selectedApt?.id === apt.id ? 'selected' : ''} ${isDragged ? 'dragging' : ''}`}
-                              style={{ ...aptStyle(apt, colIndex, totalCols), ...customStyle, cursor: isDragged ? 'grabbing' : 'grab' }}
+                              className={blockClass}
+                              style={blockStyle}
                               onClick={() => { if (dragWasActive.current) return; onSelect(apt); }}
                               onDoubleClick={() => { if (dragWasActive.current) return; onDoubleClick(apt); }}
                               onContextMenu={e => { e.preventDefault(); e.stopPropagation(); onContextMenu(e, apt); }}
@@ -751,6 +789,9 @@ const TimeGrid: React.FC<{
                               }}
                               onMouseLeave={() => setTooltip(null)}
                             >
+                              {apt.doctor && (
+                                <div className="apt-doctor-strip" style={{ background: doctorColor }} title={apt.doctor.name} />
+                              )}
                               <div className="apt-block-time">
                                 {new Date(apt.startTime).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                               </div>
@@ -847,6 +888,114 @@ const MonthView: React.FC<{
   );
 };
 
+// ─── Search Panel ─────────────────────────────────────────────────────────────
+
+const SearchPanel: React.FC<{
+  onClose: () => void;
+  onJumpTo: (date: Date) => void;
+  locale: string;
+}> = ({ onClose, onJumpTo, locale }) => {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 50); }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleSearch = async () => {
+    if (!query.trim()) return;
+    setIsSearching(true);
+    try {
+      const data = await api.get('/appointments', { q: query.trim() });
+      const items = Array.isArray(data) ? data : (data?.data?.items ?? data?.data ?? []);
+      setResults(items);
+      setSearched(true);
+    } catch {}
+    finally { setIsSearching(false); }
+  };
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const fmtDateTime = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getDate()} ${d.toLocaleDateString(locale, { month: 'short' })} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  return (
+    <div className="search-panel-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="search-panel">
+        <div className="search-panel-header">
+          <span className="search-panel-title">Extended Search</span>
+          <button className="search-panel-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="search-panel-input-row">
+          <input
+            ref={inputRef}
+            className="search-panel-input"
+            placeholder="Patient name or phone number..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          />
+          <button
+            className="search-panel-btn"
+            onClick={handleSearch}
+            disabled={isSearching || !query.trim()}
+          >
+            {isSearching ? '...' : 'Search'}
+          </button>
+        </div>
+
+        {searched && (
+          <div className="search-panel-meta">
+            {results.length === 0
+              ? 'No appointments found'
+              : `Found: ${results.length} appointment${results.length !== 1 ? 's' : ''}`}
+          </div>
+        )}
+
+        <div className="search-results">
+          {results.map(apt => {
+            const patientName = `${apt.patient?.lastName ?? ''} ${apt.patient?.firstName ?? ''}`.trim() || 'Patient';
+            const phone = apt.patient?.contacts?.[0]?.value ?? apt.patient?.phone ?? '';
+            const statusInfo = APT_STATUSES.find(s => s.value === apt.status);
+            return (
+              <div key={apt.id} className="search-result-row">
+                <div className="search-result-left">
+                  <div className="search-result-name">{patientName}</div>
+                  {phone && <div className="search-result-phone">📞 {phone}</div>}
+                </div>
+                <div className="search-result-mid">
+                  <div className="search-result-datetime">{fmtDateTime(apt.startTime)}</div>
+                  <div className="search-result-doctor">{apt.doctor?.name ?? '—'}</div>
+                </div>
+                <div className="search-result-right">
+                  <span className={`status-chip ${statusColor[apt.status] || 'scheduled'}`}>
+                    {statusInfo?.icon} {statusInfo?.label}
+                  </span>
+                  <button
+                    className="search-result-jump"
+                    onClick={() => { onJumpTo(new Date(apt.startTime)); onClose(); }}
+                  >
+                    Jump →
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Mini Calendar (date picker in toolbar) ────────────────────────────────
 
 const MiniCalendar: React.FC<{
@@ -913,9 +1062,13 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingApt, setEditingApt] = useState<any>(null);
   const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [showCancelled, setShowCancelled] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchPanelOpen, setSearchPanelOpen] = useState(false);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [colorMode] = useState<'status' | 'doctor'>(() =>
+    (localStorage.getItem(COLOR_MODE_KEY) as 'status' | 'doctor') || 'status'
+  );
+  const slotMin = parseInt(localStorage.getItem('calendarSlotMin') || '15', 10);
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
@@ -923,7 +1076,6 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
   const [legendOpen, setLegendOpen] = useState(false);
   const [statusColors, setStatusColors] = useState<Record<string, string>>(loadStatusColors);
   const gridRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
   const branchDropdownRef = useRef<HTMLDivElement>(null);
 
   const locale = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
@@ -991,27 +1143,14 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
     }
   };
 
-  // Filtered appointments based on search query and cancelled toggle
+  // Filtered appointments based on cancelled toggle
   const filteredAppointments = appointments.filter(apt => {
     if (!showCancelled && (apt.status === 'CANCELLED')) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const full = `${apt.patient?.lastName ?? ''} ${apt.patient?.firstName ?? ''} ${apt.patient?.middleName ?? ''}`.toLowerCase();
-      if (!full.includes(q)) return false;
-    }
     return true;
   });
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleSearchToggle = () => {
-    setSearchOpen(prev => {
-      if (prev) setSearchQuery('');
-      else setTimeout(() => searchRef.current?.focus(), 50);
-      return !prev;
-    });
   };
 
   // Scroll to current time on mount (time-grid views only)
@@ -1050,6 +1189,14 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
       setBranches(list);
       const main = list.find((b: any) => b.isMain) ?? list[0];
       if (main) setSelectedBranchId(main.id);
+    }).catch(() => {});
+  }, []);
+
+  // Load doctors on mount
+  useEffect(() => {
+    api.get('/staff', { role: 'DOCTOR', limit: '100' }).then((data: any) => {
+      const list = Array.isArray(data) ? data : (data?.data?.items ?? data?.data ?? []);
+      setDoctors(list);
     }).catch(() => {});
   }, []);
 
@@ -1156,6 +1303,15 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
   return (
     <div className="calendar-page-wrapper" onContextMenu={e => e.preventDefault()}>
 
+      {/* Search Panel */}
+      {searchPanelOpen && (
+        <SearchPanel
+          onClose={() => setSearchPanelOpen(false)}
+          onJumpTo={date => { setCurrentDate(date); setView('day'); }}
+          locale={locale}
+        />
+      )}
+
       {/* Context menu */}
       {ctxMenu && (
         <ContextMenu
@@ -1249,29 +1405,14 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
           {/* Utility action group */}
           <div className="cal-util-group">
             {/* Patient search */}
-            <div className={`cal-search-wrap ${searchOpen ? 'open' : ''}`}>
-              <button
-                className={`cal-util-btn ${searchOpen ? 'active' : ''}`}
-                title="Search by patient name"
-                onClick={handleSearchToggle}
-              >
-                <IconSearch />
-                <span>Search</span>
-              </button>
-              {searchOpen && (
-                <input
-                  ref={searchRef}
-                  className="cal-search-input"
-                  placeholder="Patient name..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  onKeyDown={e => e.key === 'Escape' && handleSearchToggle()}
-                />
-              )}
-              {searchQuery && (
-                <span className="cal-search-count">{filteredAppointments.length}</span>
-              )}
-            </div>
+            <button
+              className={`cal-util-btn ${searchPanelOpen ? 'active' : ''}`}
+              title="Extended search"
+              onClick={() => setSearchPanelOpen(true)}
+            >
+              <IconSearch />
+              <span>Search</span>
+            </button>
 
             {/* Show cancelled toggle */}
             <button
@@ -1327,6 +1468,30 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
         </div>
       </header>
 
+      {/* Stats strip */}
+      {!isLoading && filteredAppointments.length > 0 && (view === 'week' || view === 'day') && (
+        <div className="stats-strip">
+          {(() => {
+            const total = filteredAppointments.length;
+            const byStatus = APT_STATUSES.map(s => ({
+              ...s,
+              count: filteredAppointments.filter(a => a.status === s.value).length,
+            })).filter(s => s.count > 0);
+            return (
+              <>
+                <span className="stats-item total">{total} appointments</span>
+                <span className="stats-divider">·</span>
+                {byStatus.map(s => (
+                  <span key={s.value} className="stats-item">
+                    {s.icon} {s.count} {s.label.toLowerCase()}
+                  </span>
+                ))}
+              </>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Main layout: grid + details */}
       <div className="calendar-main-layout">
 
@@ -1355,6 +1520,9 @@ const Calendar: React.FC<{ onOpenPatient?: (patientId: string) => void }> = ({ o
               gridMin={gridMin}
               isLoading={isLoading}
               workingHours={branches.find(b => b.id === selectedBranchId)?.workingHours}
+              slotMin={slotMin}
+              doctors={doctors}
+              colorMode={colorMode}
               onSelect={handleSelect}
               onDoubleClick={handleDoubleClick}
               onContextMenu={handleCtxApt}

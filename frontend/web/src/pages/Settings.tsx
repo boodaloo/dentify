@@ -37,6 +37,9 @@ const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [slotMin,  setSlotMin]  = useState(() => parseInt(localStorage.getItem(SLOT_MIN_KEY) || '15', 10));
   const [gridMin,  setGridMin]  = useState(() => parseInt(localStorage.getItem(GRID_MIN_KEY) || '60', 10));
+  const [colorMode, setColorMode] = useState<'status' | 'doctor'>(() =>
+    (localStorage.getItem('calendarColorMode') as 'status' | 'doctor') || 'status'
+  );
   const [branchId, setBranchId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -345,6 +348,30 @@ const Settings: React.FC = () => {
                     </div>
                   ))}
                   <div className="grid-preview-row hour">10:00</div>
+                </div>
+              </div>
+
+              {/* Color mode */}
+              <div className="settings-field-group mt-xl">
+                <div className="settings-field-label">Appointment color mode</div>
+                <div className="settings-field-desc">Choose what determines the color of appointment blocks.</div>
+                <div className="color-mode-options mt-m">
+                  {[
+                    { val: 'status', label: 'By Status', desc: 'Each status has its own color (Confirmed, Scheduled, etc.)' },
+                    { val: 'doctor', label: 'By Doctor', desc: 'Each doctor gets a unique color across all appointments' },
+                  ].map(opt => (
+                    <div
+                      key={opt.val}
+                      className={`color-mode-card ${colorMode === opt.val ? 'active' : ''}`}
+                      onClick={() => { setColorMode(opt.val as 'status' | 'doctor'); localStorage.setItem('calendarColorMode', opt.val); }}
+                    >
+                      <div className="color-mode-radio">{colorMode === opt.val ? '●' : '○'}</div>
+                      <div>
+                        <div className="color-mode-label">{opt.label}</div>
+                        <div className="color-mode-desc">{opt.desc}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
