@@ -909,17 +909,25 @@ const SearchPanel: React.FC<{
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-    setIsSearching(true);
-    try {
-      const data = await api.get('/appointments', { q: query.trim() });
-      const items = Array.isArray(data) ? data : (data?.data?.items ?? data?.data ?? []);
-      setResults(items);
-      setSearched(true);
-    } catch {}
-    finally { setIsSearching(false); }
-  };
+  // Debounced live search — fires 350ms after user stops typing (min 2 chars)
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      if (searched) { setResults([]); setSearched(false); }
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const data = await api.get('/appointments', { q });
+        const items = Array.isArray(data) ? data : (data?.data?.items ?? data?.data ?? []);
+        setResults(items);
+        setSearched(true);
+      } catch {}
+      finally { setIsSearching(false); }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const pad = (n: number) => String(n).padStart(2, '0');
   const fmtDateTime = (iso: string) => {
@@ -942,18 +950,14 @@ const SearchPanel: React.FC<{
             placeholder="Patient name or phone number..."
             value={query}
             onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
           />
-          <button
-            className="search-panel-btn"
-            onClick={handleSearch}
-            disabled={isSearching || !query.trim()}
-          >
-            {isSearching ? '...' : 'Search'}
-          </button>
+          {isSearching && <div className="search-panel-spinner" />}
         </div>
 
-        {searched && (
+        {query.trim().length > 0 && query.trim().length < 2 && (
+          <div className="search-panel-meta">Type at least 2 characters…</div>
+        )}
+        {searched && !isSearching && (
           <div className="search-panel-meta">
             {results.length === 0
               ? 'No appointments found'

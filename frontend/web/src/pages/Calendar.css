@@ -1401,20 +1401,20 @@
   box-shadow: 0 0 0 3px rgba(20,145,155,0.1);
 }
 
-.search-panel-btn {
-  height: 40px;
-  padding: 0 20px;
-  background: var(--primary-light-teal);
-  color: white;
-  border-radius: var(--radius-m);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s;
+.search-panel-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-light);
+  border-top-color: var(--primary-light-teal);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
   flex-shrink: 0;
+  align-self: center;
 }
-.search-panel-btn:hover:not(:disabled) { background: var(--primary-deep-teal); }
-.search-panel-btn:disabled { opacity: 0.5; cursor: default; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 .search-panel-meta {
   padding: 8px 20px;
