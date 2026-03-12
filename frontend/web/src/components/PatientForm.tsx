@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
+import PhoneInput from './PhoneInput';
 import './PatientForm.css';
 
 interface PatientFormProps {
@@ -109,7 +110,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ initialData, onSuccess, onCan
       <div className="flex gap-m">
         <div className="form-group flex-1">
           <label>Phone</label>
-          <input type="tel" value={formData.phone} onChange={handleChange('phone')} placeholder="+7 (999) 000-00-00" />
+          <PhoneInput value={formData.phone} onChange={handleChange('phone')} />
         </div>
         <div className="form-group flex-1">
           <label>Email</label>

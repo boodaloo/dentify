@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Avatar from 'boring-avatars';
 import { api } from '../services/api';
+import PhoneInput from '../components/PhoneInput';
+import { getPhoneMask, setPhoneMaskPref, formatPhone, maskToPlaceholder, PHONE_MASK_PRESETS, PHONE_MASK_KEY } from '../utils/phoneMask';
 import './Settings.css';
 
 const getCurrentUser = (): any => {
@@ -70,6 +72,7 @@ const Settings: React.FC = () => {
   const [colorMode, setColorMode] = useState<'status' | 'doctor'>(() =>
     (localStorage.getItem('calendarColorMode') as 'status' | 'doctor') || 'status'
   );
+  const [phoneMask, setPhoneMask] = useState(getPhoneMask);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -396,13 +399,49 @@ const Settings: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label>{t('settings.phone')}</label>
-                  <input type="text" value={clinicData.phone} onChange={(e) => setClinicData({ ...clinicData, phone: e.target.value })} />
+                  <PhoneInput
+                    value={clinicData.phone}
+                    onChange={e => setClinicData({ ...clinicData, phone: e.target.value })}
+                  />
                 </div>
                 <div className="form-group">
                   <label>{t('settings.email')}</label>
                   <input type="email" value={clinicData.email} onChange={(e) => setClinicData({ ...clinicData, email: e.target.value })} />
                 </div>
               </div>
+              {/* Phone mask */}
+              <div className="settings-field-group mt-xl">
+                <div className="settings-field-label">Phone number format</div>
+                <div className="settings-field-desc">
+                  Choose how phone numbers are entered and displayed. Use <code style={{ fontFamily: 'monospace', background: 'var(--bg-off-white)', padding: '1px 5px', borderRadius: '4px' }}>X</code> as digit placeholder.
+                </div>
+                <div className="slot-options mt-m" style={{ flexWrap: 'wrap' }}>
+                  {PHONE_MASK_PRESETS.map(p => (
+                    <button
+                      key={p.mask}
+                      className={`slot-option-btn ${phoneMask === p.mask ? 'active' : ''}`}
+                      onClick={() => { setPhoneMask(p.mask); setPhoneMaskPref(p.mask); }}
+                      title={p.mask}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="phone-mask-custom mt-m">
+                  <input
+                    type="text"
+                    className="room-add-input"
+                    value={phoneMask}
+                    onChange={e => { setPhoneMask(e.target.value); setPhoneMaskPref(e.target.value); }}
+                    placeholder="e.g. 7(XXX)XXX-XX-XX"
+                    style={{ maxWidth: '200px' }}
+                  />
+                  <span className="phone-mask-preview">
+                    {formatPhone('9161234567', phoneMask) || maskToPlaceholder(phoneMask)}
+                  </span>
+                </div>
+              </div>
+
               {saveStatus === 'success' && (
                 <div style={{ color: 'var(--color-teal-500)', fontSize: '13px', marginBottom: '12px' }}>
                   ✓ Changes saved successfully
@@ -722,9 +761,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="staff-add-field">
                       <label>Phone</label>
-                      <input
-                        type="tel"
-                        placeholder="+7 999 000 00 00"
+                      <PhoneInput
                         value={addForm.phone}
                         onChange={e => setAddForm(p => ({ ...p, phone: e.target.value }))}
                       />

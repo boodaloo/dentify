@@ -403,6 +403,28 @@
 .wh-status.success { background: rgba(69,183,160,0.1); color: var(--secondary-seafoam); }
 .wh-status.error   { background: rgba(255,107,107,0.1); color: var(--accent-coral); }
 
+/* ── Phone mask ───────────────────────────────────────────────────────────── */
+
+.phone-mask-custom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.phone-mask-preview {
+  font-size: 14px;
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--primary-light-teal);
+  background: rgba(20, 145, 155, 0.06);
+  border: 1px solid rgba(20, 145, 155, 0.2);
+  border-radius: var(--radius-m);
+  padding: 6px 14px;
+  min-width: 160px;
+  text-align: center;
+}
+
 /* ── Staff Management ─────────────────────────────────────────────────────── */
 
 .staff-mgmt-header {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import PhoneInput from './PhoneInput';
 import './AppointmentForm.css';
 
 interface AppointmentFormProps {
@@ -391,9 +392,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               </div>
               <div className="apt-field">
                 <label>Phone <span className="apt-req">*</span></label>
-                <input
-                  type="tel"
-                  placeholder="+7 999 000 00 00"
+                <PhoneInput
                   value={newPatient.phone}
                   onChange={e => setNewPatient(p => ({ ...p, phone: e.target.value }))}
                 />
