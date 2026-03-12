@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
+import DateInput from '../components/DateInput';
 import './Tasks.css';
 
 interface AssignedUser {
@@ -54,12 +55,14 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_TABS = ['MY', 'ALL', 'OPEN', 'IN_PROGRESS', 'DONE'];
 
+const getTodayStr = () => new Date().toISOString().slice(0, 10);
+
 const defaultForm = {
   title: '',
   description: '',
   priority: 'MEDIUM',
   status: 'OPEN',
-  dueDate: '',
+  dueDate: getTodayStr(),
   assignedToId: '',
   patientId: '',
   patientSearch: '',
@@ -76,6 +79,7 @@ const Tasks: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ ...defaultForm });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [patientResults, setPatientResults] = useState<PatientSearch[]>([]);
@@ -136,9 +140,11 @@ const Tasks: React.FC = () => {
   };
 
   const openNew = () => {
+    console.log('[Tasks] openNew called');
     setEditingTask(null);
     setForm({ ...defaultForm });
     setPatientResults([]);
+    setSaveError('');
     setShowModal(true);
   };
 
@@ -155,6 +161,7 @@ const Tasks: React.FC = () => {
       patientSearch: task.patient ? `${task.patient.lastName} ${task.patient.firstName}` : '',
     });
     setPatientResults([]);
+    setSaveError('');
     setShowModal(true);
   };
 
@@ -165,8 +172,13 @@ const Tasks: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!form.title.trim()) return;
+    console.log('[Tasks] handleSave called, title:', form.title);
+    if (!form.title.trim()) {
+      setSaveError('Title is required');
+      return;
+    }
     setSaving(true);
+    setSaveError('');
     try {
       const payload: any = {
         title: form.title,
@@ -184,8 +196,9 @@ const Tasks: React.FC = () => {
       }
       closeModal();
       loadTasks();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setSaveError(e?.message || 'Failed to save task');
     } finally {
       setSaving(false);
     }
@@ -219,7 +232,11 @@ const Tasks: React.FC = () => {
 
   const formatDate = (d?: string) => {
     if (!d) return '';
-    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const dt = new Date(d);
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
   };
 
   const getKanbanColumns = () => {
@@ -427,10 +444,9 @@ const Tasks: React.FC = () => {
               <div className="task-form-row">
                 <div className="task-form-group">
                   <label>Due Date</label>
-                  <input
-                    type="date"
+                  <DateInput
                     value={form.dueDate}
-                    onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+                    onChange={(iso) => setForm({ ...form, dueDate: iso })}
                   />
                 </div>
                 <div className="task-form-group">
@@ -491,6 +507,11 @@ const Tasks: React.FC = () => {
               </div>
             </div>
 
+            {saveError && (
+              <div style={{ padding: '0 24px 8px', color: '#ef4444', fontSize: 13 }}>
+                Error: {saveError}
+              </div>
+            )}
             <div className="task-modal-footer">
               <div className="task-modal-footer-left">
                 {editingTask && (
@@ -498,7 +519,7 @@ const Tasks: React.FC = () => {
                 )}
               </div>
               <button className="btn-secondary" onClick={closeModal}>Cancel</button>
-              <button className="btn-primary" onClick={handleSave} disabled={!form.title.trim() || saving}>
+              <button className="btn-primary" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : (editingTask ? 'Save Changes' : 'Create Task')}
               </button>
             </div>

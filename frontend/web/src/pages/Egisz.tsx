@@ -101,8 +101,8 @@ const Egisz: React.FC = () => {
     try {
       const params: Record<string, string> = { limit: '100' };
       if (statusFilter) params.status = statusFilter;
-      const res = await api.get('/egisz/documents', { params });
-      setDocuments(res.data?.data?.items ?? []);
+      const res: any = await api.get('/egisz/documents', params);
+      setDocuments(res?.data?.items ?? []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -136,8 +136,8 @@ const Egisz: React.FC = () => {
   const searchPatients = async (q: string) => {
     if (!q || q.length < 2) { setGenPatients([]); return; }
     try {
-      const res = await api.get('/patients', { params: { search: q, limit: '10' } });
-      setGenPatients(res.data?.data?.items ?? []);
+      const res: any = await api.get('/patients', { search: q, limit: '10' });
+      setGenPatients(res?.data?.items ?? []);
     } catch (e) { setGenPatients([]); }
   };
 

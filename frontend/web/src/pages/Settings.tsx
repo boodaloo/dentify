@@ -876,7 +876,7 @@ const Settings: React.FC = () => {
                       </div>
 
                       <div className="staff-item-right">
-                        {isEditing ? (
+                        {isEditing && editingStaff ? (
                           <div className="staff-edit-row">
                             <select
                               className="wh-time-select"

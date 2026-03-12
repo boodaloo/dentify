@@ -7,16 +7,1653 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================
-// ENUMS
-// ============================================================
+model Clinic {
+  id              String           @id @default(uuid())
+  name            String
+  legalName       String?
+  inn             String?
+  address         String?
+  phone           String?
+  email           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  branches        Branch[]
+  settings        ClinicSettings?
+  patients        Patient[]
+  specializations Specialization[]
+  userClinics     UserClinic[]
+  widgetSettings  WidgetSettings?
+  subscription    Subscription?
+
+  @@map("core_clinics")
+}
+
+model ClinicSettings {
+  id                         String   @id @default(uuid())
+  clinicId                   String   @unique
+  timezone                   String   @default("Europe/Moscow")
+  currency                   String   @default("RUB")
+  dateFormat                 String   @default("DD.MM.YYYY")
+  timeFormat                 String   @default("24h")
+  appointmentDurationDefault Int      @default(30)
+  workingHoursStart          String   @default("09:00")
+  workingHoursEnd            String   @default("21:00")
+  updatedAt                  DateTime @updatedAt
+  clinic                     Clinic   @relation(fields: [clinicId], references: [id])
+
+  @@map("core_clinic_settings")
+}
+
+model WidgetSettings {
+  clinicId            String   @id
+  apiKey              String   @unique @default(uuid())
+  allowedDomains      String[]
+  enabled             Boolean  @default(false)
+  theme               Json?
+  showDoctors         Boolean  @default(true)
+  availableServiceIds String[]
+  updatedAt           DateTime @updatedAt
+  clinic              Clinic   @relation(fields: [clinicId], references: [id])
+
+  @@map("core_widget_settings")
+}
+
+model Branch {
+  id                   String                @id @default(uuid())
+  clinicId             String
+  name                 String
+  shortCode            String?
+  address              String?
+  phone                String?
+  color                String?
+  isMain               Boolean               @default(false)
+  isActive             Boolean               @default(true)
+  workingHoursStart    String?
+  workingHoursEnd      String?
+  isDeleted            Boolean               @default(false)
+  deletedAt            DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  appointments         Appointment[]
+  doctorSchedules      DoctorSchedule[]
+  scheduleExceptions   ScheduleException[]
+  serviceBranchPrices  ServiceBranchPrice[]
+  workingHours         BranchWorkingHours[]
+  clinic               Clinic                @relation(fields: [clinicId], references: [id])
+  calls                Call[]
+  rooms                Room[]
+  userBranches         UserBranch[]
+  cashFlowTransactions CashFlowTransaction[]
+  workTimes            EmployeeWorkTime[]
+  materialStock        MaterialStock[]
+  stockMovements       StockMovement[]
+  stockReceipts        StockReceipt[]
+
+  @@map("core_branches")
+}
+
+model BranchWorkingHours {
+  id        String  @id @default(uuid())
+  branchId  String
+  dayOfWeek Int
+  isOpen    Boolean @default(true)
+  startTime String  @default("09:00")
+  endTime   String  @default("21:00")
+  branch    Branch  @relation(fields: [branchId], references: [id])
+
+  @@unique([branchId, dayOfWeek])
+  @@map("core_branch_working_hours")
+}
+
+model Room {
+  id           String        @id @default(uuid())
+  clinicId     String
+  branchId     String
+  name         String
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
+  branch       Branch        @relation(fields: [branchId], references: [id])
+
+  @@map("core_rooms")
+}
+
+model User {
+  id                     String                   @id @default(uuid())
+  email                  String                   @unique
+  password               String
+  name                   String
+  phone                  String?
+  avatarUrl              String?
+  failedAttempts         Int                      @default(0)
+  lockedUntil            DateTime?
+  lastLoginAt            DateTime?
+  isDeleted              Boolean                  @default(false)
+  deletedAt              DateTime?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  birthDate              DateTime?
+  title                  String?
+  createdAppointments    Appointment[]            @relation("CreatedAppointments")
+  appointments           Appointment[]            @relation("DoctorAppointments")
+  doctorSchedules        DoctorSchedule[]
+  uploadedFiles          File[]
+  medicalRecords         MedicalRecord[]
+  patientDiaries         PatientDiary[]
+  scheduleExceptions     ScheduleException[]
+  treatmentPlans         TreatmentPlan[]
+  handledCalls           Call[]
+  assignedTasks          ClinicTask[]             @relation("AssignedTasks")
+  createdTasks           ClinicTask[]             @relation("CreatedTasks")
+  issuedDocuments        IssuedDocument[]
+  patientComments        PatientComment[]
+  patientDoctors         PatientDoctor[]
+  userBranches           UserBranch[]
+  userClinics            UserClinic[]
+  balanceTransactions    BalanceTransaction[]
+  bonusTransactions      BonusTransaction[]
+  cashFlowTransactions   CashFlowTransaction[]
+  createdConsultInvoices ConsultInvoice[]
+  createdInvoices        Invoice[]
+  receivedPayments       Payment[]
+  createdDoctorPayments  DoctorPayment[]          @relation("DoctorPaymentCreatedBy")
+  doctorPayments         DoctorPayment[]          @relation("DoctorPaymentUser")
+  salarySettings         EmployeeSalarySettings[]
+  workTimes              EmployeeWorkTime[]
+  stockMovements         StockMovement[]
+  createdStockReceipts   StockReceipt[]
+  createdLabInvoices     LabInvoice[]
+  createdLabOrders       LabOrder[]
+  reminders              Reminder[]
+
+  @@map("core_users")
+}
+
+model UserClinic {
+  id               String          @id @default(uuid())
+  userId           String
+  clinicId         String
+  role             UserRole        @default(DOCTOR)
+  isOwner          Boolean         @default(false)
+  specializationId String?
+  color            String?
+  isActive         Boolean         @default(true)
+  isDeleted        Boolean         @default(false)
+  deletedAt        DateTime?
+  joinedAt         DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  clinic           Clinic          @relation(fields: [clinicId], references: [id])
+  specialization   Specialization? @relation(fields: [specializationId], references: [id])
+  user             User            @relation(fields: [userId], references: [id])
+
+  @@unique([userId, clinicId])
+  @@map("core_user_clinics")
+}
+
+model UserBranch {
+  userId      String
+  branchId    String
+  isDefault   Boolean @default(false)
+  accessLevel String  @default("full")
+  branch      Branch  @relation(fields: [branchId], references: [id])
+  user        User    @relation(fields: [userId], references: [id])
+
+  @@id([userId, branchId])
+  @@map("core_user_branches")
+}
+
+model Specialization {
+  id             String                   @id @default(uuid())
+  clinicId       String
+  name           String
+  sortOrder      Int                      @default(0)
+  isActive       Boolean                  @default(true)
+  createdAt      DateTime                 @default(now())
+  patientDoctors PatientDoctor[]
+  clinic         Clinic                   @relation(fields: [clinicId], references: [id])
+  userClinics    UserClinic[]
+  salarySettings EmployeeSalarySettings[]
+
+  @@map("core_specializations")
+}
+
+model Patient {
+  id                  String                   @id @default(uuid())
+  clinicId            String
+  firstName           String
+  lastName            String
+  middleName          String?
+  birthDate           DateTime?
+  allergies           String?
+  notes               String?
+  referralSource      PatientReferralSource?
+  homeBranchId        String?
+  createdByUserId     String?
+  isDeleted           Boolean                  @default(false)
+  deletedAt           DateTime?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  inn                 String?
+  loyaltyTierId       String?
+  passportNumber      String?
+  passportSeries      String?
+  patientNumber       String?
+  snils               String?
+  gender              Gender?
+  appointments        Appointment[]
+  dentalChart         DentalChart[]
+  files               File[]
+  medicalRecords      MedicalRecord[]
+  patientDiaries      PatientDiary[]
+  treatmentPlans      TreatmentPlan[]
+  widgetBookings      WidgetBooking[]
+  calls               Call[]
+  clinicTasks         ClinicTask[]
+  issuedDocuments     IssuedDocument[]
+  comments            PatientComment[]
+  contacts            PatientContact[]
+  doctors             PatientDoctor[]
+  groupMemberships    PatientGroupMember[]
+  labels              PatientLabelAssignment[]
+  relatives           PatientRelative[]        @relation("PatientRelatives")
+  relativeOf          PatientRelative[]        @relation("RelativeAsPatient")
+  clinic              Clinic                   @relation(fields: [clinicId], references: [id])
+  loyaltyTier         LoyaltyTier?             @relation(fields: [loyaltyTierId], references: [id])
+  egiszDocuments      EgiszDocument[]
+  balanceTransactions BalanceTransaction[]
+  balance             Balance?
+  bonusTransactions   BonusTransaction[]
+  bonuses             Bonus?
+  consultInvoices     ConsultInvoice[]
+  invoices            Invoice[]
+  promotionUsages     PromotionUsage[]
+  insurances          PatientInsurance[]
+  labOrders           LabOrder[]
+  notificationLogs    NotificationLog[]
+  reminders           Reminder[]
+
+  @@unique([clinicId, patientNumber])
+  @@map("core_patients")
+}
+
+model PatientContact {
+  id        String      @id @default(uuid())
+  clinicId  String
+  patientId String
+  type      ContactType
+  value     String
+  label     String?
+  isPrimary Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  patient   Patient     @relation(fields: [patientId], references: [id])
+
+  @@map("core_patient_contacts")
+}
+
+model PatientComment {
+  id        String   @id @default(uuid())
+  clinicId  String
+  patientId String
+  authorId  String
+  content   String
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id])
+  patient   Patient  @relation(fields: [patientId], references: [id])
+
+  @@map("core_patient_comments")
+}
+
+model PatientLabel {
+  id          String                   @id @default(uuid())
+  clinicId    String
+  name        String
+  color       String                   @default("#14919B")
+  textColor   String                   @default("#ffffff")
+  isSystem    Boolean                  @default(false)
+  createdAt   DateTime                 @default(now())
+  assignments PatientLabelAssignment[]
+
+  @@unique([clinicId, name])
+  @@map("core_patient_labels")
+}
+
+model PatientLabelAssignment {
+  id         String       @id @default(uuid())
+  clinicId   String
+  patientId  String
+  labelId    String
+  assignedAt DateTime     @default(now())
+  label      PatientLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  patient    Patient      @relation(fields: [patientId], references: [id])
+
+  @@unique([patientId, labelId])
+  @@map("core_patient_label_assignments")
+}
+
+model PatientDoctor {
+  id               String         @id @default(uuid())
+  clinicId         String
+  patientId        String
+  doctorId         String
+  specializationId String
+  isActive         Boolean        @default(true)
+  assignedAt       DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+  doctor           User           @relation(fields: [doctorId], references: [id])
+  patient          Patient        @relation(fields: [patientId], references: [id])
+  specialization   Specialization @relation(fields: [specializationId], references: [id])
+
+  @@map("core_patient_doctors")
+}
+
+model PatientRelative {
+  id                String       @id @default(uuid())
+  clinicId          String
+  patientId         String
+  relativeType      RelativeType
+  name              String
+  phone             String?
+  email             String?
+  isGuardian        Boolean      @default(false)
+  notes             String?
+  relativePatientId String?
+  createdAt         DateTime     @default(now())
+  patient           Patient      @relation("PatientRelatives", fields: [patientId], references: [id])
+  relativePatient   Patient?     @relation("RelativeAsPatient", fields: [relativePatientId], references: [id])
+
+  @@map("core_patient_relatives")
+}
+
+model PatientGroup {
+  id            String               @id @default(uuid())
+  clinicId      String
+  name          String
+  discountType  DiscountType         @default(PERCENT)
+  discountValue Decimal              @db.Decimal(5, 2)
+  color         String?
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  members       PatientGroupMember[]
+
+  @@map("core_patient_groups")
+}
+
+model PatientGroupMember {
+  groupId   String
+  patientId String
+  addedAt   DateTime     @default(now())
+  group     PatientGroup @relation(fields: [groupId], references: [id])
+  patient   Patient      @relation(fields: [patientId], references: [id])
+
+  @@id([groupId, patientId])
+  @@map("core_patient_group_members")
+}
+
+model Call {
+  id              String        @id @default(uuid())
+  clinicId        String
+  branchId        String?
+  patientId       String?
+  userId          String?
+  direction       CallDirection
+  result          CallResult
+  phone           String
+  durationSeconds Int?
+  notes           String?
+  recordingUrl    String?
+  calledAt        DateTime
+  createdAt       DateTime      @default(now())
+  branch          Branch?       @relation(fields: [branchId], references: [id])
+  patient         Patient?      @relation(fields: [patientId], references: [id])
+  user            User?         @relation(fields: [userId], references: [id])
+
+  @@map("core_calls")
+}
+
+model IssuedDocument {
+  id              String    @id @default(uuid())
+  clinicId        String
+  patientId       String?
+  docType         String
+  docNumber       String?
+  issuedAt        DateTime  @default(now())
+  validTo         DateTime?
+  fileKey         String?
+  notes           String?
+  createdByUserId String?
+  createdBy       User?     @relation(fields: [createdByUserId], references: [id])
+  patient         Patient?  @relation(fields: [patientId], references: [id])
+
+  @@map("core_issued_documents")
+}
+
+model Appointment {
+  id                 String               @id @default(uuid())
+  clinicId           String
+  patientId          String
+  doctorId           String
+  branchId           String
+  roomId             String?
+  startTime          DateTime
+  endTime            DateTime
+  status             AppointmentStatus    @default(SCHEDULED)
+  color              String?
+  notes              String?
+  cancellationReason String?
+  createdByUserId    String?
+  isDeleted          Boolean              @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  completedAt        DateTime?
+  confirmedAt        DateTime?
+  source             AppointmentSource    @default(MANUAL)
+  startedAt          DateTime?
+  services           AppointmentService[]
+  branch             Branch               @relation(fields: [branchId], references: [id])
+  createdBy          User?                @relation("CreatedAppointments", fields: [createdByUserId], references: [id])
+  doctor             User                 @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  patient            Patient              @relation(fields: [patientId], references: [id])
+  room               Room?                @relation(fields: [roomId], references: [id])
+  files              File[]
+  medicalRecord      MedicalRecord?
+  patientDiaries     PatientDiary[]
+  invoices           Invoice[]
+  promotionUsages    PromotionUsage[]
+  doctorPayments     DoctorPayment[]
+  labOrders          LabOrder[]
+
+  @@map("clin_appointments")
+}
+
+model WidgetBooking {
+  id               String              @id @default(uuid())
+  clinicId         String
+  patientName      String
+  patientPhone     String
+  patientEmail     String?
+  patientId        String?
+  serviceId        String?
+  doctorId         String?
+  preferredDate    DateTime
+  preferredTime    String
+  status           WidgetBookingStatus @default(NEW)
+  ipAddress        String?
+  createdAt        DateTime            @default(now())
+  processedAt      DateTime?
+  confirmationCode String?
+  patient          Patient?            @relation(fields: [patientId], references: [id])
+  service          Service?            @relation(fields: [serviceId], references: [id])
+
+  @@map("clin_widget_bookings")
+}
+
+model DoctorSchedule {
+  id        String                @id @default(uuid())
+  clinicId  String
+  doctorId  String
+  branchId  String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isWorking Boolean               @default(true)
+  updatedAt DateTime              @updatedAt
+  breaks    DoctorScheduleBreak[]
+  branch    Branch                @relation(fields: [branchId], references: [id])
+  doctor    User                  @relation(fields: [doctorId], references: [id])
+
+  @@unique([doctorId, branchId, dayOfWeek])
+  @@map("clin_doctor_schedules")
+}
+
+model DoctorScheduleBreak {
+  id         String         @id @default(uuid())
+  scheduleId String
+  startTime  String
+  endTime    String
+  schedule   DoctorSchedule @relation(fields: [scheduleId], references: [id])
+
+  @@map("clin_doctor_schedule_breaks")
+}
+
+model ScheduleException {
+  id          String                @id @default(uuid())
+  clinicId    String
+  doctorId    String
+  branchId    String?
+  date        DateTime              @db.Date
+  isAvailable Boolean               @default(false)
+  startTime   String?
+  endTime     String?
+  reason      String?
+  createdAt   DateTime              @default(now())
+  type        ScheduleExceptionType @default(CUSTOM_HOURS)
+  branch      Branch?               @relation(fields: [branchId], references: [id])
+  doctor      User                  @relation(fields: [doctorId], references: [id])
+
+  @@map("clin_schedule_exceptions")
+}
+
+model ServiceCategory {
+  id        String    @id @default(uuid())
+  clinicId  String
+  name      String
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  services  Service[]
+
+  @@map("clin_service_categories")
+}
+
+model Service {
+  id                         String                      @id @default(uuid())
+  clinicId                   String
+  categoryId                 String?
+  name                       String
+  code                       String?
+  price                      Decimal                     @db.Decimal(10, 2)
+  durationMinutes            Int                         @default(30)
+  isActive                   Boolean                     @default(true)
+  isDeleted                  Boolean                     @default(false)
+  deletedAt                  DateTime?
+  createdAt                  DateTime                    @default(now())
+  color                      String?
+  description                String?
+  appointmentServices        AppointmentService[]
+  branchPrices               ServiceBranchPrice[]
+  category                   ServiceCategory?            @relation(fields: [categoryId], references: [id])
+  treatmentPlanItems         TreatmentPlanItem[]
+  treatmentPlanTemplateItems TreatmentPlanTemplateItem[]
+  widgetBookings             WidgetBooking[]
+  consultInvoiceItems        ConsultInvoiceItem[]
+  invoiceItems               InvoiceItem[]
+  promotionServices          PromotionService[]
+  serviceMaterials           ServiceMaterial[]
+
+  @@map("clin_services")
+}
+
+model ServiceBranchPrice {
+  serviceId String
+  branchId  String
+  price     Decimal   @db.Decimal(10, 2)
+  updatedAt DateTime  @updatedAt
+  validFrom DateTime? @db.Date
+  validTo   DateTime? @db.Date
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  service   Service   @relation(fields: [serviceId], references: [id])
+
+  @@id([serviceId, branchId])
+  @@map("clin_service_branch_prices")
+}
+
+model AppointmentService {
+  id            String      @id @default(uuid())
+  appointmentId String
+  serviceId     String
+  quantity      Int         @default(1)
+  price         Decimal     @db.Decimal(10, 2)
+  discount      Decimal     @default(0) @db.Decimal(10, 2)
+  createdAt     DateTime    @default(now())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  service       Service     @relation(fields: [serviceId], references: [id])
+
+  @@map("clin_appointment_services")
+}
+
+model TreatmentPlanTemplate {
+  id        String                      @id @default(uuid())
+  clinicId  String
+  name      String
+  parentId  String?
+  isFolder  Boolean                     @default(false)
+  sortOrder Int                         @default(0)
+  isActive  Boolean                     @default(true)
+  createdAt DateTime                    @default(now())
+  items     TreatmentPlanTemplateItem[]
+  parent    TreatmentPlanTemplate?      @relation("TplFolder", fields: [parentId], references: [id])
+  children  TreatmentPlanTemplate[]     @relation("TplFolder")
+
+  @@map("clin_treatment_plan_templates")
+}
+
+model TreatmentPlanTemplateItem {
+  id         String                @id @default(uuid())
+  templateId String
+  serviceId  String
+  quantity   Int                   @default(1)
+  sortOrder  Int                   @default(0)
+  service    Service               @relation(fields: [serviceId], references: [id])
+  template   TreatmentPlanTemplate @relation(fields: [templateId], references: [id])
+
+  @@map("clin_treatment_plan_template_items")
+}
+
+model TreatmentPlan {
+  id              String              @id @default(uuid())
+  clinicId        String
+  patientId       String
+  doctorId        String
+  name            String
+  status          TreatmentPlanStatus @default(DRAFT)
+  startDate       DateTime?           @db.Date
+  endDate         DateTime?           @db.Date
+  notes           String?
+  isDeleted       Boolean             @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  items           TreatmentPlanItem[]
+  doctor          User                @relation(fields: [doctorId], references: [id])
+  patient         Patient             @relation(fields: [patientId], references: [id])
+  consultInvoices ConsultInvoice[]
+
+  @@map("clin_treatment_plans")
+}
+
+model TreatmentPlanItem {
+  id          String        @id @default(uuid())
+  planId      String
+  serviceId   String
+  toothNumber Int?
+  quantity    Int           @default(1)
+  price       Decimal       @db.Decimal(10, 2)
+  discount    Decimal       @default(0) @db.Decimal(10, 2)
+  isDone      Boolean       @default(false)
+  doneAt      DateTime?
+  sortOrder   Int           @default(0)
+  plan        TreatmentPlan @relation(fields: [planId], references: [id])
+  service     Service       @relation(fields: [serviceId], references: [id])
+
+  @@map("clin_treatment_plan_items")
+}
+
+model DiagnosisCategory {
+  id        String              @id @default(uuid())
+  clinicId  String
+  name      String
+  parentId  String?
+  sortOrder Int                 @default(0)
+  isActive  Boolean             @default(true)
+  diagnoses Diagnosis[]
+  parent    DiagnosisCategory?  @relation("DiagnosisFolder", fields: [parentId], references: [id])
+  children  DiagnosisCategory[] @relation("DiagnosisFolder")
+
+  @@map("clin_diagnosis_categories")
+}
+
+model Diagnosis {
+  id              String                   @id @default(uuid())
+  clinicId        String
+  categoryId      String?
+  code            String?
+  name            String
+  isActive        Boolean                  @default(true)
+  category        DiagnosisCategory?       @relation(fields: [categoryId], references: [id])
+  recordDiagnoses MedicalRecordDiagnosis[]
+
+  @@map("clin_diagnoses")
+}
+
+model MedicalRecordDiagnosis {
+  id              String        @id @default(uuid())
+  medicalRecordId String
+  diagnosisId     String
+  isPrimary       Boolean       @default(false)
+  diagnosis       Diagnosis     @relation(fields: [diagnosisId], references: [id])
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id])
+
+  @@map("clin_medical_record_diagnoses")
+}
+
+model ExaminationTemplate {
+  id        String                       @id @default(uuid())
+  clinicId  String
+  name      String
+  parentId  String?
+  isFolder  Boolean                      @default(false)
+  sortOrder Int                          @default(0)
+  isActive  Boolean                      @default(true)
+  sections  ExaminationTemplateSection[]
+  parent    ExaminationTemplate?         @relation("ExamFolder", fields: [parentId], references: [id])
+  children  ExaminationTemplate[]        @relation("ExamFolder")
+
+  @@map("clin_examination_templates")
+}
+
+model ExaminationTemplateSection {
+  id         String              @id @default(uuid())
+  templateId String
+  name       String
+  content    String?
+  sortOrder  Int                 @default(0)
+  template   ExaminationTemplate @relation(fields: [templateId], references: [id])
+
+  @@map("clin_examination_template_sections")
+}
+
+model DiaryTemplate {
+  id        String          @id @default(uuid())
+  clinicId  String
+  name      String
+  parentId  String?
+  isFolder  Boolean         @default(false)
+  content   String?
+  sortOrder Int             @default(0)
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  parent    DiaryTemplate?  @relation("DiaryFolder", fields: [parentId], references: [id])
+  children  DiaryTemplate[] @relation("DiaryFolder")
+
+  @@map("clin_diary_templates")
+}
+
+model DentalChart {
+  id              String               @id @default(uuid())
+  clinicId        String
+  patientId       String
+  toothNumber     Int
+  status          ToothStatus          @default(HEALTHY)
+  notes           String?
+  updatedByUserId String?
+  updatedAt       DateTime             @updatedAt
+  buccalStatus    ToothStatus?
+  distalStatus    ToothStatus?
+  hasSensitivity  Boolean?
+  lingualStatus   ToothStatus?
+  mesialStatus    ToothStatus?
+  mobility        Int?
+  occlusalStatus  ToothStatus?
+  toothColor      String?
+  patient         Patient              @relation(fields: [patientId], references: [id])
+  history         DentalChartHistory[]
+
+  @@unique([patientId, toothNumber])
+  @@map("clin_dental_chart")
+}
+
+model DentalChartHistory {
+  id              String      @id @default(uuid())
+  dentalChartId   String
+  oldStatus       ToothStatus
+  newStatus       ToothStatus
+  notes           String?
+  changedByUserId String?
+  createdAt       DateTime    @default(now())
+  dentalChart     DentalChart @relation(fields: [dentalChartId], references: [id])
+
+  @@map("clin_dental_chart_history")
+}
+
+model MedicalRecord {
+  id              String                   @id @default(uuid())
+  clinicId        String
+  patientId       String
+  appointmentId   String?                  @unique
+  recordType      RecordType               @default(EXAMINATION)
+  complaints      String?
+  anamnesis       String?
+  treatmentPlan   String?
+  notes           String?
+  createdByUserId String?
+  isDeleted       Boolean                  @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  diagnoses       MedicalRecordDiagnosis[]
+  appointment     Appointment?             @relation(fields: [appointmentId], references: [id])
+  createdBy       User?                    @relation(fields: [createdByUserId], references: [id])
+  patient         Patient                  @relation(fields: [patientId], references: [id])
+
+  @@map("clin_medical_records")
+}
+
+model PatientDiary {
+  id            String       @id @default(uuid())
+  clinicId      String
+  patientId     String
+  doctorId      String
+  appointmentId String?
+  content       String
+  recordDate    DateTime     @db.Date
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  doctor        User         @relation(fields: [doctorId], references: [id])
+  patient       Patient      @relation(fields: [patientId], references: [id])
+
+  @@map("clin_patient_diary")
+}
+
+model File {
+  id               String       @id @default(uuid())
+  clinicId         String
+  patientId        String
+  appointmentId    String?
+  fileType         FileType     @default(OTHER)
+  originalName     String
+  s3Key            String
+  mimeType         String?
+  sizeBytes        Int?
+  uploadedByUserId String?
+  createdAt        DateTime     @default(now())
+  deletedAt        DateTime?
+  appointment      Appointment? @relation(fields: [appointmentId], references: [id])
+  patient          Patient      @relation(fields: [patientId], references: [id])
+  uploadedBy       User?        @relation(fields: [uploadedByUserId], references: [id])
+
+  @@map("clin_files")
+}
+
+model LabTechnician {
+  id            String          @id @default(uuid())
+  clinicId      String
+  name          String
+  type          LabType         @default(LAB)
+  contactPerson String?
+  phone         String?
+  email         String?
+  address       String?
+  notes         String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  invoices      LabInvoice[]
+  orders        LabOrder[]
+  priceItems    LabPriceItem[]
+  toothColors   LabToothColor[]
+
+  @@map("lab_technicians")
+}
+
+model LabToothColor {
+  id           String        @id @default(uuid())
+  clinicId     String
+  technicianId String
+  colorCode    String
+  colorName    String?
+  technician   LabTechnician @relation(fields: [technicianId], references: [id])
+
+  @@map("lab_tooth_colors")
+}
+
+model LabPriceItem {
+  id             String             @id @default(uuid())
+  clinicId       String
+  technicianId   String
+  name           String
+  price          Decimal            @db.Decimal(10, 2)
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  orderWorkItems LabOrderWorkItem[]
+  technician     LabTechnician      @relation(fields: [technicianId], references: [id])
+
+  @@map("lab_price_items")
+}
+
+model LabOrder {
+  id              String          @id @default(uuid())
+  clinicId        String
+  patientId       String
+  technicianId    String
+  appointmentId   String?
+  orderNumber     String?
+  status          LabOrderStatus  @default(NEW)
+  toothColor      String?
+  dueDate         DateTime?       @db.Date
+  notes           String?
+  createdByUserId String?
+  isDeleted       Boolean         @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  invoices        LabInvoice[]
+  stages          LabOrderStage[]
+  appointment     Appointment?    @relation(fields: [appointmentId], references: [id])
+  createdBy       User?           @relation(fields: [createdByUserId], references: [id])
+  patient         Patient         @relation(fields: [patientId], references: [id])
+  technician      LabTechnician   @relation(fields: [technicianId], references: [id])
+
+  @@map("lab_orders")
+}
+
+model LabOrderStage {
+  id          String             @id @default(uuid())
+  orderId     String
+  name        String
+  dueDate     DateTime?          @db.Date
+  completedAt DateTime?
+  sortOrder   Int                @default(0)
+  notes       String?
+  order       LabOrder           @relation(fields: [orderId], references: [id])
+  workItems   LabOrderWorkItem[]
+
+  @@map("lab_order_stages")
+}
+
+model LabOrderWorkItem {
+  id          String        @id @default(uuid())
+  stageId     String
+  priceItemId String?
+  name        String
+  quantity    Int           @default(1)
+  price       Decimal       @db.Decimal(10, 2)
+  priceItem   LabPriceItem? @relation(fields: [priceItemId], references: [id])
+  stage       LabOrderStage @relation(fields: [stageId], references: [id])
+
+  @@map("lab_order_work_items")
+}
+
+model LabInvoice {
+  id              String        @id @default(uuid())
+  clinicId        String
+  technicianId    String
+  orderId         String?
+  invoiceNumber   String?
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  paidAmount      Decimal       @default(0) @db.Decimal(10, 2)
+  status          InvoiceStatus @default(PENDING)
+  invoiceDate     DateTime      @db.Date
+  notes           String?
+  createdByUserId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdBy       User?         @relation(fields: [createdByUserId], references: [id])
+  order           LabOrder?     @relation(fields: [orderId], references: [id])
+  technician      LabTechnician @relation(fields: [technicianId], references: [id])
+
+  @@map("lab_invoices")
+}
+
+model InsuranceCompany {
+  id                String             @id @default(uuid())
+  clinicId          String
+  name              String
+  phone             String?
+  email             String?
+  address           String?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  patientInsurances PatientInsurance[]
+
+  @@map("ins_companies")
+}
+
+model PatientInsurance {
+  id           String           @id @default(uuid())
+  clinicId     String
+  patientId    String
+  companyId    String
+  type         InsuranceType    @default(DMS)
+  policyNumber String?
+  validFrom    DateTime?        @db.Date
+  validTo      DateTime?        @db.Date
+  notes        String?
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  company      InsuranceCompany @relation(fields: [companyId], references: [id])
+  patient      Patient          @relation(fields: [patientId], references: [id])
+
+  @@map("ins_patient_policies")
+}
+
+model EmployeeSalarySettings {
+  id               String          @id @default(uuid())
+  clinicId         String
+  userId           String
+  specializationId String?
+  salaryType       SalaryType      @default(PERCENT)
+  fixedAmount      Decimal?        @db.Decimal(10, 2)
+  percentValue     Decimal?        @db.Decimal(5, 2)
+  isActive         Boolean         @default(true)
+  updatedAt        DateTime        @updatedAt
+  specialization   Specialization? @relation(fields: [specializationId], references: [id])
+  user             User            @relation(fields: [userId], references: [id])
+
+  @@map("hr_salary_settings")
+}
+
+model EmployeeWorkTime {
+  id          String   @id @default(uuid())
+  clinicId    String
+  userId      String
+  branchId    String
+  date        DateTime @db.Date
+  startTime   String
+  endTime     String
+  hoursWorked Decimal  @db.Decimal(4, 2)
+  notes       String?
+  createdAt   DateTime @default(now())
+  isApproved  Boolean  @default(false)
+  branch      Branch   @relation(fields: [branchId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("hr_work_time")
+}
+
+model DoctorPayment {
+  id              String       @id @default(uuid())
+  clinicId        String
+  userId          String
+  appointmentId   String?
+  amount          Decimal      @db.Decimal(10, 2)
+  percentApplied  Decimal?     @db.Decimal(5, 2)
+  paymentDate     DateTime     @db.Date
+  notes           String?
+  createdByUserId String?
+  createdAt       DateTime     @default(now())
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id])
+  createdBy       User?        @relation("DoctorPaymentCreatedBy", fields: [createdByUserId], references: [id])
+  user            User         @relation("DoctorPaymentUser", fields: [userId], references: [id])
+
+  @@map("hr_doctor_payments")
+}
+
+model Invoice {
+  id                  String               @id @default(uuid())
+  clinicId            String
+  patientId           String
+  appointmentId       String?
+  invoiceNumber       String?
+  totalAmount         Decimal              @db.Decimal(10, 2)
+  paidAmount          Decimal              @default(0) @db.Decimal(10, 2)
+  status              InvoiceStatus        @default(PENDING)
+  createdByUserId     String?
+  isDeleted           Boolean              @default(false)
+  deletedAt           DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  discountAmount      Decimal              @default(0) @db.Decimal(10, 2)
+  dueDate             DateTime?            @db.Date
+  balanceTransactions BalanceTransaction[]
+  items               InvoiceItem[]
+  appointment         Appointment?         @relation(fields: [appointmentId], references: [id])
+  createdBy           User?                @relation(fields: [createdByUserId], references: [id])
+  patient             Patient              @relation(fields: [patientId], references: [id])
+  payments            Payment[]
+  promotionUsages     PromotionUsage[]
+
+  @@map("fin_invoices")
+}
+
+model InvoiceItem {
+  id        String   @id @default(uuid())
+  invoiceId String
+  serviceId String?
+  name      String
+  quantity  Int      @default(1)
+  price     Decimal  @db.Decimal(10, 2)
+  discount  Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  service   Service? @relation(fields: [serviceId], references: [id])
+
+  @@map("fin_invoice_items")
+}
+
+model ConsultInvoice {
+  id              String               @id @default(uuid())
+  clinicId        String
+  patientId       String
+  planId          String?
+  totalAmount     Decimal              @db.Decimal(10, 2)
+  notes           String?
+  createdByUserId String?
+  createdAt       DateTime             @default(now())
+  items           ConsultInvoiceItem[]
+  createdBy       User?                @relation(fields: [createdByUserId], references: [id])
+  patient         Patient              @relation(fields: [patientId], references: [id])
+  plan            TreatmentPlan?       @relation(fields: [planId], references: [id])
+
+  @@map("fin_consult_invoices")
+}
+
+model ConsultInvoiceItem {
+  id               String         @id @default(uuid())
+  consultInvoiceId String
+  serviceId        String
+  quantity         Int            @default(1)
+  price            Decimal        @db.Decimal(10, 2)
+  discount         Decimal        @default(0) @db.Decimal(10, 2)
+  consultInvoice   ConsultInvoice @relation(fields: [consultInvoiceId], references: [id])
+  service          Service        @relation(fields: [serviceId], references: [id])
+
+  @@map("fin_consult_invoice_items")
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  invoiceId        String
+  amount           Decimal       @db.Decimal(10, 2)
+  method           PaymentMethod
+  balanceCashUsed  Decimal       @default(0) @db.Decimal(10, 2)
+  balanceCardUsed  Decimal       @default(0) @db.Decimal(10, 2)
+  receivedByUserId String?
+  isDeleted        Boolean       @default(false)
+  deletedAt        DateTime?
+  createdAt        DateTime      @default(now())
+  invoice          Invoice       @relation(fields: [invoiceId], references: [id])
+  receivedBy       User?         @relation(fields: [receivedByUserId], references: [id])
+
+  @@map("fin_payments")
+}
+
+model Balance {
+  id          String   @id @default(uuid())
+  clinicId    String
+  patientId   String   @unique
+  cashBalance Decimal  @default(0) @db.Decimal(10, 2)
+  cardBalance Decimal  @default(0) @db.Decimal(10, 2)
+  updatedAt   DateTime @updatedAt
+  patient     Patient  @relation(fields: [patientId], references: [id])
+
+  @@map("fin_balances")
+}
+
+model BalanceTransaction {
+  id               String                 @id @default(uuid())
+  clinicId         String
+  patientId        String
+  type             BalanceTransactionType
+  amount           Decimal                @db.Decimal(10, 2)
+  cashAmount       Decimal                @default(0) @db.Decimal(10, 2)
+  cardAmount       Decimal                @default(0) @db.Decimal(10, 2)
+  balanceCashAfter Decimal                @db.Decimal(10, 2)
+  balanceCardAfter Decimal                @db.Decimal(10, 2)
+  sourceType       String?
+  sourceId         String?
+  invoiceId        String?
+  description      String?
+  createdByUserId  String?
+  receiptNumber    String?
+  createdAt        DateTime               @default(now())
+  createdBy        User?                  @relation(fields: [createdByUserId], references: [id])
+  invoice          Invoice?               @relation(fields: [invoiceId], references: [id])
+  patient          Patient                @relation(fields: [patientId], references: [id])
+
+  @@map("fin_balance_transactions")
+}
+
+model Bonus {
+  id          String   @id @default(uuid())
+  clinicId    String
+  patientId   String   @unique
+  balance     Int      @default(0)
+  totalEarned Int      @default(0)
+  totalSpent  Int      @default(0)
+  updatedAt   DateTime @updatedAt
+  patient     Patient  @relation(fields: [patientId], references: [id])
+
+  @@map("fin_bonuses")
+}
+
+model BonusTransaction {
+  id              String               @id @default(uuid())
+  clinicId        String
+  patientId       String
+  amount          Int
+  balanceAfter    Int
+  type            BonusTransactionType
+  sourceType      String?
+  sourceId        String?
+  description     String?
+  createdByUserId String?
+  createdAt       DateTime             @default(now())
+  createdBy       User?                @relation(fields: [createdByUserId], references: [id])
+  patient         Patient              @relation(fields: [patientId], references: [id])
+
+  @@map("fin_bonus_transactions")
+}
+
+model BonusRule {
+  id             String        @id @default(uuid())
+  clinicId       String
+  name           String
+  type           BonusRuleType
+  value          Decimal       @db.Decimal(5, 2)
+  minCheckAmount Decimal?      @db.Decimal(10, 2)
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+
+  @@map("fin_bonus_rules")
+}
+
+model LoyaltyTier {
+  id              String       @id @default(uuid())
+  clinicId        String
+  name            String
+  minTotalSpent   Decimal      @db.Decimal(10, 2)
+  bonusMultiplier Decimal      @default(1.0) @db.Decimal(3, 1)
+  discountType    DiscountType @default(PERCENT)
+  discountValue   Decimal      @default(0) @db.Decimal(5, 2)
+  color           String?
+  sortOrder       Int          @default(0)
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  patients        Patient[]
+
+  @@map("fin_loyalty_tiers")
+}
+
+model Promotion {
+  id                String             @id @default(uuid())
+  clinicId          String
+  name              String
+  description       String?
+  type              PromotionType
+  value             Decimal            @db.Decimal(10, 2)
+  startDate         DateTime           @db.Date
+  endDate           DateTime           @db.Date
+  minCheckAmount    Decimal?           @db.Decimal(10, 2)
+  maxUsesTotal      Int?
+  maxUsesPerPatient Int?
+  promoCode         String?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  promotionServices PromotionService[]
+  promotionUsages   PromotionUsage[]
+
+  @@map("fin_promotions")
+}
+
+model PromotionService {
+  id               String    @id @default(uuid())
+  promotionId      String
+  serviceId        String
+  discountOverride Decimal?  @db.Decimal(5, 2)
+  promotion        Promotion @relation(fields: [promotionId], references: [id])
+  service          Service   @relation(fields: [serviceId], references: [id])
+
+  @@map("fin_promotion_services")
+}
+
+model PromotionUsage {
+  id             String       @id @default(uuid())
+  clinicId       String
+  promotionId    String
+  patientId      String
+  appointmentId  String?
+  invoiceId      String?
+  discountAmount Decimal      @db.Decimal(10, 2)
+  promoCodeUsed  String?
+  createdAt      DateTime     @default(now())
+  appointment    Appointment? @relation(fields: [appointmentId], references: [id])
+  invoice        Invoice?     @relation(fields: [invoiceId], references: [id])
+  patient        Patient      @relation(fields: [patientId], references: [id])
+  promotion      Promotion    @relation(fields: [promotionId], references: [id])
+
+  @@map("fin_promotion_usages")
+}
+
+model CashFlowCategory {
+  id           String                @id @default(uuid())
+  clinicId     String
+  name         String
+  direction    CashFlowDirection
+  parentId     String?
+  sortOrder    Int                   @default(0)
+  isActive     Boolean               @default(true)
+  parent       CashFlowCategory?     @relation("CashFlowFolder", fields: [parentId], references: [id])
+  children     CashFlowCategory[]    @relation("CashFlowFolder")
+  transactions CashFlowTransaction[]
+
+  @@map("fin_cashflow_categories")
+}
+
+model CashFlowTransaction {
+  id              String            @id @default(uuid())
+  clinicId        String
+  branchId        String?
+  categoryId      String
+  direction       CashFlowDirection
+  amount          Decimal           @db.Decimal(10, 2)
+  description     String?
+  transactionDate DateTime          @db.Date
+  createdByUserId String?
+  createdAt       DateTime          @default(now())
+  branch          Branch?           @relation(fields: [branchId], references: [id])
+  category        CashFlowCategory  @relation(fields: [categoryId], references: [id])
+  createdBy       User?             @relation(fields: [createdByUserId], references: [id])
+
+  @@map("fin_cashflow_transactions")
+}
+
+model NotificationTemplate {
+  id        String                @id @default(uuid())
+  clinicId  String
+  eventType NotificationEventType
+  channel   NotificationChannel   @default(SMS)
+  name      String
+  body      String
+  isActive  Boolean               @default(true)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  logs      NotificationLog[]
+
+  @@map("ntf_templates")
+}
+
+model NotificationLog {
+  id           String                @id @default(uuid())
+  clinicId     String
+  patientId    String?
+  templateId   String?
+  channel      NotificationChannel
+  recipient    String
+  body         String
+  status       NotificationStatus    @default(PENDING)
+  cost         Decimal?              @db.Decimal(8, 4)
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  errorMessage String?
+  createdAt    DateTime              @default(now())
+  patient      Patient?              @relation(fields: [patientId], references: [id])
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id])
+
+  @@map("ntf_logs")
+}
+
+model Reminder {
+  id        String    @id @default(uuid())
+  clinicId  String
+  userId    String
+  patientId String?
+  text      String
+  remindAt  DateTime
+  isDone    Boolean   @default(false)
+  doneAt    DateTime?
+  createdAt DateTime  @default(now())
+  patient   Patient?  @relation(fields: [patientId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@map("ntf_reminders")
+}
+
+model Contractor {
+  id             String          @id @default(uuid())
+  clinicId       String
+  name           String
+  type           ContractorType  @default(SUPPLIER)
+  inn            String?
+  contactPerson  String?
+  phone          String?
+  email          String?
+  address        String?
+  notes          String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  materials      Material[]
+  stockMovements StockMovement[]
+  stockReceipts  StockReceipt[]
+
+  @@map("inv_contractors")
+}
+
+model MaterialCategory {
+  id        String     @id @default(uuid())
+  clinicId  String
+  name      String
+  sortOrder Int        @default(0)
+  isActive  Boolean    @default(true)
+  materials Material[]
+
+  @@map("inv_material_categories")
+}
+
+model Unit {
+  id        String     @id @default(uuid())
+  clinicId  String
+  name      String
+  shortName String?
+  isActive  Boolean    @default(true)
+  materials Material[]
+
+  @@map("inv_units")
+}
+
+model Material {
+  id                  String             @id @default(uuid())
+  clinicId            String
+  categoryId          String?
+  name                String
+  sku                 String?
+  unitId              String?
+  minStock            Decimal            @default(0) @db.Decimal(10, 3)
+  defaultContractorId String?
+  isActive            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  stock               MaterialStock[]
+  category            MaterialCategory?  @relation(fields: [categoryId], references: [id])
+  defaultContractor   Contractor?        @relation(fields: [defaultContractorId], references: [id])
+  unit                Unit?              @relation(fields: [unitId], references: [id])
+  serviceMaterials    ServiceMaterial[]
+  movements           StockMovement[]
+  receiptItems        StockReceiptItem[]
+
+  @@map("inv_materials")
+}
+
+model MaterialStock {
+  id              String   @id @default(uuid())
+  clinicId        String
+  materialId      String
+  branchId        String
+  quantity        Decimal  @default(0) @db.Decimal(10, 3)
+  lastUpdatedAt   DateTime @updatedAt
+  updatedByUserId String?
+  branch          Branch   @relation(fields: [branchId], references: [id])
+  material        Material @relation(fields: [materialId], references: [id])
+
+  @@unique([materialId, branchId])
+  @@map("inv_material_stock")
+}
+
+model StockMovement {
+  id                 String            @id @default(uuid())
+  clinicId           String
+  materialId         String
+  branchId           String
+  type               StockMovementType
+  quantity           Decimal           @db.Decimal(10, 3)
+  quantityBefore     Decimal           @db.Decimal(10, 3)
+  quantityAfter      Decimal           @db.Decimal(10, 3)
+  sourceType         String?
+  sourceId           String?
+  contractorId       String?
+  transferToBranchId String?
+  notes              String?
+  createdByUserId    String?
+  createdAt          DateTime          @default(now())
+  branch             Branch            @relation(fields: [branchId], references: [id])
+  contractor         Contractor?       @relation(fields: [contractorId], references: [id])
+  createdBy          User?             @relation(fields: [createdByUserId], references: [id])
+  material           Material          @relation(fields: [materialId], references: [id])
+
+  @@map("inv_stock_movements")
+}
+
+model StockReceipt {
+  id              String             @id @default(uuid())
+  clinicId        String
+  branchId        String
+  contractorId    String?
+  receiptNumber   String?
+  receiptDate     DateTime           @db.Date
+  totalAmount     Decimal            @db.Decimal(10, 2)
+  notes           String?
+  createdByUserId String?
+  createdAt       DateTime           @default(now())
+  items           StockReceiptItem[]
+  branch          Branch             @relation(fields: [branchId], references: [id])
+  contractor      Contractor?        @relation(fields: [contractorId], references: [id])
+  createdBy       User?              @relation(fields: [createdByUserId], references: [id])
+
+  @@map("inv_stock_receipts")
+}
+
+model StockReceiptItem {
+  id         String       @id @default(uuid())
+  receiptId  String
+  materialId String
+  quantity   Decimal      @db.Decimal(10, 3)
+  price      Decimal      @db.Decimal(10, 2)
+  amount     Decimal      @db.Decimal(10, 2)
+  createdAt  DateTime     @default(now())
+  material   Material     @relation(fields: [materialId], references: [id])
+  receipt    StockReceipt @relation(fields: [receiptId], references: [id])
+
+  @@map("inv_stock_receipt_items")
+}
+
+model ServiceMaterial {
+  id         String   @id @default(uuid())
+  clinicId   String
+  serviceId  String
+  materialId String
+  quantity   Decimal  @db.Decimal(10, 3)
+  isRequired Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+  material   Material @relation(fields: [materialId], references: [id])
+  service    Service  @relation(fields: [serviceId], references: [id])
+
+  @@unique([serviceId, materialId])
+  @@map("inv_service_materials")
+}
+
+model SubscriptionPlan {
+  id            String               @id @default(uuid())
+  code          SubscriptionPlanCode @unique
+  name          String
+  maxDoctors    Int?
+  maxBranches   Int?
+  priceMonthly  Decimal              @db.Decimal(10, 2)
+  priceYearly   Decimal              @db.Decimal(10, 2)
+  features      Json?
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  subscriptions Subscription[]
+
+  @@map("saas_subscription_plans")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  clinicId             String             @unique
+  planId               String
+  status               SubscriptionStatus @default(TRIAL)
+  trialEndsAt          DateTime?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  cancelledAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  clinic               Clinic             @relation(fields: [clinicId], references: [id])
+  plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
+
+  @@map("saas_subscriptions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  clinicId   String?
+  userId     String?
+  entityType String
+  entityId   String
+  action     String
+  changes    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([clinicId, createdAt])
+  @@map("sys_audit_logs")
+}
+
+model VisitFormTemplate {
+  id        String   @id @default(uuid())
+  clinicId  String
+  name      String
+  role      String
+  isDefault Boolean  @default(false)
+  blocks    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("clin_visit_form_templates")
+}
+
+model ClinicTask {
+  id              String       @id @default(uuid())
+  clinicId        String
+  title           String
+  description     String?
+  priority        TaskPriority @default(MEDIUM)
+  status          TaskStatus   @default(OPEN)
+  dueDate         DateTime?
+  assignedToId    String?
+  createdByUserId String?
+  patientId       String?
+  appointmentId   String?
+  completedAt     DateTime?
+  isDeleted       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  assignedTo      User?        @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  createdBy       User?        @relation("CreatedTasks", fields: [createdByUserId], references: [id])
+  patient         Patient?     @relation(fields: [patientId], references: [id])
+
+  @@map("core_clinic_tasks")
+}
+
+model EgiszSettings {
+  id          String    @id @default(uuid())
+  clinicId    String    @unique
+  isEnabled   Boolean   @default(false)
+  orgOid      String?
+  orgName     String?
+  apiUrl      String?
+  apiLogin    String?
+  apiPassword String?
+  lastSyncAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("egisz_settings")
+}
+
+model EgiszDocument {
+  id              String         @id @default(uuid())
+  clinicId        String
+  patientId       String
+  appointmentId   String?
+  docType         EgiszDocType
+  status          EgiszDocStatus @default(DRAFT)
+  xmlPayload      String?
+  errorMessage    String?
+  sentAt          DateTime?
+  acceptedAt      DateTime?
+  externalId      String?
+  createdByUserId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  patient         Patient        @relation(fields: [patientId], references: [id])
+
+  @@map("egisz_documents")
+}
 
 enum UserRole {
-  OWNER
   ADMIN
   DOCTOR
-  NURSE
   RECEPTIONIST
+  OWNER
+  NURSE
   ACCOUNTANT
   LAB_TECHNICIAN
 }
@@ -240,562 +1877,6 @@ enum SubscriptionStatus {
   EXPIRED
 }
 
-// ============================================================
-// CORE — Клиника
-// ============================================================
-
-model Clinic {
-  id        String   @id @default(uuid())
-  name      String
-  legalName String?
-  inn       String?
-  address   String?
-  phone     String?
-  email     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  branches        Branch[]
-  userClinics     UserClinic[]
-  specializations Specialization[]
-  patients        Patient[]
-  settings        ClinicSettings?
-  widgetSettings  WidgetSettings?
-  subscription    Subscription?
-
-  @@map("core_clinics")
-}
-
-model ClinicSettings {
-  id                         String   @id @default(uuid())
-  clinicId                   String   @unique
-  clinic                     Clinic   @relation(fields: [clinicId], references: [id])
-  timezone                   String   @default("Europe/Moscow")
-  currency                   String   @default("RUB")
-  dateFormat                 String   @default("DD.MM.YYYY")
-  timeFormat                 String   @default("24h")
-  appointmentDurationDefault Int      @default(30)
-  workingHoursStart          String   @default("09:00")
-  workingHoursEnd            String   @default("21:00")
-  updatedAt                  DateTime @updatedAt
-
-  @@map("core_clinic_settings")
-}
-
-model WidgetSettings {
-  clinicId            String   @id
-  clinic              Clinic   @relation(fields: [clinicId], references: [id])
-  apiKey              String   @unique @default(uuid())
-  allowedDomains      String[]
-  enabled             Boolean  @default(false)
-  theme               Json?
-  showDoctors         Boolean  @default(true)
-  availableServiceIds String[]
-  updatedAt           DateTime @updatedAt
-
-  @@map("core_widget_settings")
-}
-
-// ============================================================
-// CORE — Филиалы и кабинеты
-// ============================================================
-
-model Branch {
-  id                String    @id @default(uuid())
-  clinicId          String
-  clinic            Clinic    @relation(fields: [clinicId], references: [id])
-  name              String
-  shortCode         String?
-  address           String?
-  phone             String?
-  color             String?
-  isMain            Boolean   @default(false)
-  isActive          Boolean   @default(true)
-  workingHoursStart String?
-  workingHoursEnd   String?
-  isDeleted         Boolean   @default(false)
-  deletedAt         DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  rooms                Room[]
-  workingHours         BranchWorkingHours[]
-  userBranches         UserBranch[]
-  appointments         Appointment[]
-  doctorSchedules      DoctorSchedule[]
-  scheduleExceptions   ScheduleException[]
-  serviceBranchPrices  ServiceBranchPrice[]
-  materialStock        MaterialStock[]
-  stockMovements       StockMovement[]
-  stockReceipts        StockReceipt[]
-  calls                Call[]
-  workTimes            EmployeeWorkTime[]
-  cashFlowTransactions CashFlowTransaction[]
-
-  @@map("core_branches")
-}
-
-model BranchWorkingHours {
-  id        String  @id @default(uuid())
-  branchId  String
-  branch    Branch  @relation(fields: [branchId], references: [id])
-  dayOfWeek Int     // 0=Пн, 6=Вс
-  isOpen    Boolean @default(true)
-  startTime String  @default("09:00")
-  endTime   String  @default("21:00")
-
-  @@unique([branchId, dayOfWeek])
-  @@map("core_branch_working_hours")
-}
-
-model Room {
-  id        String   @id @default(uuid())
-  clinicId  String
-  branchId  String
-  branch    Branch   @relation(fields: [branchId], references: [id])
-  name      String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-
-  appointments Appointment[]
-
-  @@map("core_rooms")
-}
-
-// ============================================================
-// CORE — Пользователи (глобальные)
-// ============================================================
-
-model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
-  password       String
-  name           String
-  phone          String?
-  avatarUrl      String?
-  birthDate      DateTime?
-  title          String?
-  failedAttempts Int       @default(0)
-  lockedUntil    DateTime?
-  lastLoginAt    DateTime?
-  isDeleted      Boolean   @default(false)
-  deletedAt      DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Членство в клиниках
-  userClinics UserClinic[]
-
-  // Связи с данными (контекст клиники определяется через clinicId на каждой записи)
-  userBranches             UserBranch[]
-  patientComments          PatientComment[]
-  appointments             Appointment[]        @relation("DoctorAppointments")
-  createdAppointments      Appointment[]        @relation("CreatedAppointments")
-  doctorSchedules          DoctorSchedule[]
-  scheduleExceptions       ScheduleException[]
-  medicalRecords           MedicalRecord[]
-  patientDiaries           PatientDiary[]
-  uploadedFiles            File[]
-  createdInvoices          Invoice[]
-  receivedPayments         Payment[]
-  balanceTransactions      BalanceTransaction[]
-  bonusTransactions        BonusTransaction[]
-  stockMovements           StockMovement[]
-  createdStockReceipts     StockReceipt[]
-  salarySettings           EmployeeSalarySettings[]
-  workTimes                EmployeeWorkTime[]
-  doctorPayments           DoctorPayment[]      @relation("DoctorPaymentUser")
-  createdDoctorPayments    DoctorPayment[]      @relation("DoctorPaymentCreatedBy")
-  reminders                Reminder[]
-  handledCalls             Call[]
-  treatmentPlans           TreatmentPlan[]
-  createdConsultInvoices   ConsultInvoice[]
-  cashFlowTransactions     CashFlowTransaction[]
-  createdLabOrders         LabOrder[]
-  createdLabInvoices       LabInvoice[]
-  issuedDocuments          IssuedDocument[]
-  patientDoctors           PatientDoctor[]
-  assignedTasks            ClinicTask[]     @relation("AssignedTasks")
-  createdTasks             ClinicTask[]     @relation("CreatedTasks")
-
-  @@map("core_users")
-}
-
-// Членство пользователя в конкретной клинике (роль, специализация — всё клинико-специфичное)
-model UserClinic {
-  id               String         @id @default(uuid())
-  userId           String
-  user             User           @relation(fields: [userId], references: [id])
-  clinicId         String
-  clinic           Clinic         @relation(fields: [clinicId], references: [id])
-  role             UserRole       @default(DOCTOR)
-  isOwner          Boolean        @default(false)
-  specializationId String?
-  specialization   Specialization? @relation(fields: [specializationId], references: [id])
-  color            String?
-  isActive         Boolean        @default(true)
-  isDeleted        Boolean        @default(false)
-  deletedAt        DateTime?
-  joinedAt         DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
-  @@unique([userId, clinicId])
-  @@map("core_user_clinics")
-}
-
-model UserBranch {
-  userId      String
-  branchId    String
-  user        User    @relation(fields: [userId], references: [id])
-  branch      Branch  @relation(fields: [branchId], references: [id])
-  isDefault   Boolean @default(false)
-  accessLevel String  @default("full")
-
-  @@id([userId, branchId])
-  @@map("core_user_branches")
-}
-
-// ============================================================
-// CORE — Специализации
-// ============================================================
-
-model Specialization {
-  id        String   @id @default(uuid())
-  clinicId  String
-  clinic    Clinic   @relation(fields: [clinicId], references: [id])
-  name      String
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-
-  userClinics    UserClinic[]
-  patientDoctors PatientDoctor[]
-  salarySettings EmployeeSalarySettings[]
-
-  @@map("core_specializations")
-}
-
-// ============================================================
-// CORE — Пациенты
-// ============================================================
-
-model Patient {
-  id              String                 @id @default(uuid())
-  clinicId        String
-  clinic          Clinic                 @relation(fields: [clinicId], references: [id])
-  patientNumber   String?                // читаемый номер карты: П-00123
-  firstName       String
-  lastName        String
-  middleName      String?
-  birthDate       DateTime?
-  gender          Gender?
-  allergies       String?
-  notes           String?
-  snils           String?
-  inn             String?
-  passportSeries  String?
-  passportNumber  String?
-  referralSource  PatientReferralSource?
-  homeBranchId    String?
-  loyaltyTierId   String?
-  loyaltyTier     LoyaltyTier?           @relation(fields: [loyaltyTierId], references: [id])
-  createdByUserId String?
-  isDeleted       Boolean                @default(false)
-  deletedAt       DateTime?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-
-  contacts             PatientContact[]
-  comments             PatientComment[]
-  doctors              PatientDoctor[]
-  relatives            PatientRelative[]    @relation("PatientRelatives")
-  relativeOf           PatientRelative[]    @relation("RelativeAsPatient")
-  groupMemberships     PatientGroupMember[]
-  insurances           PatientInsurance[]
-  appointments         Appointment[]
-  medicalRecords       MedicalRecord[]
-  patientDiaries       PatientDiary[]
-  dentalChart          DentalChart[]
-  files                File[]
-  invoices             Invoice[]
-  balance              Balance?
-  balanceTransactions  BalanceTransaction[]
-  bonuses              Bonus?
-  bonusTransactions    BonusTransaction[]
-  promotionUsages      PromotionUsage[]
-  widgetBookings       WidgetBooking[]
-  treatmentPlans       TreatmentPlan[]
-  consultInvoices      ConsultInvoice[]
-  labOrders            LabOrder[]
-  notificationLogs     NotificationLog[]
-  reminders            Reminder[]
-  calls                Call[]
-  issuedDocuments      IssuedDocument[]
-  labels               PatientLabelAssignment[]
-  clinicTasks          ClinicTask[]
-  egiszDocuments       EgiszDocument[]
-
-  @@unique([clinicId, patientNumber])
-  @@map("core_patients")
-}
-
-model PatientContact {
-  id        String      @id @default(uuid())
-  clinicId  String
-  patientId String
-  patient   Patient     @relation(fields: [patientId], references: [id])
-  type      ContactType
-  value     String
-  label     String?
-  isPrimary Boolean     @default(false)
-  createdAt DateTime    @default(now())
-
-  @@map("core_patient_contacts")
-}
-
-model PatientComment {
-  id        String   @id @default(uuid())
-  clinicId  String
-  patientId String
-  patient   Patient  @relation(fields: [patientId], references: [id])
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  content   String
-  isPinned  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("core_patient_comments")
-}
-
-model PatientLabel {
-  id          String                  @id @default(uuid())
-  clinicId    String
-  name        String
-  color       String                  @default("#14919B")
-  textColor   String                  @default("#ffffff")
-  isSystem    Boolean                 @default(false)
-  createdAt   DateTime                @default(now())
-  assignments PatientLabelAssignment[]
-
-  @@unique([clinicId, name])
-  @@map("core_patient_labels")
-}
-
-model PatientLabelAssignment {
-  id        String       @id @default(uuid())
-  clinicId  String
-  patientId String
-  patient   Patient      @relation(fields: [patientId], references: [id])
-  labelId   String
-  label     PatientLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
-  assignedAt DateTime    @default(now())
-
-  @@unique([patientId, labelId])
-  @@map("core_patient_label_assignments")
-}
-
-model PatientDoctor {
-  id               String         @id @default(uuid())
-  clinicId         String
-  patientId        String
-  patient          Patient        @relation(fields: [patientId], references: [id])
-  doctorId         String
-  doctor           User           @relation(fields: [doctorId], references: [id])
-  specializationId String
-  specialization   Specialization @relation(fields: [specializationId], references: [id])
-  isActive         Boolean        @default(true)
-  assignedAt       DateTime       @default(now())
-  createdAt        DateTime       @default(now())
-
-  @@map("core_patient_doctors")
-}
-
-model PatientRelative {
-  id                String       @id @default(uuid())
-  clinicId          String
-  patientId         String
-  patient           Patient      @relation("PatientRelatives", fields: [patientId], references: [id])
-  relativeType      RelativeType
-  name              String
-  phone             String?
-  email             String?
-  isGuardian        Boolean      @default(false)
-  notes             String?
-  relativePatientId String?
-  relativePatient   Patient?     @relation("RelativeAsPatient", fields: [relativePatientId], references: [id])
-  createdAt         DateTime     @default(now())
-
-  @@map("core_patient_relatives")
-}
-
-model PatientGroup {
-  id            String       @id @default(uuid())
-  clinicId      String
-  name          String
-  discountType  DiscountType @default(PERCENT)
-  discountValue Decimal      @db.Decimal(5, 2)
-  color         String?
-  isActive      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-
-  members PatientGroupMember[]
-
-  @@map("core_patient_groups")
-}
-
-model PatientGroupMember {
-  groupId   String
-  patientId String
-  group     PatientGroup @relation(fields: [groupId], references: [id])
-  patient   Patient      @relation(fields: [patientId], references: [id])
-  addedAt   DateTime     @default(now())
-
-  @@id([groupId, patientId])
-  @@map("core_patient_group_members")
-}
-
-// ============================================================
-// CORE — Звонки
-// ============================================================
-
-model Call {
-  id              String        @id @default(uuid())
-  clinicId        String
-  branchId        String?
-  branch          Branch?       @relation(fields: [branchId], references: [id])
-  patientId       String?
-  patient         Patient?      @relation(fields: [patientId], references: [id])
-  userId          String?
-  user            User?         @relation(fields: [userId], references: [id])
-  direction       CallDirection
-  result          CallResult
-  phone           String
-  durationSeconds Int?
-  notes           String?
-  recordingUrl    String?
-  calledAt        DateTime
-  createdAt       DateTime      @default(now())
-
-  @@map("core_calls")
-}
-
-// ============================================================
-// CORE — Выданные документы
-// ============================================================
-
-model IssuedDocument {
-  id              String    @id @default(uuid())
-  clinicId        String
-  patientId       String?
-  patient         Patient?  @relation(fields: [patientId], references: [id])
-  docType         String
-  docNumber       String?
-  issuedAt        DateTime  @default(now())
-  validTo         DateTime?
-  fileKey         String?
-  notes           String?
-  createdByUserId String?
-  createdBy       User?     @relation(fields: [createdByUserId], references: [id])
-
-  @@map("core_issued_documents")
-}
-
-// ============================================================
-// CLINICAL — Расписание и приёмы
-// ============================================================
-
-model Appointment {
-  id                 String            @id @default(uuid())
-  clinicId           String
-  patientId          String
-  patient            Patient           @relation(fields: [patientId], references: [id])
-  doctorId           String
-  doctor             User              @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  branchId           String
-  branch             Branch            @relation(fields: [branchId], references: [id])
-  roomId             String?
-  room               Room?             @relation(fields: [roomId], references: [id])
-  startTime          DateTime
-  endTime            DateTime
-  status             AppointmentStatus @default(SCHEDULED)
-  source             AppointmentSource @default(MANUAL)
-  color              String?
-  notes              String?
-  cancellationReason String?
-  confirmedAt        DateTime?
-  startedAt          DateTime?
-  completedAt        DateTime?
-  createdByUserId    String?
-  createdBy          User?             @relation("CreatedAppointments", fields: [createdByUserId], references: [id])
-  isDeleted          Boolean           @default(false)
-  deletedAt          DateTime?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-
-  services        AppointmentService[]
-  medicalRecord   MedicalRecord?
-  patientDiaries  PatientDiary[]
-  files           File[]
-  invoices        Invoice[]
-  promotionUsages PromotionUsage[]
-  labOrders       LabOrder[]
-  doctorPayments  DoctorPayment[]
-
-  @@map("clin_appointments")
-}
-
-model WidgetBooking {
-  id                String              @id @default(uuid())
-  clinicId          String
-  patientName       String
-  patientPhone      String
-  patientEmail      String?
-  patientId         String?
-  patient           Patient?            @relation(fields: [patientId], references: [id])
-  serviceId         String?
-  service           Service?            @relation(fields: [serviceId], references: [id])
-  doctorId          String?
-  preferredDate     DateTime
-  preferredTime     String
-  status            WidgetBookingStatus @default(NEW)
-  confirmationCode  String?
-  ipAddress         String?
-  createdAt         DateTime            @default(now())
-  processedAt       DateTime?
-
-  @@map("clin_widget_bookings")
-}
-
-model DoctorSchedule {
-  id        String   @id @default(uuid())
-  clinicId  String
-  doctorId  String
-  doctor    User     @relation(fields: [doctorId], references: [id])
-  branchId  String
-  branch    Branch   @relation(fields: [branchId], references: [id])
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  isWorking Boolean  @default(true)
-  updatedAt DateTime @updatedAt
-
-  breaks DoctorScheduleBreak[]
-
-  @@unique([doctorId, branchId, dayOfWeek])
-  @@map("clin_doctor_schedules")
-}
-
-model DoctorScheduleBreak {
-  id         String         @id @default(uuid())
-  scheduleId String
-  schedule   DoctorSchedule @relation(fields: [scheduleId], references: [id])
-  startTime  String
-  endTime    String
-
-  @@map("clin_doctor_schedule_breaks")
-}
-
 enum ScheduleExceptionType {
   DAY_OFF
   NO_SHOW
@@ -803,1177 +1884,6 @@ enum ScheduleExceptionType {
   VACATION
   CUSTOM_HOURS
 }
-
-model ScheduleException {
-  id          String                @id @default(uuid())
-  clinicId    String
-  doctorId    String
-  doctor      User                  @relation(fields: [doctorId], references: [id])
-  branchId    String?
-  branch      Branch?               @relation(fields: [branchId], references: [id])
-  date        DateTime              @db.Date
-  isAvailable Boolean               @default(false)
-  type        ScheduleExceptionType @default(CUSTOM_HOURS)
-  startTime   String?
-  endTime     String?
-  reason      String?
-  createdAt   DateTime              @default(now())
-
-  @@map("clin_schedule_exceptions")
-}
-
-// ============================================================
-// CLINICAL — Услуги и прайс-лист
-// ============================================================
-
-model ServiceCategory {
-  id        String    @id @default(uuid())
-  clinicId  String
-  name      String
-  sortOrder Int       @default(0)
-  isActive  Boolean   @default(true)
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-
-  services Service[]
-
-  @@map("clin_service_categories")
-}
-
-model Service {
-  id              String           @id @default(uuid())
-  clinicId        String
-  categoryId      String?
-  category        ServiceCategory? @relation(fields: [categoryId], references: [id])
-  name            String
-  code            String?
-  description     String?
-  color           String?
-  price           Decimal          @db.Decimal(10, 2)
-  durationMinutes Int              @default(30)
-  isActive        Boolean          @default(true)
-  isDeleted       Boolean          @default(false)
-  deletedAt       DateTime?
-  createdAt       DateTime         @default(now())
-
-  branchPrices               ServiceBranchPrice[]
-  appointmentServices        AppointmentService[]
-  widgetBookings             WidgetBooking[]
-  promotionServices          PromotionService[]
-  serviceMaterials           ServiceMaterial[]
-  treatmentPlanTemplateItems TreatmentPlanTemplateItem[]
-  treatmentPlanItems         TreatmentPlanItem[]
-  consultInvoiceItems        ConsultInvoiceItem[]
-  invoiceItems               InvoiceItem[]
-
-  @@map("clin_services")
-}
-
-model ServiceBranchPrice {
-  serviceId String
-  branchId  String
-  service   Service  @relation(fields: [serviceId], references: [id])
-  branch    Branch   @relation(fields: [branchId], references: [id])
-  price     Decimal  @db.Decimal(10, 2)
-  validFrom DateTime? @db.Date
-  validTo   DateTime? @db.Date
-  updatedAt DateTime @updatedAt
-
-  @@id([serviceId, branchId])
-  @@map("clin_service_branch_prices")
-}
-
-model AppointmentService {
-  id            String      @id @default(uuid())
-  appointmentId String
-  appointment   Appointment @relation(fields: [appointmentId], references: [id])
-  serviceId     String
-  service       Service     @relation(fields: [serviceId], references: [id])
-  quantity      Int         @default(1)
-  price         Decimal     @db.Decimal(10, 2)
-  discount      Decimal     @default(0) @db.Decimal(10, 2)
-  createdAt     DateTime    @default(now())
-
-  @@map("clin_appointment_services")
-}
-
-// ============================================================
-// CLINICAL — Планы лечения
-// ============================================================
-
-model TreatmentPlanTemplate {
-  id        String                  @id @default(uuid())
-  clinicId  String
-  name      String
-  parentId  String?
-  parent    TreatmentPlanTemplate?  @relation("TplFolder", fields: [parentId], references: [id])
-  children  TreatmentPlanTemplate[] @relation("TplFolder")
-  isFolder  Boolean                 @default(false)
-  sortOrder Int                     @default(0)
-  isActive  Boolean                 @default(true)
-  createdAt DateTime                @default(now())
-
-  items TreatmentPlanTemplateItem[]
-
-  @@map("clin_treatment_plan_templates")
-}
-
-model TreatmentPlanTemplateItem {
-  id         String                @id @default(uuid())
-  templateId String
-  template   TreatmentPlanTemplate @relation(fields: [templateId], references: [id])
-  serviceId  String
-  service    Service               @relation(fields: [serviceId], references: [id])
-  quantity   Int                   @default(1)
-  sortOrder  Int                   @default(0)
-
-  @@map("clin_treatment_plan_template_items")
-}
-
-model TreatmentPlan {
-  id              String              @id @default(uuid())
-  clinicId        String
-  patientId       String
-  patient         Patient             @relation(fields: [patientId], references: [id])
-  doctorId        String
-  doctor          User                @relation(fields: [doctorId], references: [id])
-  name            String
-  status          TreatmentPlanStatus @default(DRAFT)
-  startDate       DateTime?           @db.Date
-  endDate         DateTime?           @db.Date
-  notes           String?
-  isDeleted       Boolean             @default(false)
-  deletedAt       DateTime?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-
-  items           TreatmentPlanItem[]
-  consultInvoices ConsultInvoice[]
-
-  @@map("clin_treatment_plans")
-}
-
-model TreatmentPlanItem {
-  id          String        @id @default(uuid())
-  planId      String
-  plan        TreatmentPlan @relation(fields: [planId], references: [id])
-  serviceId   String
-  service     Service       @relation(fields: [serviceId], references: [id])
-  toothNumber Int?
-  quantity    Int           @default(1)
-  price       Decimal       @db.Decimal(10, 2)
-  discount    Decimal       @default(0) @db.Decimal(10, 2)
-  isDone      Boolean       @default(false)
-  doneAt      DateTime?
-  sortOrder   Int           @default(0)
-
-  @@map("clin_treatment_plan_items")
-}
-
-// ============================================================
-// CLINICAL — Диагнозы
-// ============================================================
-
-model DiagnosisCategory {
-  id        String              @id @default(uuid())
-  clinicId  String
-  name      String
-  parentId  String?
-  parent    DiagnosisCategory?  @relation("DiagnosisFolder", fields: [parentId], references: [id])
-  children  DiagnosisCategory[] @relation("DiagnosisFolder")
-  sortOrder Int                 @default(0)
-  isActive  Boolean             @default(true)
-
-  diagnoses Diagnosis[]
-
-  @@map("clin_diagnosis_categories")
-}
-
-model Diagnosis {
-  id         String             @id @default(uuid())
-  clinicId   String
-  categoryId String?
-  category   DiagnosisCategory? @relation(fields: [categoryId], references: [id])
-  code       String?
-  name       String
-  isActive   Boolean            @default(true)
-
-  recordDiagnoses MedicalRecordDiagnosis[]
-
-  @@map("clin_diagnoses")
-}
-
-model MedicalRecordDiagnosis {
-  id              String        @id @default(uuid())
-  medicalRecordId String
-  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id])
-  diagnosisId     String
-  diagnosis       Diagnosis     @relation(fields: [diagnosisId], references: [id])
-  isPrimary       Boolean       @default(false)
-
-  @@map("clin_medical_record_diagnoses")
-}
-
-// ============================================================
-// CLINICAL — Шаблоны осмотров и дневников
-// ============================================================
-
-model ExaminationTemplate {
-  id        String                @id @default(uuid())
-  clinicId  String
-  name      String
-  parentId  String?
-  parent    ExaminationTemplate?  @relation("ExamFolder", fields: [parentId], references: [id])
-  children  ExaminationTemplate[] @relation("ExamFolder")
-  isFolder  Boolean               @default(false)
-  sortOrder Int                   @default(0)
-  isActive  Boolean               @default(true)
-
-  sections ExaminationTemplateSection[]
-
-  @@map("clin_examination_templates")
-}
-
-model ExaminationTemplateSection {
-  id         String              @id @default(uuid())
-  templateId String
-  template   ExaminationTemplate @relation(fields: [templateId], references: [id])
-  name       String
-  content    String?
-  sortOrder  Int                 @default(0)
-
-  @@map("clin_examination_template_sections")
-}
-
-model DiaryTemplate {
-  id        String          @id @default(uuid())
-  clinicId  String
-  name      String
-  parentId  String?
-  parent    DiaryTemplate?  @relation("DiaryFolder", fields: [parentId], references: [id])
-  children  DiaryTemplate[] @relation("DiaryFolder")
-  isFolder  Boolean         @default(false)
-  content   String?
-  sortOrder Int             @default(0)
-  isActive  Boolean         @default(true)
-  createdAt DateTime        @default(now())
-
-  @@map("clin_diary_templates")
-}
-
-// ============================================================
-// CLINICAL — Медицинские данные
-// ============================================================
-
-model DentalChart {
-  id              String      @id @default(uuid())
-  clinicId        String
-  patientId       String
-  patient         Patient     @relation(fields: [patientId], references: [id])
-  toothNumber     Int         // FDI нотация: 11-48
-  status          ToothStatus @default(HEALTHY)
-  // Статус по поверхностям
-  buccalStatus    ToothStatus?  // вестибулярная/щёчная
-  mesialStatus    ToothStatus?  // медиальная
-  distalStatus    ToothStatus?  // дистальная
-  occlusalStatus  ToothStatus?  // окклюзальная/режущий край
-  lingualStatus   ToothStatus?  // язычная/нёбная
-  // Дополнительные параметры
-  toothColor      String?       // цвет зуба (по шкале Vita)
-  mobility        Int?          // подвижность: 0-3
-  hasSensitivity  Boolean?
-  notes           String?
-  updatedByUserId String?
-  updatedAt       DateTime    @updatedAt
-
-  history DentalChartHistory[]
-
-  @@unique([patientId, toothNumber])
-  @@map("clin_dental_chart")
-}
-
-model DentalChartHistory {
-  id              String      @id @default(uuid())
-  dentalChartId   String
-  dentalChart     DentalChart @relation(fields: [dentalChartId], references: [id])
-  oldStatus       ToothStatus
-  newStatus       ToothStatus
-  notes           String?
-  changedByUserId String?
-  createdAt       DateTime    @default(now())
-
-  @@map("clin_dental_chart_history")
-}
-
-model MedicalRecord {
-  id              String       @id @default(uuid())
-  clinicId        String
-  patientId       String
-  patient         Patient      @relation(fields: [patientId], references: [id])
-  appointmentId   String?      @unique
-  appointment     Appointment? @relation(fields: [appointmentId], references: [id])
-  recordType      RecordType   @default(EXAMINATION)
-  complaints      String?
-  anamnesis       String?
-  treatmentPlan   String?
-  notes           String?
-  createdByUserId String?
-  createdBy       User?        @relation(fields: [createdByUserId], references: [id])
-  isDeleted       Boolean      @default(false)
-  deletedAt       DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  diagnoses MedicalRecordDiagnosis[]
-
-  @@map("clin_medical_records")
-}
-
-model PatientDiary {
-  id            String       @id @default(uuid())
-  clinicId      String
-  patientId     String
-  patient       Patient      @relation(fields: [patientId], references: [id])
-  doctorId      String
-  doctor        User         @relation(fields: [doctorId], references: [id])
-  appointmentId String?
-  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
-  content       String
-  recordDate    DateTime     @db.Date
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  @@map("clin_patient_diary")
-}
-
-model File {
-  id               String       @id @default(uuid())
-  clinicId         String
-  patientId        String
-  patient          Patient      @relation(fields: [patientId], references: [id])
-  appointmentId    String?
-  appointment      Appointment? @relation(fields: [appointmentId], references: [id])
-  fileType         FileType     @default(OTHER)
-  originalName     String
-  s3Key            String
-  mimeType         String?
-  sizeBytes        Int?
-  uploadedByUserId String?
-  uploadedBy       User?        @relation(fields: [uploadedByUserId], references: [id])
-  createdAt        DateTime     @default(now())
-  deletedAt        DateTime?
-
-  @@map("clin_files")
-}
-
-// ============================================================
-// LAB — Лаборатории и техники
-// ============================================================
-
-model LabTechnician {
-  id            String   @id @default(uuid())
-  clinicId      String
-  name          String
-  type          LabType  @default(LAB)
-  contactPerson String?
-  phone         String?
-  email         String?
-  address       String?
-  notes         String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-
-  priceItems  LabPriceItem[]
-  toothColors LabToothColor[]
-  orders      LabOrder[]
-  invoices    LabInvoice[]
-
-  @@map("lab_technicians")
-}
-
-model LabToothColor {
-  id           String        @id @default(uuid())
-  clinicId     String
-  technicianId String
-  technician   LabTechnician @relation(fields: [technicianId], references: [id])
-  colorCode    String
-  colorName    String?
-
-  @@map("lab_tooth_colors")
-}
-
-model LabPriceItem {
-  id           String        @id @default(uuid())
-  clinicId     String
-  technicianId String
-  technician   LabTechnician @relation(fields: [technicianId], references: [id])
-  name         String
-  price        Decimal       @db.Decimal(10, 2)
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-
-  orderWorkItems LabOrderWorkItem[]
-
-  @@map("lab_price_items")
-}
-
-model LabOrder {
-  id              String         @id @default(uuid())
-  clinicId        String
-  patientId       String
-  patient         Patient        @relation(fields: [patientId], references: [id])
-  technicianId    String
-  technician      LabTechnician  @relation(fields: [technicianId], references: [id])
-  appointmentId   String?
-  appointment     Appointment?   @relation(fields: [appointmentId], references: [id])
-  orderNumber     String?
-  status          LabOrderStatus @default(NEW)
-  toothColor      String?
-  dueDate         DateTime?      @db.Date
-  notes           String?
-  createdByUserId String?
-  createdBy       User?          @relation(fields: [createdByUserId], references: [id])
-  isDeleted       Boolean        @default(false)
-  deletedAt       DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  stages   LabOrderStage[]
-  invoices LabInvoice[]
-
-  @@map("lab_orders")
-}
-
-model LabOrderStage {
-  id          String     @id @default(uuid())
-  orderId     String
-  order       LabOrder   @relation(fields: [orderId], references: [id])
-  name        String
-  dueDate     DateTime?  @db.Date
-  completedAt DateTime?
-  sortOrder   Int        @default(0)
-  notes       String?
-
-  workItems LabOrderWorkItem[]
-
-  @@map("lab_order_stages")
-}
-
-model LabOrderWorkItem {
-  id          String        @id @default(uuid())
-  stageId     String
-  stage       LabOrderStage @relation(fields: [stageId], references: [id])
-  priceItemId String?
-  priceItem   LabPriceItem? @relation(fields: [priceItemId], references: [id])
-  name        String
-  quantity    Int           @default(1)
-  price       Decimal       @db.Decimal(10, 2)
-
-  @@map("lab_order_work_items")
-}
-
-model LabInvoice {
-  id              String        @id @default(uuid())
-  clinicId        String
-  technicianId    String
-  technician      LabTechnician @relation(fields: [technicianId], references: [id])
-  orderId         String?
-  order           LabOrder?     @relation(fields: [orderId], references: [id])
-  invoiceNumber   String?
-  totalAmount     Decimal       @db.Decimal(10, 2)
-  paidAmount      Decimal       @default(0) @db.Decimal(10, 2)
-  status          InvoiceStatus @default(PENDING)
-  invoiceDate     DateTime      @db.Date
-  notes           String?
-  createdByUserId String?
-  createdBy       User?         @relation(fields: [createdByUserId], references: [id])
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  @@map("lab_invoices")
-}
-
-// ============================================================
-// INSURANCE — Страхование
-// ============================================================
-
-model InsuranceCompany {
-  id        String   @id @default(uuid())
-  clinicId  String
-  name      String
-  phone     String?
-  email     String?
-  address   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-
-  patientInsurances PatientInsurance[]
-
-  @@map("ins_companies")
-}
-
-model PatientInsurance {
-  id           String           @id @default(uuid())
-  clinicId     String
-  patientId    String
-  patient      Patient          @relation(fields: [patientId], references: [id])
-  companyId    String
-  company      InsuranceCompany @relation(fields: [companyId], references: [id])
-  type         InsuranceType    @default(DMS)
-  policyNumber String?
-  validFrom    DateTime?        @db.Date
-  validTo      DateTime?        @db.Date
-  notes        String?
-  isActive     Boolean          @default(true)
-  createdAt    DateTime         @default(now())
-
-  @@map("ins_patient_policies")
-}
-
-// ============================================================
-// HR — Зарплаты и учёт рабочего времени
-// ============================================================
-
-model EmployeeSalarySettings {
-  id               String          @id @default(uuid())
-  clinicId         String
-  userId           String
-  user             User            @relation(fields: [userId], references: [id])
-  specializationId String?
-  specialization   Specialization? @relation(fields: [specializationId], references: [id])
-  salaryType       SalaryType      @default(PERCENT)
-  fixedAmount      Decimal?        @db.Decimal(10, 2)
-  percentValue     Decimal?        @db.Decimal(5, 2)
-  isActive         Boolean         @default(true)
-  updatedAt        DateTime        @updatedAt
-
-  @@map("hr_salary_settings")
-}
-
-model EmployeeWorkTime {
-  id          String   @id @default(uuid())
-  clinicId    String
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  branchId    String
-  branch      Branch   @relation(fields: [branchId], references: [id])
-  date        DateTime @db.Date
-  startTime   String
-  endTime     String
-  hoursWorked Decimal  @db.Decimal(4, 2)
-  isApproved  Boolean  @default(false)
-  notes       String?
-  createdAt   DateTime @default(now())
-
-  @@map("hr_work_time")
-}
-
-model DoctorPayment {
-  id              String       @id @default(uuid())
-  clinicId        String
-  userId          String
-  user            User         @relation("DoctorPaymentUser", fields: [userId], references: [id])
-  appointmentId   String?
-  appointment     Appointment? @relation(fields: [appointmentId], references: [id])
-  amount          Decimal      @db.Decimal(10, 2)
-  percentApplied  Decimal?     @db.Decimal(5, 2)
-  paymentDate     DateTime     @db.Date
-  notes           String?
-  createdByUserId String?
-  createdBy       User?        @relation("DoctorPaymentCreatedBy", fields: [createdByUserId], references: [id])
-  createdAt       DateTime     @default(now())
-
-  @@map("hr_doctor_payments")
-}
-
-// ============================================================
-// FINANCE — Счета и оплаты
-// ============================================================
-
-model Invoice {
-  id              String        @id @default(uuid())
-  clinicId        String
-  patientId       String
-  patient         Patient       @relation(fields: [patientId], references: [id])
-  appointmentId   String?
-  appointment     Appointment?  @relation(fields: [appointmentId], references: [id])
-  invoiceNumber   String?
-  totalAmount     Decimal       @db.Decimal(10, 2)
-  discountAmount  Decimal       @default(0) @db.Decimal(10, 2)
-  paidAmount      Decimal       @default(0) @db.Decimal(10, 2)
-  status          InvoiceStatus @default(PENDING)
-  dueDate         DateTime?     @db.Date
-  createdByUserId String?
-  createdBy       User?         @relation(fields: [createdByUserId], references: [id])
-  isDeleted       Boolean       @default(false)
-  deletedAt       DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  items               InvoiceItem[]
-  payments            Payment[]
-  balanceTransactions BalanceTransaction[]
-  promotionUsages     PromotionUsage[]
-
-  @@map("fin_invoices")
-}
-
-model InvoiceItem {
-  id        String   @id @default(uuid())
-  invoiceId String
-  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
-  serviceId String?
-  service   Service? @relation(fields: [serviceId], references: [id])
-  name      String
-  quantity  Int      @default(1)
-  price     Decimal  @db.Decimal(10, 2)
-  discount  Decimal  @default(0) @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
-
-  @@map("fin_invoice_items")
-}
-
-model ConsultInvoice {
-  id              String         @id @default(uuid())
-  clinicId        String
-  patientId       String
-  patient         Patient        @relation(fields: [patientId], references: [id])
-  planId          String?
-  plan            TreatmentPlan? @relation(fields: [planId], references: [id])
-  totalAmount     Decimal        @db.Decimal(10, 2)
-  notes           String?
-  createdByUserId String?
-  createdBy       User?          @relation(fields: [createdByUserId], references: [id])
-  createdAt       DateTime       @default(now())
-
-  items ConsultInvoiceItem[]
-
-  @@map("fin_consult_invoices")
-}
-
-model ConsultInvoiceItem {
-  id               String         @id @default(uuid())
-  consultInvoiceId String
-  consultInvoice   ConsultInvoice @relation(fields: [consultInvoiceId], references: [id])
-  serviceId        String
-  service          Service        @relation(fields: [serviceId], references: [id])
-  quantity         Int            @default(1)
-  price            Decimal        @db.Decimal(10, 2)
-  discount         Decimal        @default(0) @db.Decimal(10, 2)
-
-  @@map("fin_consult_invoice_items")
-}
-
-model Payment {
-  id               String        @id @default(uuid())
-  invoiceId        String
-  invoice          Invoice       @relation(fields: [invoiceId], references: [id])
-  amount           Decimal       @db.Decimal(10, 2)
-  method           PaymentMethod
-  balanceCashUsed  Decimal       @default(0) @db.Decimal(10, 2)
-  balanceCardUsed  Decimal       @default(0) @db.Decimal(10, 2)
-  receivedByUserId String?
-  receivedBy       User?         @relation(fields: [receivedByUserId], references: [id])
-  isDeleted        Boolean       @default(false)
-  deletedAt        DateTime?
-  createdAt        DateTime      @default(now())
-
-  @@map("fin_payments")
-}
-
-// ============================================================
-// FINANCE — Баланс пациента
-// ============================================================
-
-model Balance {
-  id          String   @id @default(uuid())
-  clinicId    String
-  patientId   String   @unique
-  patient     Patient  @relation(fields: [patientId], references: [id])
-  cashBalance Decimal  @default(0) @db.Decimal(10, 2)
-  cardBalance Decimal  @default(0) @db.Decimal(10, 2)
-  updatedAt   DateTime @updatedAt
-
-  @@map("fin_balances")
-}
-
-model BalanceTransaction {
-  id               String                 @id @default(uuid())
-  clinicId         String
-  patientId        String
-  patient          Patient                @relation(fields: [patientId], references: [id])
-  type             BalanceTransactionType
-  amount           Decimal                @db.Decimal(10, 2)
-  cashAmount       Decimal                @default(0) @db.Decimal(10, 2)
-  cardAmount       Decimal                @default(0) @db.Decimal(10, 2)
-  balanceCashAfter Decimal                @db.Decimal(10, 2)
-  balanceCardAfter Decimal                @db.Decimal(10, 2)
-  sourceType       String?
-  sourceId         String?
-  invoiceId        String?
-  invoice          Invoice?               @relation(fields: [invoiceId], references: [id])
-  description      String?
-  createdByUserId  String?
-  createdBy        User?                  @relation(fields: [createdByUserId], references: [id])
-  receiptNumber    String?
-  createdAt        DateTime               @default(now())
-
-  @@map("fin_balance_transactions")
-}
-
-// ============================================================
-// FINANCE — Бонусы и лояльность
-// ============================================================
-
-model Bonus {
-  id          String   @id @default(uuid())
-  clinicId    String
-  patientId   String   @unique
-  patient     Patient  @relation(fields: [patientId], references: [id])
-  balance     Int      @default(0)
-  totalEarned Int      @default(0)
-  totalSpent  Int      @default(0)
-  updatedAt   DateTime @updatedAt
-
-  @@map("fin_bonuses")
-}
-
-model BonusTransaction {
-  id              String               @id @default(uuid())
-  clinicId        String
-  patientId       String
-  patient         Patient              @relation(fields: [patientId], references: [id])
-  amount          Int
-  balanceAfter    Int
-  type            BonusTransactionType
-  sourceType      String?
-  sourceId        String?
-  description     String?
-  createdByUserId String?
-  createdBy       User?                @relation(fields: [createdByUserId], references: [id])
-  createdAt       DateTime             @default(now())
-
-  @@map("fin_bonus_transactions")
-}
-
-model BonusRule {
-  id             String        @id @default(uuid())
-  clinicId       String
-  name           String
-  type           BonusRuleType
-  value          Decimal       @db.Decimal(5, 2)
-  minCheckAmount Decimal?      @db.Decimal(10, 2)
-  isActive       Boolean       @default(true)
-  createdAt      DateTime      @default(now())
-
-  @@map("fin_bonus_rules")
-}
-
-model LoyaltyTier {
-  id              String       @id @default(uuid())
-  clinicId        String
-  name            String
-  minTotalSpent   Decimal      @db.Decimal(10, 2)
-  bonusMultiplier Decimal      @default(1.0) @db.Decimal(3, 1)
-  discountType    DiscountType @default(PERCENT)
-  discountValue   Decimal      @default(0) @db.Decimal(5, 2)
-  color           String?
-  sortOrder       Int          @default(0)
-  isActive        Boolean      @default(true)
-  createdAt       DateTime     @default(now())
-
-  patients Patient[]
-
-  @@map("fin_loyalty_tiers")
-}
-
-model Promotion {
-  id                String        @id @default(uuid())
-  clinicId          String
-  name              String
-  description       String?
-  type              PromotionType
-  value             Decimal       @db.Decimal(10, 2)
-  startDate         DateTime      @db.Date
-  endDate           DateTime      @db.Date
-  minCheckAmount    Decimal?      @db.Decimal(10, 2)
-  maxUsesTotal      Int?
-  maxUsesPerPatient Int?
-  promoCode         String?
-  isActive          Boolean       @default(true)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-
-  promotionServices PromotionService[]
-  promotionUsages   PromotionUsage[]
-
-  @@map("fin_promotions")
-}
-
-model PromotionService {
-  id               String    @id @default(uuid())
-  promotionId      String
-  promotion        Promotion @relation(fields: [promotionId], references: [id])
-  serviceId        String
-  service          Service   @relation(fields: [serviceId], references: [id])
-  discountOverride Decimal?  @db.Decimal(5, 2)
-
-  @@map("fin_promotion_services")
-}
-
-model PromotionUsage {
-  id             String       @id @default(uuid())
-  clinicId       String
-  promotionId    String
-  promotion      Promotion    @relation(fields: [promotionId], references: [id])
-  patientId      String
-  patient        Patient      @relation(fields: [patientId], references: [id])
-  appointmentId  String?
-  appointment    Appointment? @relation(fields: [appointmentId], references: [id])
-  invoiceId      String?
-  invoice        Invoice?     @relation(fields: [invoiceId], references: [id])
-  discountAmount Decimal      @db.Decimal(10, 2)
-  promoCodeUsed  String?
-  createdAt      DateTime     @default(now())
-
-  @@map("fin_promotion_usages")
-}
-
-// ============================================================
-// FINANCE — Движение денежных средств
-// ============================================================
-
-model CashFlowCategory {
-  id        String             @id @default(uuid())
-  clinicId  String
-  name      String
-  direction CashFlowDirection
-  parentId  String?
-  parent    CashFlowCategory?  @relation("CashFlowFolder", fields: [parentId], references: [id])
-  children  CashFlowCategory[] @relation("CashFlowFolder")
-  sortOrder Int                @default(0)
-  isActive  Boolean            @default(true)
-
-  transactions CashFlowTransaction[]
-
-  @@map("fin_cashflow_categories")
-}
-
-model CashFlowTransaction {
-  id              String            @id @default(uuid())
-  clinicId        String
-  branchId        String?
-  branch          Branch?           @relation(fields: [branchId], references: [id])
-  categoryId      String
-  category        CashFlowCategory  @relation(fields: [categoryId], references: [id])
-  direction       CashFlowDirection
-  amount          Decimal           @db.Decimal(10, 2)
-  description     String?
-  transactionDate DateTime          @db.Date
-  createdByUserId String?
-  createdBy       User?             @relation(fields: [createdByUserId], references: [id])
-  createdAt       DateTime          @default(now())
-
-  @@map("fin_cashflow_transactions")
-}
-
-// ============================================================
-// NOTIFICATIONS — Уведомления и напоминания
-// ============================================================
-
-model NotificationTemplate {
-  id        String                @id @default(uuid())
-  clinicId  String
-  eventType NotificationEventType
-  channel   NotificationChannel   @default(SMS)
-  name      String
-  body      String
-  isActive  Boolean               @default(true)
-  createdAt DateTime              @default(now())
-  updatedAt DateTime              @updatedAt
-
-  logs NotificationLog[]
-
-  @@map("ntf_templates")
-}
-
-model NotificationLog {
-  id           String                @id @default(uuid())
-  clinicId     String
-  patientId    String?
-  patient      Patient?              @relation(fields: [patientId], references: [id])
-  templateId   String?
-  template     NotificationTemplate? @relation(fields: [templateId], references: [id])
-  channel      NotificationChannel
-  recipient    String
-  body         String
-  status       NotificationStatus    @default(PENDING)
-  cost         Decimal?              @db.Decimal(8, 4)
-  sentAt       DateTime?
-  deliveredAt  DateTime?
-  errorMessage String?
-  createdAt    DateTime              @default(now())
-
-  @@map("ntf_logs")
-}
-
-model Reminder {
-  id        String    @id @default(uuid())
-  clinicId  String
-  userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  patientId String?
-  patient   Patient?  @relation(fields: [patientId], references: [id])
-  text      String
-  remindAt  DateTime
-  isDone    Boolean   @default(false)
-  doneAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  @@map("ntf_reminders")
-}
-
-// ============================================================
-// INVENTORY — Склад и материалы
-// ============================================================
-
-model Contractor {
-  id            String         @id @default(uuid())
-  clinicId      String
-  name          String
-  type          ContractorType @default(SUPPLIER)
-  inn           String?
-  contactPerson String?
-  phone         String?
-  email         String?
-  address       String?
-  notes         String?
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-
-  materials      Material[]
-  stockMovements StockMovement[]
-  stockReceipts  StockReceipt[]
-
-  @@map("inv_contractors")
-}
-
-model MaterialCategory {
-  id        String   @id @default(uuid())
-  clinicId  String
-  name      String
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-
-  materials Material[]
-
-  @@map("inv_material_categories")
-}
-
-model Unit {
-  id        String   @id @default(uuid())
-  clinicId  String
-  name      String
-  shortName String?
-  isActive  Boolean  @default(true)
-
-  materials Material[]
-
-  @@map("inv_units")
-}
-
-model Material {
-  id                  String            @id @default(uuid())
-  clinicId            String
-  categoryId          String?
-  category            MaterialCategory? @relation(fields: [categoryId], references: [id])
-  name                String
-  sku                 String?
-  unitId              String?
-  unit                Unit?             @relation(fields: [unitId], references: [id])
-  minStock            Decimal           @default(0) @db.Decimal(10, 3)
-  defaultContractorId String?
-  defaultContractor   Contractor?       @relation(fields: [defaultContractorId], references: [id])
-  isActive            Boolean           @default(true)
-  createdAt           DateTime          @default(now())
-
-  stock            MaterialStock[]
-  movements        StockMovement[]
-  receiptItems     StockReceiptItem[]
-  serviceMaterials ServiceMaterial[]
-
-  @@map("inv_materials")
-}
-
-model MaterialStock {
-  id              String   @id @default(uuid())
-  clinicId        String
-  materialId      String
-  material        Material @relation(fields: [materialId], references: [id])
-  branchId        String
-  branch          Branch   @relation(fields: [branchId], references: [id])
-  quantity        Decimal  @default(0) @db.Decimal(10, 3)
-  lastUpdatedAt   DateTime @updatedAt
-  updatedByUserId String?
-
-  @@unique([materialId, branchId])
-  @@map("inv_material_stock")
-}
-
-model StockMovement {
-  id                 String            @id @default(uuid())
-  clinicId           String
-  materialId         String
-  material           Material          @relation(fields: [materialId], references: [id])
-  branchId           String
-  branch             Branch            @relation(fields: [branchId], references: [id])
-  type               StockMovementType
-  quantity           Decimal           @db.Decimal(10, 3)
-  quantityBefore     Decimal           @db.Decimal(10, 3)
-  quantityAfter      Decimal           @db.Decimal(10, 3)
-  sourceType         String?
-  sourceId           String?
-  contractorId       String?
-  contractor         Contractor?       @relation(fields: [contractorId], references: [id])
-  transferToBranchId String?
-  notes              String?
-  createdByUserId    String?
-  createdBy          User?             @relation(fields: [createdByUserId], references: [id])
-  createdAt          DateTime          @default(now())
-
-  @@map("inv_stock_movements")
-}
-
-model StockReceipt {
-  id              String      @id @default(uuid())
-  clinicId        String
-  branchId        String
-  branch          Branch      @relation(fields: [branchId], references: [id])
-  contractorId    String?
-  contractor      Contractor? @relation(fields: [contractorId], references: [id])
-  receiptNumber   String?
-  receiptDate     DateTime    @db.Date
-  totalAmount     Decimal     @db.Decimal(10, 2)
-  notes           String?
-  createdByUserId String?
-  createdBy       User?       @relation(fields: [createdByUserId], references: [id])
-  createdAt       DateTime    @default(now())
-
-  items StockReceiptItem[]
-
-  @@map("inv_stock_receipts")
-}
-
-model StockReceiptItem {
-  id         String       @id @default(uuid())
-  receiptId  String
-  receipt    StockReceipt @relation(fields: [receiptId], references: [id])
-  materialId String
-  material   Material     @relation(fields: [materialId], references: [id])
-  quantity   Decimal      @db.Decimal(10, 3)
-  price      Decimal      @db.Decimal(10, 2)
-  amount     Decimal      @db.Decimal(10, 2)
-  createdAt  DateTime     @default(now())
-
-  @@map("inv_stock_receipt_items")
-}
-
-model ServiceMaterial {
-  id         String   @id @default(uuid())
-  clinicId   String
-  serviceId  String
-  service    Service  @relation(fields: [serviceId], references: [id])
-  materialId String
-  material   Material @relation(fields: [materialId], references: [id])
-  quantity   Decimal  @db.Decimal(10, 3)
-  isRequired Boolean  @default(true)
-  updatedAt  DateTime @updatedAt
-
-  @@unique([serviceId, materialId])
-  @@map("inv_service_materials")
-}
-
-// ============================================================
-// SAAS — Подписки (биллинг платформы Orisios)
-// ============================================================
-
-model SubscriptionPlan {
-  id           String               @id @default(uuid())
-  code         SubscriptionPlanCode @unique
-  name         String
-  maxDoctors   Int?
-  maxBranches  Int?
-  priceMonthly Decimal              @db.Decimal(10, 2)
-  priceYearly  Decimal              @db.Decimal(10, 2)
-  features     Json?
-  isActive     Boolean              @default(true)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-
-  subscriptions Subscription[]
-
-  @@map("saas_subscription_plans")
-}
-
-model Subscription {
-  id                   String             @id @default(uuid())
-  clinicId             String             @unique
-  clinic               Clinic             @relation(fields: [clinicId], references: [id])
-  planId               String
-  plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
-  status               SubscriptionStatus @default(TRIAL)
-  trialEndsAt          DateTime?
-  currentPeriodStart   DateTime?
-  currentPeriodEnd     DateTime?
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
-  cancelledAt          DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-
-  @@map("saas_subscriptions")
-}
-
-// ============================================================
-// SYSTEM — Аудит лог
-// ============================================================
-
-model AuditLog {
-  id         String   @id @default(uuid())
-  clinicId   String?
-  userId     String?
-  entityType String   // "Patient", "Invoice", "MedicalRecord", etc.
-  entityId   String
-  action     String   // "CREATE", "UPDATE", "DELETE"
-  changes    Json?    // { field: { old: ..., new: ... } }
-  ipAddress  String?
-  createdAt  DateTime @default(now())
-
-  @@index([entityType, entityId])
-  @@index([clinicId, createdAt])
-  @@map("sys_audit_logs")
-}
-
-// ============================================================
-// CLINICAL — Visit Form Templates
-// ============================================================
-
-model VisitFormTemplate {
-  id        String   @id @default(uuid())
-  clinicId  String
-  name      String
-  role      String   // "DOCTOR" | "ADMIN" | "ALL"
-  isDefault Boolean  @default(false)
-  blocks    Json     // [{type, order, visible, required, label}]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("clin_visit_form_templates")
-}
-
-// ============================================================
-// TASK MANAGER
-// ============================================================
 
 enum TaskPriority {
   LOW
@@ -1989,49 +1899,6 @@ enum TaskStatus {
   CANCELLED
 }
 
-model ClinicTask {
-  id              String       @id @default(uuid())
-  clinicId        String
-  title           String
-  description     String?
-  priority        TaskPriority @default(MEDIUM)
-  status          TaskStatus   @default(OPEN)
-  dueDate         DateTime?
-  assignedToId    String?
-  assignedTo      User?        @relation("AssignedTasks", fields: [assignedToId], references: [id])
-  createdByUserId String?
-  createdBy       User?        @relation("CreatedTasks", fields: [createdByUserId], references: [id])
-  patientId       String?
-  patient         Patient?     @relation(fields: [patientId], references: [id])
-  appointmentId   String?
-  completedAt     DateTime?
-  isDeleted       Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  @@map("core_clinic_tasks")
-}
-
-// ============================================================
-// ЕГИСЗ — Russian State Medical Reporting
-// ============================================================
-
-model EgiszSettings {
-  id          String   @id @default(uuid())
-  clinicId    String   @unique
-  isEnabled   Boolean  @default(false)
-  orgOid      String?
-  orgName     String?
-  apiUrl      String?
-  apiLogin    String?
-  apiPassword String?
-  lastSyncAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("egisz_settings")
-}
-
 enum EgiszDocType {
   SEMD_OUTPATIENT
   SEMD_REFERRAL
@@ -2045,24 +1912,4 @@ enum EgiszDocStatus {
   ACCEPTED
   REJECTED
   ERROR
-}
-
-model EgiszDocument {
-  id              String         @id @default(uuid())
-  clinicId        String
-  patientId       String
-  patient         Patient        @relation(fields: [patientId], references: [id])
-  appointmentId   String?
-  docType         EgiszDocType
-  status          EgiszDocStatus @default(DRAFT)
-  xmlPayload      String?        @db.Text
-  errorMessage    String?
-  sentAt          DateTime?
-  acceptedAt      DateTime?
-  externalId      String?
-  createdByUserId String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  @@map("egisz_documents")
 }

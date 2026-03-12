@@ -13,11 +13,11 @@ export const getVisitData = async (req: Request, res: Response) => {
     const appointment = await prisma.appointment.findFirst({
       where: { id, clinicId, isDeleted: false },
       include: {
-        patient: { select: { id: true, firstName: true, lastName: true, middleName: true, phone: true, birthDate: true, allergies: true } },
+        patient: { select: { id: true, firstName: true, lastName: true, middleName: true, birthDate: true, allergies: true } },
         doctor:  { select: { id: true, name: true } },
         branch:  { select: { id: true, name: true } },
         services: {
-          include: { service: { select: { id: true, name: true, price: true, duration: true } } },
+          include: { service: { select: { id: true, name: true, price: true } } },
         },
         invoices: {
           where: { isDeleted: false },

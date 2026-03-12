@@ -26,9 +26,9 @@ const IconX         = () => <svg width="14" height="14" viewBox="0 0 24 24" fill
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate     = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-const fmtDateTime = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-const fmtTime     = (d: string) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+const fmtDate     = (d: string) => { const dt = new Date(d); return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`; };
+const fmtDateTime = (d: string) => { const dt = new Date(d); return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`; };
+const fmtTime     = (d: string) => { const dt = new Date(d); return `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`; };
 const fmtCur      = (n: number) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {

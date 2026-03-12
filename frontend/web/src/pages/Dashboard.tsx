@@ -228,7 +228,7 @@ const MyTasksWidget: React.FC<{ onOpenTasks: () => void }> = ({ onOpenTasks }) =
             </span>
             {task.dueDate && (
               <span style={{ fontSize: 11, color: isOverdue(task.dueDate) && task.status !== 'DONE' ? '#EF4444' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                {new Date(task.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                {(() => { const dt = new Date(task.dueDate); return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`; })()}
               </span>
             )}
           </div>

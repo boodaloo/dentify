@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import PhoneInput from './PhoneInput';
+import DateInput from './DateInput';
 import './AppointmentForm.css';
 
 interface AppointmentFormProps {
@@ -457,11 +458,9 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         <div className="apt-row apt-row-3">
           <div className="apt-field apt-field-wide">
             <label>Date <span className="apt-req">*</span></label>
-            <input
-              type="date"
+            <DateInput
               value={date}
-              onChange={e => setDate(e.target.value)}
-              required
+              onChange={iso => setDate(iso)}
             />
           </div>
           <div className="apt-field">

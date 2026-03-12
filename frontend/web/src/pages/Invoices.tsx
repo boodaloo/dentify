@@ -7,7 +7,8 @@ const formatCurrency = (n: number | string) =>
 
 const formatDate = (d: string | null) => {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+  const dt = new Date(d);
+  return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`;
 };
 
 const initials = (p: any) => {

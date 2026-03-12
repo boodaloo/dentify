@@ -1,5 +1,6 @@
 :root {
   /* Colors */
+  --primary-teal: #14919B;
   --primary-deep-teal: #0D7377;
   --primary-light-teal: #14919B;
   --secondary-seafoam: #45B7A0;
@@ -36,9 +37,13 @@
 
   --text-primary: #1A1A2E;
   --text-secondary: #5A5A72;
+  --text-muted: #9CA3AF;
   --border-light: #E8E8ED;
+  --border-color: #E8E8ED;
   --bg-off-white: #F8F9FC;
   --bg-white: #FFFFFF;
+  --bg-primary: #FFFFFF;
+  --bg-surface: #F8F9FC;
   --warning-saffron: #F2CC8F;
 
   /* Spacing */

@@ -48,7 +48,7 @@ export const uploadPatientFile = async (req: Request, res: Response) => {
     const patient = await prisma.patient.findFirst({ where: { id: patientId, clinicId, isDeleted: false } });
     if (!patient) return R.error(res, 'Patient not found', 404);
 
-    const file = req.file;
+    const file = (req as any).file;
     if (!file) return R.error(res, 'No file uploaded');
 
     const { fileType = 'OTHER', appointmentId, description } = req.body;

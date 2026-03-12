@@ -137,10 +137,10 @@ export default function Documents() {
                       ) : <span style={{ color: 'var(--text-secondary)' }}>—</span>}
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>
-                      {new Date(d.issuedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {(() => { const dt = new Date(d.issuedAt); return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`; })()}
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>
-                      {d.validTo ? new Date(d.validTo).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      {d.validTo ? (() => { const dt = new Date(d.validTo); return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`; })() : '—'}
                     </td>
                     <td><span className={`sp-badge ${status.cls}`}>{status.label}</span></td>
                     <td>
